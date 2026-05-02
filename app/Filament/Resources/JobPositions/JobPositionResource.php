@@ -8,8 +8,10 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Forms;
 use Filament\Schemas\Schema;
-use Filament\Support\Icons\Heroicon;
 use App\Filament\Resources\JobPositions\Pages;
+
+// ✅ Filament v5 uses this for all actions
+use Filament\Actions\Action;
 
 class JobPositionResource extends Resource
 {
@@ -43,17 +45,26 @@ class JobPositionResource extends Resource
                     ->label('Open'),
             ])
             ->actions([
-                Tables\Actions\Action::make('toggle')
-                    ->icon('heroicon-o-switch-horizontal')
+                Action::make('toggle')
+                    ->label('Toggle Status')
+                    ->icon('heroicon-o-arrows-right-left')
                     ->color('warning')
+                    ->requiresConfirmation()
                     ->action(fn ($record) => $record->update([
                         'is_open' => !$record->is_open,
                     ])),
 
-                Tables\Actions\EditAction::make(),
+                Action::make('edit')
+                    ->label('Edit')
+                    ->icon('heroicon-o-pencil')
+                    ->url(fn ($record) => static::getUrl('edit', ['record' => $record])),
             ])
             ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
+                Action::make('delete')
+                    ->label('Delete Selected')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->action(fn ($records) => $records->each->delete()),
             ]);
     }
 
