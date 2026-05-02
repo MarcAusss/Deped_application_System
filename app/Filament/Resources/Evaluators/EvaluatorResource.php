@@ -8,8 +8,10 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Forms;
 use Filament\Schemas\Schema;
-use Filament\Support\Icons\Heroicon;
 use App\Filament\Resources\Evaluators\Pages;
+
+// ✅ Correct for Filament v5
+use Filament\Actions\Action;
 
 class EvaluatorResource extends Resource
 {
@@ -49,29 +51,40 @@ class EvaluatorResource extends Resource
 
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
-                    ->color(fn(string $state) => match ($state) {
+                    ->color(fn (string $state) => match ($state) {
                         'pending' => 'gray',
                         'approved' => 'success',
                         'rejected' => 'danger',
                     }),
             ])
             ->actions([
-                Tables\Actions\Action::make('approve')
+                Action::make('approve')
+                    ->label('Approve')
                     ->icon('heroicon-o-check')
                     ->color('success')
-                    ->action(fn($record) => $record->update(['status' => 'approved']))
-                    ->visible(fn($record) => $record->status === 'pending'),
+                    ->requiresConfirmation()
+                    ->action(fn ($record) => $record->update(['status' => 'approved']))
+                    ->visible(fn ($record) => $record->status === 'pending'),
 
-                Tables\Actions\Action::make('reject')
+                Action::make('reject')
+                    ->label('Reject')
                     ->icon('heroicon-o-x-mark')
                     ->color('danger')
-                    ->action(fn($record) => $record->update(['status' => 'rejected']))
-                    ->visible(fn($record) => $record->status === 'pending'),
+                    ->requiresConfirmation()
+                    ->action(fn ($record) => $record->update(['status' => 'rejected']))
+                    ->visible(fn ($record) => $record->status === 'pending'),
 
-                Tables\Actions\EditAction::make(),
+                Action::make('edit')
+                    ->label('Edit')
+                    ->icon('heroicon-o-pencil')
+                    ->url(fn ($record) => static::getUrl('edit', ['record' => $record])),
             ])
             ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
+                Action::make('delete')
+                    ->label('Delete Selected')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->action(fn ($records) => $records->each->delete()),
             ]);
     }
 
