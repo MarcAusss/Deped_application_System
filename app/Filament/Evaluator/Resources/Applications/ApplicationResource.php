@@ -1,20 +1,24 @@
 <?php
 
-namespace App\Filament\Resources\Applications;
+namespace App\Filament\Evaluator\Resources\Applications;
 
 use App\Models\Application;
-use App\Filament\Resources\Applications\Pages;
-use App\Filament\Resources\Applications\RelationManagers;
+use App\Models\ApplicationControlNumber;
+use App\Filament\Evaluator\Resources\Applications\Pages;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Section;        // ✅ Layout components
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Placeholder;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Actions\Action;
+use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Auth;
 
 class ApplicationResource extends Resource
 {
@@ -24,7 +28,7 @@ class ApplicationResource extends Resource
 
     protected static ?string $navigationLabel = 'Applications';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?string $slug = 'applications';
 
     public static function getNavigationGroup(): ?string
     {
@@ -33,7 +37,7 @@ class ApplicationResource extends Resource
 
     /*
     |--------------------------------------------------------------------------
-    | FORM (Read-only view of application details)
+    | FORM
     |--------------------------------------------------------------------------
     */
     public static function form(Schema $schema): Schema
@@ -56,8 +60,9 @@ class ApplicationResource extends Resource
 
             Section::make('Control Number')
                 ->icon('heroicon-o-hashtag')
+                ->description('Assign a control number to this application before marking it as evaluated.')
                 ->schema([
-                    Placeholder::make('control_number')
+                    Placeholder::make('existing_control_number')
                         ->label('Assigned Control Number')
                         ->content(fn ($record) => $record?->controlNumber?->control_number ?? 'Not yet assigned'),
 
@@ -98,19 +103,19 @@ class ApplicationResource extends Resource
 
             Section::make('Evaluation Checklist')
                 ->icon('heroicon-o-clipboard-document-check')
-                ->description('Completed by the evaluator.')
+                ->description('Check each item after verifying the applicant\'s submitted documents.')
                 ->schema([
                     Toggle::make('resume_checked')
                         ->label('Resume Checked')
-                        ->disabled(),
+                        ->helperText('Mark if the applicant\'s resume has been reviewed.'),
 
                     Toggle::make('credentials_valid')
                         ->label('Credentials Valid')
-                        ->disabled(),
+                        ->helperText('Mark if submitted credentials passed verification.'),
 
                     Toggle::make('recommended')
                         ->label('Recommended for Approval')
-                        ->disabled(),
+                        ->helperText('Mark if this applicant is recommended to proceed.'),
                 ])
                 ->columns(3),
         ]);
@@ -184,28 +189,73 @@ class ApplicationResource extends Resource
             ])
 
             ->actions([
+                Action::make('assign_control_number')
+                    ->label('Assign Control #')
+                    ->icon('heroicon-o-hashtag')
+                    ->color('info')
+                    ->visible(fn ($record) => blank($record->controlNumber))
+                    ->form([
+                        TextInput::make('control_number')
+                            ->label('Control Number')
+                            ->required()
+                            ->maxLength(50)
+                            ->placeholder('e.g. DEP-2025-0001'),
+                    ])
+                    ->action(function ($record, array $data) {
+                        // Manual unique check to avoid the broken query
+                        $exists = ApplicationControlNumber::where(
+                            'control_number', $data['control_number']
+                        )->exists();
+
+                        if ($exists) {
+                            Notification::make()
+                                ->title('Control number already in use.')
+                                ->danger()
+                                ->send();
+                            return;
+                        }
+
+                        ApplicationControlNumber::create([
+                            'application_id' => $record->id,
+                            'control_number' => $data['control_number'],
+                            'generated_by'   => Auth::id(),
+                        ]);
+
+                        Notification::make()
+                            ->title('Control number assigned successfully.')
+                            ->success()
+                            ->send();
+                    }),
+
+                Action::make('evaluate')
+                    ->label('Mark Evaluated')
+                    ->icon('heroicon-o-pencil-square')
+                    ->color('warning')
+                    ->visible(fn ($record) => $record->status === 'pending' && filled($record->controlNumber))
+                    ->requiresConfirmation()
+                    ->modalHeading('Mark as Evaluated')
+                    ->modalDescription('This forwards the application to admin for final approval. Ensure the control number is assigned and the checklist is complete.')
+                    ->action(function ($record) {
+                        $record->update(['status' => 'evaluated']);
+
+                        Notification::make()
+                            ->title('Application marked as evaluated.')
+                            ->success()
+                            ->send();
+                    }),
+
                 Action::make('view')
                     ->label('View')
                     ->icon('heroicon-o-eye')
                     ->url(fn ($record) => static::getUrl('view', ['record' => $record])),
+
+                Action::make('edit')
+                    ->label('Edit Checklist')
+                    ->icon('heroicon-o-pencil')
+                    ->url(fn ($record) => static::getUrl('edit', ['record' => $record])),
             ])
 
             ->bulkActions([]);
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | RELATION MANAGERS
-    |--------------------------------------------------------------------------
-    */
-    public static function getRelations(): array
-    {
-        return [
-            RelationManagers\EducationRelationManager::class,
-            RelationManagers\ExperienceRelationManager::class,
-            RelationManagers\TrainingRelationManager::class,
-            RelationManagers\DocumentsRelationManager::class,
-        ];
     }
 
     /*
@@ -218,6 +268,7 @@ class ApplicationResource extends Resource
         return [
             'index' => Pages\ListApplications::route('/'),
             'view'  => Pages\ViewApplication::route('/{record}'),
+            'edit'  => Pages\EditApplication::route('/{record}/edit'),
         ];
     }
 }
