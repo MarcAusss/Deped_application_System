@@ -11,13 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-       Schema::create('applications', function (Blueprint $table) {
+        Schema::create('application_status_logs', function (Blueprint $table) {
             $table->id();
 
-            $table->foreignId('job_position_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('application_id')->constrained()->cascadeOnDelete();
 
-            $table->enum('status', ['pending', 'evaluated', 'approved', 'rejected'])
-                ->default('pending');
+            $table->string('status');
+            $table->text('remarks')->nullable();
+
+            $table->foreignId('changed_by')->nullable()->constrained('users');
 
             $table->timestamps();
         });
@@ -28,6 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('applications');
+        Schema::dropIfExists('application_status_logs');
     }
 };
