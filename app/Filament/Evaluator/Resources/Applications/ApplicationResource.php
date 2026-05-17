@@ -19,6 +19,7 @@ use Filament\Tables\Table;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Auth;
+use App\Filament\Evaluator\Resources\Applications\RelationManagers;
 
 class ApplicationResource extends Resource
 {
@@ -258,6 +259,21 @@ class ApplicationResource extends Resource
             ->bulkActions([]);
     }
 
+    /*
+|--------------------------------------------------------------------------
+| RELATION MANAGERS
+|--------------------------------------------------------------------------
+*/
+public static function getRelations(): array
+{
+    return [
+        RelationManagers\EducationRelationManager::class,
+        RelationManagers\ExperienceRelationManager::class,
+        RelationManagers\TrainingRelationManager::class,
+        RelationManagers\EligibilityRelationManager::class,
+        RelationManagers\DocumentsRelationManager::class,
+    ];
+}
     /*
     |--------------------------------------------------------------------------
     | PAGES
