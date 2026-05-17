@@ -6,10 +6,27 @@ use App\Models\Application;
 use App\Models\JobPosition;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 class ApplicationController extends Controller
 {
+    /*
+    |--------------------------------------------------------------------------
+    | SHOW JOB LIST
+    |--------------------------------------------------------------------------
+    */
+
+    public function jobs()
+    {
+        $jobs = JobPosition::where('is_open', true)->latest()->get();
+
+        return view('jobs', compact('jobs'));
+    }
+    /*
+    |--------------------------------------------------------------------------
+    | SHOW APPLICATION FORM
+    |--------------------------------------------------------------------------
+    */
+
     public function create(JobPosition $job)
     {
         if (!$job->is_open) {
@@ -19,10 +36,23 @@ class ApplicationController extends Controller
         return view('apply', compact('job'));
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | STORE APPLICATION
+    |--------------------------------------------------------------------------
+    */
+
     public function store(Request $request, JobPosition $job)
     {
-        // 🔒 VALIDATION (basic but clean)
+        /*
+        |--------------------------------------------------------------------------
+        | VALIDATION
+        |--------------------------------------------------------------------------
+        */
+
         $validated = $request->validate([
+
+            // PERSONAL INFO
             'full_name' => 'required|string',
             'email' => 'required|email',
             'phone_number' => 'nullable|string',
@@ -30,20 +60,47 @@ class ApplicationController extends Controller
             'disability' => 'nullable|string',
             'ethnic_group' => 'nullable|string',
 
+            // ARRAYS
             'education' => 'nullable|array',
             'experience' => 'nullable|array',
             'training' => 'nullable|array',
+            'eligibility' => 'nullable|array',
+
+            // DOCUMENTS
+            'letter_of_intent' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png',
+            'tor_diploma' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png',
+            'prc_license' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png',
+
+            // 🔥 RENAMED
+            'eligibility_file' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png',
+
+            'training_certificates' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png',
+            'employment_records' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png',
+            'latest_appointment' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png',
+            'performance_rating' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png',
+            'cav' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png',
+            'movs' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png',
         ]);
 
         DB::transaction(function () use ($validated, $request, $job) {
 
-            // 🧾 1. CREATE MAIN APPLICATION
+            /*
+            |--------------------------------------------------------------------------
+            | CREATE APPLICATION
+            |--------------------------------------------------------------------------
+            */
+
             $application = Application::create([
                 'job_position_id' => $job->id,
                 'status' => 'pending',
             ]);
 
-            // 👤 2. PROFILE (1:1)
+            /*
+            |--------------------------------------------------------------------------
+            | PROFILE
+            |--------------------------------------------------------------------------
+            */
+
             $application->profile()->create([
                 'full_name' => $validated['full_name'],
                 'email' => $validated['email'],
@@ -53,10 +110,18 @@ class ApplicationController extends Controller
                 'ethnic_group' => $validated['ethnic_group'] ?? null,
             ]);
 
-            // 🎓 3. EDUCATION (1:N CLEAN FIX)
+            /*
+            |--------------------------------------------------------------------------
+            | EDUCATION
+            |--------------------------------------------------------------------------
+            */
+
             if (!empty($request->education)) {
+
                 foreach ($request->education as $edu) {
+
                     if (!empty(array_filter($edu))) {
+
                         $application->educations()->create([
                             'level' => $edu['level'] ?? null,
                             'school' => $edu['school'] ?? null,
@@ -67,10 +132,18 @@ class ApplicationController extends Controller
                 }
             }
 
-            // 💼 4. EXPERIENCE
+            /*
+            |--------------------------------------------------------------------------
+            | EXPERIENCE
+            |--------------------------------------------------------------------------
+            */
+
             if (!empty($request->experience)) {
+
                 foreach ($request->experience as $exp) {
+
                     if (!empty(array_filter($exp))) {
+
                         $application->experiences()->create([
                             'title' => $exp['title'] ?? null,
                             'company' => $exp['company'] ?? null,
@@ -81,10 +154,18 @@ class ApplicationController extends Controller
                 }
             }
 
-            // 🏫 5. TRAINING
+            /*
+            |--------------------------------------------------------------------------
+            | TRAININGS
+            |--------------------------------------------------------------------------
+            */
+
             if (!empty($request->training)) {
+
                 foreach ($request->training as $train) {
+
                     if (!empty(array_filter($train))) {
+
                         $application->trainings()->create([
                             'title' => $train['title'] ?? null,
                             'hours' => $train['hours'] ?? null,
@@ -94,8 +175,67 @@ class ApplicationController extends Controller
                 }
             }
 
-            // 📁 6. DOCUMENTS (optional placeholder for now)
-            // You will connect file upload UI later
+            /*
+            |--------------------------------------------------------------------------
+            | ELIGIBILITIES
+            |--------------------------------------------------------------------------
+            */
+
+            if (!empty($request->eligibility)) {
+
+                foreach ($request->eligibility as $eligibility) {
+
+                    if (!empty(array_filter($eligibility))) {
+
+                        $application->eligibilities()->create([
+                            'license_name' => $eligibility['license_name'] ?? null,
+                            'rating' => $eligibility['rating'] ?? null,
+
+                            'valid_until' =>
+                                ($eligibility['never_expires'] ?? false)
+                                ? null
+                                : ($eligibility['valid_until'] ?? null),
+                        ]);
+                    }
+                }
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | DOCUMENT UPLOADS
+            |--------------------------------------------------------------------------
+            */
+
+            $documentFields = [
+                'letter_of_intent',
+                'tor_diploma',
+                'prc_license',
+
+                // 🔥 RENAMED
+                'eligibility_file',
+
+                'training_certificates',
+                'employment_records',
+                'latest_appointment',
+                'performance_rating',
+                'cav',
+                'movs',
+            ];
+
+            foreach ($documentFields as $field) {
+
+                if ($request->hasFile($field)) {
+
+                    $file = $request->file($field);
+
+                    $path = $file->store('documents', 'public');
+
+                    $application->documents()->create([
+                        'type' => $field,
+                        'file_path' => $path,
+                    ]);
+                }
+            }
         });
 
         return back()->with('success', 'Application submitted successfully!');

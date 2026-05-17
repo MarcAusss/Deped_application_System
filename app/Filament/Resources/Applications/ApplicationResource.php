@@ -204,6 +204,7 @@ class ApplicationResource extends Resource
             RelationManagers\EducationRelationManager::class,
             RelationManagers\ExperienceRelationManager::class,
             RelationManagers\TrainingRelationManager::class,
+            RelationManagers\EligibilityRelationManager::class,
             RelationManagers\DocumentsRelationManager::class,
         ];
     }

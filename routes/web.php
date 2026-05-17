@@ -4,7 +4,6 @@ use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ApplicationController;
-use App\Models\JobPosition;
 
 /*
 |--------------------------------------------------------------------------
@@ -12,19 +11,23 @@ use App\Models\JobPosition;
 |--------------------------------------------------------------------------
 */
 
-Route::get('/', [AuthController::class, 'showLogin'])->name('login');
-Route::post('/login', [AuthController::class, 'login']);
+Route::get('/', [AuthController::class, 'showLogin'])
+    ->name('login');
 
-Route::post('/logout', [AuthController::class, 'logout'])
+Route::post('/login', [AuthController::class, 'login'])
+    ->name('login.submit');
+
+Route::get('/logout', [AuthController::class, 'logout'])
     ->name('logout');
 
 /*
 |--------------------------------------------------------------------------
-| PUBLIC JOB LISTING (FOR APPLICANTS)
+| JOB LISTINGS
 |--------------------------------------------------------------------------
 */
 
-Route::get('/jobs', [ApplicationController::class, 'jobs'])->name('jobs');
+Route::get('/jobs', [ApplicationController::class, 'jobs'])
+    ->name('jobs');
 
 /*
 |--------------------------------------------------------------------------
