@@ -4,33 +4,40 @@ namespace App\Http\Controllers;
 
 use App\Models\Application;
 use App\Models\JobPosition;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
+use Throwable;
 
 class ApplicationController extends Controller
 {
     /*
     |--------------------------------------------------------------------------
-    | SHOW JOB LIST
+    | SHOW AVAILABLE JOB POSITIONS
     |--------------------------------------------------------------------------
     */
 
-    public function jobs()
+    public function jobs(): View
     {
-        $jobs = JobPosition::where('is_open', true)->latest()->get();
+        $jobs = JobPosition::query()
+            ->where('is_open', true)
+            ->latest()
+            ->get();
 
         return view('jobs', compact('jobs'));
     }
+
     /*
     |--------------------------------------------------------------------------
     | SHOW APPLICATION FORM
     |--------------------------------------------------------------------------
     */
 
-    public function create(JobPosition $job)
+    public function create(JobPosition $job): View
     {
-        if (!$job->is_open) {
-            abort(403, 'Job is not open');
+        if (! $job->is_open) {
+            abort(403, 'This job position is currently closed.');
         }
 
         return view('apply', compact('job'));
@@ -42,192 +49,392 @@ class ApplicationController extends Controller
     |--------------------------------------------------------------------------
     */
 
-    public function store(Request $request, JobPosition $job)
+    public function store(Request $request, JobPosition $job): RedirectResponse
     {
-        /*
-        |--------------------------------------------------------------------------
-        | VALIDATION
-        |--------------------------------------------------------------------------
-        */
+        if (! $job->is_open) {
+            abort(403, 'This job position is currently closed.');
+        }
 
         $validated = $request->validate([
+            /*
+            |--------------------------------------------------------------------------
+            | Personal Information
+            |--------------------------------------------------------------------------
+            */
 
-            // PERSONAL INFO
-            'full_name' => 'required|string',
-            'email' => 'required|email',
-            'phone_number' => 'nullable|string',
-            'address' => 'nullable|string',
-            'disability' => 'nullable|string',
-            'ethnic_group' => 'nullable|string',
+            'full_name' => [
+                'required',
+                'string',
+                'max:255',
+            ],
 
-            // ARRAYS
-            'education' => 'nullable|array',
-            'experience' => 'nullable|array',
-            'training' => 'nullable|array',
-            'eligibility' => 'nullable|array',
+            'email' => [
+                'required',
+                'email',
+                'max:255',
+            ],
 
-            // DOCUMENTS
-            'letter_of_intent' => 'nullable|file|mimes:pdf|max:10240',
-            'tor_diploma' => 'nullable|file|mimes:pdf|max:10240',
-            'prc_license' => 'nullable|file|mimes:pdf|max:10240',
+            'phone_number' => [
+                'nullable',
+                'string',
+                'max:50',
+            ],
 
-            // 🔥 RENAMED
-            'eligibility_file' => 'nullable|file|mimes:pdf|max:10240',
+            'address' => [
+                'nullable',
+                'string',
+                'max:1000',
+            ],
 
-            'training_certificates' => 'nullable|file|mimes:pdf|max:10240',
-            'employment_records' => 'nullable|file|mimes:pdf|max:10240',
-            'latest_appointment' => 'nullable|file|mimes:pdf|max:10240',
-            'performance_rating' => 'nullable|file|mimes:pdf|max:10240',
-            'cav' => 'nullable|file|mimes:pdf|max:10240',
-            'movs' => 'nullable|file|mimes:pdf|max:10240',
+            'disability' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+
+            'ethnic_group' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+
+            /*
+            |--------------------------------------------------------------------------
+            | Education
+            |--------------------------------------------------------------------------
+            */
+
+            'education' => [
+                'nullable',
+                'array',
+            ],
+
+            'education.*.level' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+
+            'education.*.school' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+
+            'education.*.degree' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+
+            'education.*.year_graduated' => [
+                'nullable',
+                'string',
+                'max:20',
+            ],
+
+            /*
+            |--------------------------------------------------------------------------
+            | Work Experience
+            |--------------------------------------------------------------------------
+            */
+
+            'experience' => [
+                'nullable',
+                'array',
+            ],
+
+            'experience.*.title' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+
+            'experience.*.company' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+
+            'experience.*.years_months' => [
+                'nullable',
+                'string',
+                'max:100',
+            ],
+
+            'experience.*.details' => [
+                'nullable',
+                'string',
+                'max:2000',
+            ],
+
+            /*
+            |--------------------------------------------------------------------------
+            | Trainings
+            |--------------------------------------------------------------------------
+            */
+
+            'training' => [
+                'nullable',
+                'array',
+            ],
+
+            'training.*.title' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+
+            'training.*.hours' => [
+                'nullable',
+                'string',
+                'max:50',
+            ],
+
+            'training.*.details' => [
+                'nullable',
+                'string',
+                'max:2000',
+            ],
+
+            /*
+            |--------------------------------------------------------------------------
+            | Eligibility
+            |--------------------------------------------------------------------------
+            */
+
+            'eligibility' => [
+                'nullable',
+                'array',
+            ],
+
+            'eligibility.*.license_name' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+
+            'eligibility.*.rating' => [
+                'nullable',
+                'string',
+                'max:100',
+            ],
+
+            'eligibility.*.valid_until' => [
+                'nullable',
+                'date',
+            ],
+
+            'eligibility.*.never_expires' => [
+                'nullable',
+                'boolean',
+            ],
+
+            /*
+            |--------------------------------------------------------------------------
+            | Documents
+            |--------------------------------------------------------------------------
+            */
+
+            'letter_of_intent' => [
+                'nullable',
+                'file',
+                'mimes:pdf',
+                'max:10240',
+            ],
+
+            'tor_diploma' => [
+                'nullable',
+                'file',
+                'mimes:pdf',
+                'max:10240',
+            ],
+
+            'prc_license' => [
+                'nullable',
+                'file',
+                'mimes:pdf',
+                'max:10240',
+            ],
+
+            'eligibility_file' => [
+                'nullable',
+                'file',
+                'mimes:pdf',
+                'max:10240',
+            ],
+
+            'training_certificates' => [
+                'nullable',
+                'file',
+                'mimes:pdf',
+                'max:10240',
+            ],
+
+            'employment_records' => [
+                'nullable',
+                'file',
+                'mimes:pdf',
+                'max:10240',
+            ],
+
+            'latest_appointment' => [
+                'nullable',
+                'file',
+                'mimes:pdf',
+                'max:10240',
+            ],
+
+            'performance_rating' => [
+                'nullable',
+                'file',
+                'mimes:pdf',
+                'max:10240',
+            ],
+
+            'cav' => [
+                'nullable',
+                'file',
+                'mimes:pdf',
+                'max:10240',
+            ],
+
+            'movs' => [
+                'nullable',
+                'file',
+                'mimes:pdf',
+                'max:10240',
+            ],
         ]);
 
-        DB::transaction(function () use ($validated, $request, $job) {
+        try {
+            DB::transaction(function () use ($validated, $request, $job): void {
+                $application = Application::create([
+                    'job_position_id' => $job->id,
+                    'status' => 'pending',
+                ]);
 
-            /*
-            |--------------------------------------------------------------------------
-            | CREATE APPLICATION
-            |--------------------------------------------------------------------------
-            */
+                /*
+                |--------------------------------------------------------------------------
+                | Applicant Profile
+                |--------------------------------------------------------------------------
+                */
 
-            $application = Application::create([
-                'job_position_id' => $job->id,
-                'status' => 'pending',
-            ]);
+                $application->profile()->create([
+                    'full_name' => $validated['full_name'],
+                    'email' => $validated['email'],
+                    'phone' => $validated['phone_number'] ?? null,
+                    'address' => $validated['address'] ?? null,
+                    'disability' => $validated['disability'] ?? null,
+                    'ethnic_group' => $validated['ethnic_group'] ?? null,
+                ]);
 
-            /*
-            |--------------------------------------------------------------------------
-            | PROFILE
-            |--------------------------------------------------------------------------
-            */
+                /*
+                |--------------------------------------------------------------------------
+                | Education
+                |--------------------------------------------------------------------------
+                */
 
-            $application->profile()->create([
-                'full_name' => $validated['full_name'],
-                'email' => $validated['email'],
-                'phone' => $validated['phone_number'] ?? null,
-                'address' => $validated['address'] ?? null,
-                'disability' => $validated['disability'] ?? null,
-                'ethnic_group' => $validated['ethnic_group'] ?? null,
-            ]);
-
-            /*
-            |--------------------------------------------------------------------------
-            | EDUCATION
-            |--------------------------------------------------------------------------
-            */
-
-            if (!empty($request->education)) {
-
-                foreach ($request->education as $edu) {
-
-                    if (!empty(array_filter($edu))) {
-
-                        $application->educations()->create([
-                            'level' => $edu['level'] ?? null,
-                            'school' => $edu['school'] ?? null,
-                            'degree' => $edu['degree'] ?? null,
-                            'year_graduated' => $edu['year_graduated'] ?? null,
-                        ]);
+                foreach ($validated['education'] ?? [] as $education) {
+                    if (! $this->hasEnteredData($education)) {
+                        continue;
                     }
+
+                    $application->educations()->create([
+                        'level' => $education['level'] ?? null,
+                        'school' => $education['school'] ?? null,
+                        'degree' => $education['degree'] ?? null,
+                        'year_graduated' => $education['year_graduated'] ?? null,
+                    ]);
                 }
-            }
 
-            /*
-            |--------------------------------------------------------------------------
-            | EXPERIENCE
-            |--------------------------------------------------------------------------
-            */
+                /*
+                |--------------------------------------------------------------------------
+                | Experience
+                |--------------------------------------------------------------------------
+                */
 
-            if (!empty($request->experience)) {
-
-                foreach ($request->experience as $exp) {
-
-                    if (!empty(array_filter($exp))) {
-
-                        $application->experiences()->create([
-                            'title' => $exp['title'] ?? null,
-                            'company' => $exp['company'] ?? null,
-                            'years_months' => $exp['years_months'] ?? null,
-                            'details' => $exp['details'] ?? null,
-                        ]);
+                foreach ($validated['experience'] ?? [] as $experience) {
+                    if (! $this->hasEnteredData($experience)) {
+                        continue;
                     }
+
+                    $application->experiences()->create([
+                        'title' => $experience['title'] ?? null,
+                        'company' => $experience['company'] ?? null,
+                        'years_months' => $experience['years_months'] ?? null,
+                        'details' => $experience['details'] ?? null,
+                    ]);
                 }
-            }
 
-            /*
-            |--------------------------------------------------------------------------
-            | TRAININGS
-            |--------------------------------------------------------------------------
-            */
+                /*
+                |--------------------------------------------------------------------------
+                | Trainings
+                |--------------------------------------------------------------------------
+                */
 
-            if (!empty($request->training)) {
-
-                foreach ($request->training as $train) {
-
-                    if (!empty(array_filter($train))) {
-
-                        $application->trainings()->create([
-                            'title' => $train['title'] ?? null,
-                            'hours' => $train['hours'] ?? null,
-                            'details' => $train['details'] ?? null,
-                        ]);
+                foreach ($validated['training'] ?? [] as $training) {
+                    if (! $this->hasEnteredData($training)) {
+                        continue;
                     }
+
+                    $application->trainings()->create([
+                        'title' => $training['title'] ?? null,
+                        'hours' => $training['hours'] ?? null,
+                        'details' => $training['details'] ?? null,
+                    ]);
                 }
-            }
 
-            /*
-            |--------------------------------------------------------------------------
-            | ELIGIBILITIES
-            |--------------------------------------------------------------------------
-            */
+                /*
+                |--------------------------------------------------------------------------
+                | Eligibilities
+                |--------------------------------------------------------------------------
+                */
 
-            if (!empty($request->eligibility)) {
-
-                foreach ($request->eligibility as $eligibility) {
-
-                    if (!empty(array_filter($eligibility))) {
-
-                        $application->eligibilities()->create([
-                            'license_name' => $eligibility['license_name'] ?? null,
-                            'rating' => $eligibility['rating'] ?? null,
-
-                            'valid_until' =>
-                                ($eligibility['never_expires'] ?? false)
-                                ? null
-                                : ($eligibility['valid_until'] ?? null),
-                        ]);
+                foreach ($validated['eligibility'] ?? [] as $eligibility) {
+                    if (! $this->hasEnteredData($eligibility)) {
+                        continue;
                     }
+
+                    $neverExpires = filter_var(
+                        $eligibility['never_expires'] ?? false,
+                        FILTER_VALIDATE_BOOLEAN
+                    );
+
+                    $application->eligibilities()->create([
+                        'license_name' => $eligibility['license_name'] ?? null,
+                        'rating' => $eligibility['rating'] ?? null,
+                        'valid_until' => $neverExpires
+                            ? null
+                            : ($eligibility['valid_until'] ?? null),
+                    ]);
                 }
-            }
 
-            /*
-            |--------------------------------------------------------------------------
-            | DOCUMENT UPLOADS
-            |--------------------------------------------------------------------------
-            */
+                /*
+                |--------------------------------------------------------------------------
+                | Uploaded Documents
+                |--------------------------------------------------------------------------
+                */
 
-            $documentFields = [
-                'letter_of_intent',
-                'tor_diploma',
-                'prc_license',
+                $documentFields = [
+                    'letter_of_intent',
+                    'tor_diploma',
+                    'prc_license',
+                    'eligibility_file',
+                    'training_certificates',
+                    'employment_records',
+                    'latest_appointment',
+                    'performance_rating',
+                    'cav',
+                    'movs',
+                ];
 
-                // 🔥 RENAMED
-                'eligibility_file',
-
-                'training_certificates',
-                'employment_records',
-                'latest_appointment',
-                'performance_rating',
-                'cav',
-                'movs',
-            ];
-
-            foreach ($documentFields as $field) {
-
-                if ($request->hasFile($field)) {
+                foreach ($documentFields as $field) {
+                    if (! $request->hasFile($field)) {
+                        continue;
+                    }
 
                     $file = $request->file($field);
-
                     $path = $file->store('documents', 'public');
 
                     $application->documents()->create([
@@ -235,9 +442,34 @@ class ApplicationController extends Controller
                         'file_path' => $path,
                     ]);
                 }
-            }
-        });
+            });
+        } catch (Throwable $exception) {
+            report($exception);
 
-        return back()->with('success', 'Application submitted successfully!');
+            return back()
+                ->withInput()
+                ->with(
+                    'error',
+                    'The application could not be submitted. Please try again.'
+                );
+        }
+
+        return redirect()
+            ->route('jobs.index')
+            ->with(
+                'success',
+                'Your application was submitted successfully.'
+            );
+    }
+
+    private function hasEnteredData(array $data): bool
+    {
+        foreach ($data as $value) {
+            if ($value !== null && $value !== '' && $value !== false) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

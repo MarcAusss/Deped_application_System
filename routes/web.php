@@ -40,3 +40,13 @@ Route::get('/apply/{job}', [ApplicationController::class, 'create'])
 
 Route::post('/apply/{job}', [ApplicationController::class, 'store'])
     ->name('apply.submit');
+
+
+Route::get('/jobs', [ApplicationController::class, 'jobs'])
+    ->name('jobs.index');
+
+Route::get('/apply/{job}', [ApplicationController::class, 'create'])
+    ->name('apply.form');
+
+Route::post('/apply/{job}', [ApplicationController::class, 'store'])
+    ->name('apply.submit');

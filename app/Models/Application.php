@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Application extends Model
 {
@@ -17,7 +18,7 @@ class Application extends Model
     |-------------------------
     */
 
-    public function jobPosition()
+    public function jobPosition(): BelongsTo
     {
         return $this->belongsTo(JobPosition::class);
     }

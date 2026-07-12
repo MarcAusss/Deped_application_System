@@ -2,34 +2,72 @@
 
 namespace App\Filament\Widgets;
 
+use App\Models\Application;
+use App\Models\User;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
-use App\Models\User;
-use App\Models\Application;
 
 class AdminStats extends StatsOverviewWidget
 {
+    protected static ?int $sort = 1;
+
+    protected int|string|array $columnSpan = 'full';
+
     protected function getStats(): array
     {
+        $totalApplications = Application::count();
+        $pendingApplications = Application::where('status', 'pending')->count();
+        $forApprovalApplications = Application::where('status', 'evaluated')->count();
+        $approvedApplications = Application::where('status', 'approved')->count();
+        $rejectedApplications = Application::where('status', 'rejected')->count();
+
         return [
+            Stat::make(
+                'Evaluators',
+                User::where('role', 'evaluator')->count()
+            )
+                ->description('Registered evaluator accounts')
+                ->descriptionIcon('heroicon-m-user-group')
+                ->color('primary'),
 
-            // 👥 TOTAL EVALUATORS
-            Stat::make('Evaluators', User::where('role', 'evaluator')->count()),
+            Stat::make(
+                'Total Applicants',
+                $totalApplications
+            )
+                ->description('All submitted applications')
+                ->descriptionIcon('heroicon-m-document-text')
+                ->color('info'),
 
-            // 🟡 PENDING APPLICATIONS
-            Stat::make('Pending Applicants', Application::where('status', 'pending')->count())
+            Stat::make(
+                'Pending Applicants',
+                $pendingApplications
+            )
+                ->description('Waiting for evaluation')
+                ->descriptionIcon('heroicon-m-clock')
                 ->color('gray'),
 
-            // 🟠 FOR ADMIN APPROVAL (evaluated)
-            Stat::make('For Approval', Application::where('status', 'evaluated')->count())
+            Stat::make(
+                'For Approval',
+                $forApprovalApplications
+            )
+                ->description('Already evaluated')
+                ->descriptionIcon('heroicon-m-document-check')
                 ->color('warning'),
 
-            // 🟢 APPROVED
-            Stat::make('Approved', Application::where('status', 'approved')->count())
+            Stat::make(
+                'Approved',
+                $approvedApplications
+            )
+                ->description('Approved applications')
+                ->descriptionIcon('heroicon-m-check-circle')
                 ->color('success'),
 
-            // 🔴 REJECTED
-            Stat::make('Rejected', Application::where('status', 'rejected')->count())
+            Stat::make(
+                'Rejected',
+                $rejectedApplications
+            )
+                ->description('Rejected applications')
+                ->descriptionIcon('heroicon-m-x-circle')
                 ->color('danger'),
         ];
     }
