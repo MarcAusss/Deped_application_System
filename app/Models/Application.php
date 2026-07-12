@@ -61,4 +61,8 @@ class Application extends Model
     {
         return $this->hasMany(ApplicationStatusLog::class);
     }
+    public function evaluation()
+    {
+        return $this->hasOne(ApplicationEvaluation::class);
+    }
 }

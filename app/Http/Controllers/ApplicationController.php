@@ -67,19 +67,19 @@ class ApplicationController extends Controller
             'eligibility' => 'nullable|array',
 
             // DOCUMENTS
-            'letter_of_intent' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png',
-            'tor_diploma' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png',
-            'prc_license' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png',
+            'letter_of_intent' => 'nullable|file|mimes:pdf|max:10240',
+            'tor_diploma' => 'nullable|file|mimes:pdf|max:10240',
+            'prc_license' => 'nullable|file|mimes:pdf|max:10240',
 
             // 🔥 RENAMED
-            'eligibility_file' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png',
+            'eligibility_file' => 'nullable|file|mimes:pdf|max:10240',
 
-            'training_certificates' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png',
-            'employment_records' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png',
-            'latest_appointment' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png',
-            'performance_rating' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png',
-            'cav' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png',
-            'movs' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png',
+            'training_certificates' => 'nullable|file|mimes:pdf|max:10240',
+            'employment_records' => 'nullable|file|mimes:pdf|max:10240',
+            'latest_appointment' => 'nullable|file|mimes:pdf|max:10240',
+            'performance_rating' => 'nullable|file|mimes:pdf|max:10240',
+            'cav' => 'nullable|file|mimes:pdf|max:10240',
+            'movs' => 'nullable|file|mimes:pdf|max:10240',
         ]);
 
         DB::transaction(function () use ($validated, $request, $job) {

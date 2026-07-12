@@ -7,7 +7,7 @@ use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 
-use Filament\Pages\Dashboard;
+use App\Filament\Evaluator\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
@@ -51,16 +51,10 @@ class EvaluatorPanelProvider extends PanelProvider
                 Dashboard::class,
             ])
 
-            ->discoverWidgets(
-                in: app_path('Filament/Evaluator/Widgets'),
-                for: 'App\\Filament\\Evaluator\\Widgets'
-            )
 
             ->widgets([
-                AccountWidget::class,
-                FilamentInfoWidget::class,
-            ])
 
+            ])
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
