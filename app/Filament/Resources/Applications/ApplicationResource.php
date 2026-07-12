@@ -96,24 +96,47 @@ class ApplicationResource extends Resource
                 ])
                 ->columns(2),
 
-            Section::make('Evaluation Checklist')
-                ->icon('heroicon-o-clipboard-document-check')
-                ->description('Completed by the evaluator.')
-                ->schema([
-                    Toggle::make('resume_checked')
-                        ->label('Resume Checked')
-                        ->disabled(),
+                Section::make('Evaluation Results')
+                    ->icon('heroicon-o-clipboard-document-check')
+                    ->description('Completed by the evaluator. View only — admin cannot edit this.')
+                    ->schema([
+                        Placeholder::make('resume_checked')
+                            ->label('Resume Checked')
+                            ->content(fn ($record) => $record?->evaluation?->resume_checked ? 'Yes' : 'No'),
 
-                    Toggle::make('credentials_valid')
-                        ->label('Credentials Valid')
-                        ->disabled(),
+                        Placeholder::make('credentials_valid')
+                            ->label('Credentials Valid')
+                            ->content(fn ($record) => $record?->evaluation?->credentials_valid ? 'Yes' : 'No'),
 
-                    Toggle::make('recommended')
-                        ->label('Recommended for Approval')
-                        ->disabled(),
-                ])
-                ->columns(3),
-        ]);
+                        Placeholder::make('recommended')
+                            ->label('Evaluator Recommendation')
+                            ->content(fn ($record) => $record?->evaluation?->recommended ? '✓ Recommended' : '✗ Not Recommended'),
+
+                        Placeholder::make('evaluated_by')
+                            ->label('Evaluated By')
+                            ->content(fn ($record) => $record?->evaluation?->evaluator?->name ?? '—'),
+
+                        Placeholder::make('evaluated_at')
+                            ->label('Evaluated On')
+                            ->content(fn ($record) => $record?->evaluation?->evaluated_at?->format('M d, Y h:i A') ?? '—'),
+
+                        Placeholder::make('remarks')
+                            ->label('Evaluator Remarks')
+                            ->content(fn ($record) => $record?->evaluation?->remarks ?? '—')
+                            ->columnSpanFull(),
+                    ])
+                    ->columns(2)
+                    ->visible(fn ($record) => $record?->evaluation !== null),
+
+                Section::make('Evaluation Pending')
+                    ->icon('heroicon-o-clock')
+                    ->schema([
+                        Placeholder::make('no_evaluation')
+                            ->label('')
+                            ->content('This application has not been evaluated yet. Approve/Reject will become available once the evaluator submits their checklist.'),
+                    ])
+                    ->visible(fn ($record) => $record?->evaluation === null),
+                        ]);
     }
 
     /*
@@ -183,12 +206,58 @@ class ApplicationResource extends Resource
                     ->relationship('jobPosition', 'title'),
             ])
 
-            ->actions([
-                Action::make('view')
-                    ->label('View')
-                    ->icon('heroicon-o-eye')
-                    ->url(fn ($record) => static::getUrl('view', ['record' => $record])),
-            ])
+->actions([
+    Action::make('view')
+        ->label('View')
+        ->icon('heroicon-o-eye')
+        ->url(fn ($record) => static::getUrl('view', ['record' => $record])),
+
+    Action::make('approve')
+        ->label('Approve')
+        ->icon('heroicon-o-check-circle')
+        ->color('success')
+        ->visible(fn ($record) => $record->status === 'evaluated')
+        ->requiresConfirmation()
+        ->modalHeading('Approve Application')
+        ->modalDescription('Are you sure you want to approve this application? This finalizes the hiring decision.')
+        ->modalSubmitActionLabel('Yes, approve')
+        ->action(function ($record) {
+            $record->update(['status' => 'approved']);
+
+            $record->logs()->create([
+                'status' => 'approved',
+                'changed_by' => auth()->id(),
+            ]);
+
+            \Filament\Notifications\Notification::make()
+                ->title('Application approved')
+                ->success()
+                ->send();
+        }),
+
+            Action::make('reject')
+                ->label('Reject')
+                ->icon('heroicon-o-x-circle')
+                ->color('danger')
+                ->visible(fn ($record) => $record->status === 'evaluated')
+                ->requiresConfirmation()
+                ->modalHeading('Reject Application')
+                ->modalDescription('Are you sure you want to reject this application? This action cannot be undone.')
+                ->modalSubmitActionLabel('Yes, reject')
+                ->action(function ($record) {
+                    $record->update(['status' => 'rejected']);
+
+                    $record->logs()->create([
+                        'status' => 'rejected',
+                        'changed_by' => auth()->id(),
+                    ]);
+
+                    \Filament\Notifications\Notification::make()
+                        ->title('Application rejected')
+                        ->danger()
+                        ->send();
+                }),
+        ])
 
             ->bulkActions([]);
     }

@@ -4,10 +4,14 @@ namespace App\Filament\Evaluator\Resources\Applications;
 
 use App\Models\Application;
 use App\Models\ApplicationControlNumber;
+use App\Models\ApplicationEvaluation;
+use App\Models\ApplicationStatusLog;
+use App\Exports\ApplicationsExport;
+use Maatwebsite\Excel\Facades\Excel;
 use App\Filament\Evaluator\Resources\Applications\Pages;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;        // ✅ Layout components
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -102,23 +106,27 @@ class ApplicationResource extends Resource
                 ])
                 ->columns(2),
 
-            Section::make('Evaluation Checklist')
-                ->icon('heroicon-o-clipboard-document-check')
-                ->description('Check each item after verifying the applicant\'s submitted documents.')
-                ->schema([
-                    Toggle::make('resume_checked')
-                        ->label('Resume Checked')
-                        ->helperText('Mark if the applicant\'s resume has been reviewed.'),
+        Section::make('Evaluation Checklist')
+            ->relationship('evaluation')
+            ->icon('heroicon-o-clipboard-document-check')
+            ->description('Complete the evaluation after reviewing the submitted documents.')
+            ->schema([
 
-                    Toggle::make('credentials_valid')
-                        ->label('Credentials Valid')
-                        ->helperText('Mark if submitted credentials passed verification.'),
+                Toggle::make('resume_checked')
+                    ->label('Resume Checked'),
 
-                    Toggle::make('recommended')
-                        ->label('Recommended for Approval')
-                        ->helperText('Mark if this applicant is recommended to proceed.'),
-                ])
-                ->columns(3),
+                Toggle::make('credentials_valid')
+                    ->label('Credentials Valid'),
+
+                Toggle::make('recommended')
+                    ->label('Recommended'),
+
+                Textarea::make('remarks')
+                    ->rows(4)
+                    ->columnSpanFull(),
+
+            ])
+            ->columns(3),
         ]);
     }
 
@@ -152,6 +160,16 @@ class ApplicationResource extends Resource
                     ->label('Position Applied')
                     ->sortable()
                     ->searchable(),
+                Tables\Columns\TextColumn::make('evaluation.evaluated_at')
+                    ->label('Evaluated')
+                    ->dateTime('M d, Y h:i A')
+                    ->sortable()
+                    ->placeholder('Not yet'),
+
+                Tables\Columns\IconColumn::make('evaluation.recommended')
+                    ->label('Recommended')
+                    ->boolean()
+                    ->alignCenter(),
 
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')
@@ -228,23 +246,6 @@ class ApplicationResource extends Resource
                             ->send();
                     }),
 
-                Action::make('evaluate')
-                    ->label('Mark Evaluated')
-                    ->icon('heroicon-o-pencil-square')
-                    ->color('warning')
-                    ->visible(fn ($record) => $record->status === 'pending' && filled($record->controlNumber))
-                    ->requiresConfirmation()
-                    ->modalHeading('Mark as Evaluated')
-                    ->modalDescription('This forwards the application to admin for final approval. Ensure the control number is assigned and the checklist is complete.')
-                    ->action(function ($record) {
-                        $record->update(['status' => 'evaluated']);
-
-                        Notification::make()
-                            ->title('Application marked as evaluated.')
-                            ->success()
-                            ->send();
-                    }),
-
                 Action::make('view')
                     ->label('View')
                     ->icon('heroicon-o-eye')
@@ -255,6 +256,19 @@ class ApplicationResource extends Resource
                     ->icon('heroicon-o-pencil')
                     ->url(fn ($record) => static::getUrl('edit', ['record' => $record])),
             ])
+
+            // ->headerActions([
+            //     Action::make('export')
+            //         ->label('Export to Excel')
+            //         ->icon('heroicon-o-arrow-down-tray')
+            //         ->color('success')
+            //         ->action(function () {
+            //             return Excel::download(
+            //                 new ApplicationsExport,
+            //                 'applications.xlsx'
+            //             );
+            //         }),
+            // ])
 
             ->bulkActions([]);
     }

@@ -139,10 +139,58 @@
                         'cav' => 'CAV',
                         'movs' => 'MOVs'
                     ] as $key => $label)
-                        <div class="file-upload">
-                            <label class="block font-semibold text-gray-700 mb-3">{{ $label }}</label>
-                            <input type="file" name="{{ $key }}" class="file-input">
+
+                    <div class="upload-card border-2 border-dashed border-gray-300 rounded-xl p-6 text-center transition-all duration-300 hover:border-green-500">
+
+                        <label class="block font-bold text-gray-800 mb-4">
+                            {{ $label }}
+                        </label>
+
+                        <input
+                            type="file"
+                            id="{{ $key }}"
+                            name="{{ $key }}"
+                            class="hidden pdf-upload"
+                            accept=".pdf,application/pdf">
+
+                        <label for="{{ $key }}" class="cursor-pointer block">
+
+                            <div class="text-6xl mb-3">
+                                📄
+                            </div>
+
+                            <p class="font-semibold text-gray-700">
+                                Drag & Drop PDF Here
+                            </p>
+
+                            <p class="text-sm text-gray-500">
+                                or click to browse
+                            </p>
+
+                            <p class="text-xs text-gray-400 mt-3">
+                                PDF only • Maximum 10 MB
+                            </p>
+
+                        </label>
+
+                        <div class="upload-info hidden mt-5 border rounded-lg bg-green-50 p-3">
+
+                            <p class="filename font-semibold text-green-700"></p>
+
+                            <p class="filesize text-sm text-gray-600"></p>
+
                         </div>
+
+                        <p class="upload-error hidden text-red-600 text-sm mt-4"></p>
+
+                        @error($key)
+                            <p class="text-red-600 text-sm mt-2">
+                                {{ $message }}
+                            </p>
+                        @enderror
+
+                    </div>
+
                     @endforeach
                 </div>
             </div>
