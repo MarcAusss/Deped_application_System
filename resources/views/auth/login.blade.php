@@ -79,15 +79,15 @@
 
     <!-- MAIN CARD -->
     <div
-        class="login-card w-full max-w-6xl rounded-[35px] overflow-hidden grid grid-cols-1 lg:grid-cols-2">
+         class="login-card w-full max-w-7xl rounded-[35px] overflow-hidden grid grid-cols-1 lg:grid-cols-[3fr_2fr]">
 
         <!-- LEFT SIDE IMAGE -->
         <div class="relative hidden lg:block min-h-[700px]">
 
             <!-- BACKGROUND IMAGE -->
             <img
-                src="{{ asset('images/694279925_1280682047550470_7173095594741328272_n.jpg') }}"
-                class="absolute inset-0 w-full h-full object-cover"
+                src="{{ asset('images/SDO-ALBAY.webp') }}"
+               class="absolute inset-0 w-full h-full object-cover object-[42%_center]"
                 alt="Background Image">
 
             <!-- WHITE OVERLAY -->
@@ -102,9 +102,9 @@
 
                     <!-- Replace with your logo -->
                     <img
-                        src="{{ asset('images/depedR5-LogoOrg.png') }}"
+                        src="{{ asset('images/depedalbay.png') }}"
                         alt="Logo"
-                        class="w-20 h-20 object-contain">
+                        class="w-30 h-30 object-contain">
 
                 </div>
 
