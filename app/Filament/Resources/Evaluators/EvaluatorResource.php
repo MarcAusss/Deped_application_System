@@ -26,7 +26,7 @@ class EvaluatorResource extends Resource
         return $schema->components([
             Forms\Components\TextInput::make('name')
                 ->required()
-                ->maxLength(255),
+                ->maxLength(255), 
 
             Forms\Components\TextInput::make('email')
                 ->email()
