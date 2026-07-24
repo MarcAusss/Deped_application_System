@@ -195,6 +195,68 @@
 
                     <div>
                         <label class="mb-2 block text-sm font-bold text-slate-700">
+                            Birth Date
+                        </label>
+
+                        <input
+                            type="date"
+                            name="birth_date"
+                            value="{{ old('birth_date') }}"
+                            max="{{ now()->toDateString() }}"
+                            class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100"
+                        >
+                    </div>
+
+                    <div>
+                        <label class="mb-2 block text-sm font-bold text-slate-700">
+                            Sex
+                        </label>
+
+                        <select
+                            name="sex"
+                            class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100"
+                        >
+                            <option value="">Select sex</option>
+                            <option value="Male" @selected(old('sex') === 'Male')>Male</option>
+                            <option value="Female" @selected(old('sex') === 'Female')>Female</option>
+                            <option value="Prefer not to say" @selected(old('sex') === 'Prefer not to say')>Prefer not to say</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="mb-2 block text-sm font-bold text-slate-700">
+                            Civil Status
+                        </label>
+
+                        <select
+                            name="civil_status"
+                            class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100"
+                        >
+                            <option value="">Select civil status</option>
+                            @foreach(['Single', 'Married', 'Widowed', 'Separated', 'Other'] as $civilStatus)
+                                <option value="{{ $civilStatus }}" @selected(old('civil_status') === $civilStatus)>
+                                    {{ $civilStatus }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="mb-2 block text-sm font-bold text-slate-700">
+                            Religion
+                        </label>
+
+                        <input
+                            type="text"
+                            name="religion"
+                            value="{{ old('religion') }}"
+                            placeholder="Optional"
+                            class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100"
+                        >
+                    </div>
+
+                    <div>
+                        <label class="mb-2 block text-sm font-bold text-slate-700">
                             Disability
                         </label>
 

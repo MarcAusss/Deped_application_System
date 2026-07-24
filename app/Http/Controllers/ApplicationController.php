@@ -86,6 +86,30 @@ class ApplicationController extends Controller
                 'max:1000',
             ],
 
+            'birth_date' => [
+                'nullable',
+                'date',
+                'before_or_equal:today',
+            ],
+
+            'sex' => [
+                'nullable',
+                'string',
+                'max:30',
+            ],
+
+            'civil_status' => [
+                'nullable',
+                'string',
+                'max:50',
+            ],
+
+            'religion' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+
             'disability' => [
                 'nullable',
                 'string',
@@ -325,6 +349,10 @@ class ApplicationController extends Controller
                     'email' => $validated['email'],
                     'phone' => $validated['phone_number'] ?? null,
                     'address' => $validated['address'] ?? null,
+                    'birth_date' => $validated['birth_date'] ?? null,
+                    'sex' => $validated['sex'] ?? null,
+                    'civil_status' => $validated['civil_status'] ?? null,
+                    'religion' => $validated['religion'] ?? null,
                     'disability' => $validated['disability'] ?? null,
                     'ethnic_group' => $validated['ethnic_group'] ?? null,
                 ]);

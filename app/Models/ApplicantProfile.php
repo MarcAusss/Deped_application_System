@@ -12,8 +12,16 @@ class ApplicantProfile extends Model
         'email',
         'phone',
         'address',
+        'birth_date',
+        'sex',
+        'civil_status',
+        'religion',
         'disability',
         'ethnic_group',
+    ];
+
+    protected $casts = [
+        'birth_date' => 'date',
     ];
 
     public function application()

@@ -28,6 +28,31 @@ class JobPositionResource extends Resource
             Forms\Components\Textarea::make('description')
                 ->required(),
 
+            Forms\Components\TextInput::make('salary_grade')
+                ->label('Salary Grade')
+                ->placeholder('e.g. 11'),
+
+            Forms\Components\TextInput::make('monthly_salary')
+                ->label('Monthly Salary')
+                ->numeric()
+                ->prefix('₱'),
+
+            Forms\Components\Textarea::make('education_requirement')
+                ->label('Education Requirement')
+                ->rows(2),
+
+            Forms\Components\Textarea::make('training_requirement')
+                ->label('Training Requirement')
+                ->rows(2),
+
+            Forms\Components\Textarea::make('experience_requirement')
+                ->label('Experience Requirement')
+                ->rows(2),
+
+            Forms\Components\Textarea::make('eligibility_requirement')
+                ->label('Eligibility Requirement')
+                ->rows(2),
+
             Forms\Components\Toggle::make('is_open')
                 ->label('Available for Hiring')
                 ->default(true),
@@ -39,6 +64,10 @@ class JobPositionResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('title')->searchable(),
+
+                Tables\Columns\TextColumn::make('salary_grade')
+                    ->label('Salary Grade')
+                    ->placeholder('—'),
 
                 Tables\Columns\IconColumn::make('is_open')
                     ->boolean()

@@ -96,6 +96,22 @@ class ApplicationResource extends Resource
                         ->label('Address')
                         ->content(fn ($record) => $record?->profile?->address ?? '—'),
 
+                    Placeholder::make('birth_date')
+                        ->label('Birth Date')
+                        ->content(fn ($record) => $record?->profile?->birth_date?->format('M d, Y') ?? '—'),
+
+                    Placeholder::make('sex')
+                        ->label('Sex')
+                        ->content(fn ($record) => $record?->profile?->sex ?? '—'),
+
+                    Placeholder::make('civil_status')
+                        ->label('Civil Status')
+                        ->content(fn ($record) => $record?->profile?->civil_status ?? '—'),
+
+                    Placeholder::make('religion')
+                        ->label('Religion')
+                        ->content(fn ($record) => $record?->profile?->religion ?? '—'),
+
                     Placeholder::make('disability')
                         ->label('Disability (if any)')
                         ->content(fn ($record) => $record?->profile?->disability ?? '—'),
