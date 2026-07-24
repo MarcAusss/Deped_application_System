@@ -92,8 +92,12 @@ window.addTraining = function () {
                 </div>
 
                 <div class="form-field">
-                    <input name="training[${trainingIndex}][details]" placeholder=" " class="form-input">
-                    <label class="floating-label">Details</label>
+                    <input
+                        type="month"
+                        name="training[${trainingIndex}][training_date]"
+                        max="${new Date().toISOString().slice(0, 7)}"
+                        class="form-input">
+                    <label class="floating-label">Month and Year</label>
                 </div>
 
             </div>

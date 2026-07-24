@@ -121,7 +121,7 @@
         >
             @csrf
 
-             
+            {{-- Personal information --}}
             <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
                 <div class="mb-7 border-b border-slate-200 pb-5">
                     <p class="text-xs font-bold uppercase tracking-widest text-government-blue">
@@ -285,7 +285,7 @@
                 </div>
             </section>
 
-             
+            {{-- Education --}}
             <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
                 <div class="mb-7 flex flex-col justify-between gap-4 border-b border-slate-200 pb-5 sm:flex-row sm:items-center">
                     <div>
@@ -310,7 +310,7 @@
                 <div id="educationWrapper" class="space-y-5"></div>
             </section>
 
-             
+            {{-- Work experience --}}
             <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
                 <div class="mb-7 flex flex-col justify-between gap-4 border-b border-slate-200 pb-5 sm:flex-row sm:items-center">
                     <div>
@@ -335,7 +335,7 @@
                 <div id="experienceWrapper" class="space-y-5"></div>
             </section>
 
-             
+            {{-- Training --}}
             <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
                 <div class="mb-7 flex flex-col justify-between gap-4 border-b border-slate-200 pb-5 sm:flex-row sm:items-center">
                     <div>
@@ -360,7 +360,7 @@
                 <div id="trainingWrapper" class="space-y-5"></div>
             </section>
 
-             
+            {{-- Eligibility --}}
             <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
                 <div class="mb-7 flex flex-col justify-between gap-4 border-b border-slate-200 pb-5 sm:flex-row sm:items-center">
                     <div>
@@ -385,7 +385,7 @@
                 <div id="eligibilityWrapper" class="space-y-5"></div>
             </section>
 
-             
+            {{-- Documents --}}
             <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
                 <div class="mb-7 border-b border-slate-200 pb-5">
                     <p class="text-xs font-bold uppercase tracking-widest text-government-blue">
@@ -629,12 +629,26 @@
                             class="${inputClass}"
                         >
 
-                        <textarea
-                            name="training[${trainingIndex}][details]"
-                            placeholder="Training details"
-                            rows="3"
-                            class="${inputClass} md:col-span-2"
-                        ></textarea>
+                        <div class="md:col-span-2">
+                            <label
+                                for="training_date_${trainingIndex}"
+                                class="mb-2 block text-sm font-bold text-government-dark"
+                            >
+                                Month and Year of Training
+                            </label>
+
+                            <input
+                                id="training_date_${trainingIndex}"
+                                type="month"
+                                name="training[${trainingIndex}][training_date]"
+                                max="{{ now()->format('Y-m') }}"
+                                class="${inputClass}"
+                            >
+
+                            <p class="mt-2 text-xs text-slate-500">
+                                Select the month and year when the training or seminar was completed.
+                            </p>
+                        </div>
                     </div>
                 </div>
             `);

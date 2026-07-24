@@ -79,7 +79,16 @@ final class IerApplicationFormatter
     private static function trainingTitles(Application $application): string
     {
         $entries = $application->trainings
-            ->pluck('title')
+            ->map(function ($training): string {
+                $title = $training->title ?: '';
+
+                if (filled($training->training_date)) {
+                    $date = Carbon::parse($training->training_date)->format('F Y');
+                    $title .= ($title !== '' ? ' ' : '').'('.$date.')';
+                }
+
+                return $title;
+            })
             ->filter(fn ($value) => filled($value));
 
         return $entries->isNotEmpty() ? $entries->implode("\n") : '—';

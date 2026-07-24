@@ -8,18 +8,18 @@ use Illuminate\Support\Facades\Hash;
 
 class ApplicationSeeder extends Seeder
 {
-    
-
-
+    /**
+     * Run the database seeds.
+     */
     public function run(): void
     {
         DB::transaction(function (): void {
 
-            
-
-
-
-
+            /*
+            |--------------------------------------------------------------------------
+            | CREATE OR GET ADMIN USER
+            |--------------------------------------------------------------------------
+            */
 
             DB::table('users')->updateOrInsert(
                 ['email' => 'admin@deped.gov.ph'],
@@ -37,11 +37,11 @@ class ApplicationSeeder extends Seeder
                 ->where('email', 'admin@deped.gov.ph')
                 ->value('id');
 
-            
-
-
-
-
+            /*
+            |--------------------------------------------------------------------------
+            | CREATE OR GET APPROVED EVALUATOR USER
+            |--------------------------------------------------------------------------
+            */
 
             DB::table('users')->updateOrInsert(
                 ['email' => 'evaluator@deped.gov.ph'],
@@ -59,11 +59,11 @@ class ApplicationSeeder extends Seeder
                 ->where('email', 'evaluator@deped.gov.ph')
                 ->value('id');
 
-            
-
-
-
-
+            /*
+            |--------------------------------------------------------------------------
+            | CREATE EVALUATOR PROFILE
+            |--------------------------------------------------------------------------
+            */
 
             DB::table('evaluators')->updateOrInsert(
                 ['email' => 'evaluator@deped.gov.ph'],
@@ -75,11 +75,11 @@ class ApplicationSeeder extends Seeder
                 ]
             );
 
-            
-
-
-
-
+            /*
+            |--------------------------------------------------------------------------
+            | CREATE JOB POSITIONS
+            |--------------------------------------------------------------------------
+            */
 
             $jobPositions = [
                 [
@@ -120,18 +120,18 @@ class ApplicationSeeder extends Seeder
                 ->where('title', 'Education Program Specialist II')
                 ->value('id');
 
-            
-
-
-
-
+            /*
+            |--------------------------------------------------------------------------
+            | SAMPLE APPLICATION DATA
+            |--------------------------------------------------------------------------
+            */
 
             $applications = [
-                
-
-
-
-
+                /*
+                |--------------------------------------------------------------------------
+                | PENDING / SUBMITTED FOR EVALUATION
+                |--------------------------------------------------------------------------
+                */
 
                 [
                     'job_position_id' => $teacherId,
@@ -203,11 +203,11 @@ class ApplicationSeeder extends Seeder
                     'days_ago' => 3,
                 ],
 
-                
-
-
-
-
+                /*
+                |--------------------------------------------------------------------------
+                | EVALUATED / FOR ADMIN APPROVAL
+                |--------------------------------------------------------------------------
+                */
 
                 [
                     'job_position_id' => $teacherId,
@@ -288,11 +288,11 @@ class ApplicationSeeder extends Seeder
                     'days_ago' => 6,
                 ],
 
-                
-
-
-
-
+                /*
+                |--------------------------------------------------------------------------
+                | APPROVED
+                |--------------------------------------------------------------------------
+                */
 
                 [
                     'job_position_id' => $teacherId,
@@ -347,11 +347,11 @@ class ApplicationSeeder extends Seeder
                     'days_ago' => 8,
                 ],
 
-                
-
-
-
-
+                /*
+                |--------------------------------------------------------------------------
+                | REJECTED
+                |--------------------------------------------------------------------------
+                */
 
                 [
                     'job_position_id' => $teacherId,
@@ -407,20 +407,20 @@ class ApplicationSeeder extends Seeder
                 ],
             ];
 
-            
-
-
-
-
+            /*
+            |--------------------------------------------------------------------------
+            | INSERT APPLICATIONS AND RELATED RECORDS
+            |--------------------------------------------------------------------------
+            */
 
             foreach ($applications as $index => $data) {
                 $createdAt = now()->subDays($data['days_ago']);
 
-                
-
-
-
-
+                /*
+                |--------------------------------------------------------------------------
+                | Avoid duplicate seeded applications
+                |--------------------------------------------------------------------------
+                */
 
                 $existingApplicationId = DB::table('applicant_profiles')
                     ->where('email', $data['email'])
@@ -434,7 +434,7 @@ class ApplicationSeeder extends Seeder
                     'job_position_id' => $data['job_position_id'],
                     'status' => $data['status'],
 
-                     
+                    // These fields exist in your additional applications migration.
                     'resume_checked' => $data['resume_checked'] ?? false,
                     'credentials_valid' => $data['credentials_valid'] ?? false,
                     'recommended' => $data['recommended'] ?? false,
@@ -443,11 +443,11 @@ class ApplicationSeeder extends Seeder
                     'updated_at' => $createdAt,
                 ]);
 
-                
-
-
-
-
+                /*
+                |--------------------------------------------------------------------------
+                | Applicant profile
+                |--------------------------------------------------------------------------
+                */
 
                 DB::table('applicant_profiles')->insert([
                     'application_id' => $applicationId,
@@ -461,11 +461,11 @@ class ApplicationSeeder extends Seeder
                     'updated_at' => $createdAt,
                 ]);
 
-                
-
-
-
-
+                /*
+                |--------------------------------------------------------------------------
+                | Education
+                |--------------------------------------------------------------------------
+                */
 
                 DB::table('applicant_educations')->insert([
                     'application_id' => $applicationId,
@@ -477,11 +477,11 @@ class ApplicationSeeder extends Seeder
                     'updated_at' => $createdAt,
                 ]);
 
-                
-
-
-
-
+                /*
+                |--------------------------------------------------------------------------
+                | Experience
+                |--------------------------------------------------------------------------
+                */
 
                 DB::table('applicant_experiences')->insert([
                     'application_id' => $applicationId,
@@ -493,26 +493,30 @@ class ApplicationSeeder extends Seeder
                     'updated_at' => $createdAt,
                 ]);
 
-                
-
-
-
-
+                /*
+                |--------------------------------------------------------------------------
+                | Training
+                |--------------------------------------------------------------------------
+                */
 
                 DB::table('applicant_trainings')->insert([
                     'application_id' => $applicationId,
                     'title' => $data['training_title'],
                     'hours' => $data['training_hours'],
-                    'details' => 'Sample training record generated for testing.',
+                    'training_date' => $createdAt
+                        ->copy()
+                        ->subMonths(6)
+                        ->startOfMonth()
+                        ->toDateString(),
                     'created_at' => $createdAt,
                     'updated_at' => $createdAt,
                 ]);
 
-                
-
-
-
-
+                /*
+                |--------------------------------------------------------------------------
+                | Eligibility
+                |--------------------------------------------------------------------------
+                */
 
                 if (! empty($data['license_name'])) {
                     DB::table('applicant_eligibilities')->insert([
@@ -525,11 +529,11 @@ class ApplicationSeeder extends Seeder
                     ]);
                 }
 
-                
-
-
-
-
+                /*
+                |--------------------------------------------------------------------------
+                | Control number
+                |--------------------------------------------------------------------------
+                */
 
                 DB::table('application_control_numbers')->insert([
                     'application_id' => $applicationId,
@@ -543,11 +547,11 @@ class ApplicationSeeder extends Seeder
                     'updated_at' => $createdAt,
                 ]);
 
-                
-
-
-
-
+                /*
+                |--------------------------------------------------------------------------
+                | Initial pending status log
+                |--------------------------------------------------------------------------
+                */
 
                 DB::table('application_status_logs')->insert([
                     'application_id' => $applicationId,
@@ -558,11 +562,11 @@ class ApplicationSeeder extends Seeder
                     'updated_at' => $createdAt,
                 ]);
 
-                
-
-
-
-
+                /*
+                |--------------------------------------------------------------------------
+                | Evaluation record
+                |--------------------------------------------------------------------------
+                */
 
                 if (in_array(
                     $data['status'],
@@ -593,11 +597,11 @@ class ApplicationSeeder extends Seeder
                     ]);
                 }
 
-                
-
-
-
-
+                /*
+                |--------------------------------------------------------------------------
+                | Final approved or rejected status log
+                |--------------------------------------------------------------------------
+                */
 
                 if (in_array($data['status'], ['approved', 'rejected'], true)) {
                     $decisionAt = $createdAt->copy()->addDays(2);

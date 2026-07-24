@@ -9,7 +9,12 @@ class ApplicantTraining extends Model
         'application_id',
         'title',
         'hours',
+        'training_date',
         'details',
+    ];
+
+    protected $casts = [
+        'training_date' => 'date',
     ];
 
     public function application()

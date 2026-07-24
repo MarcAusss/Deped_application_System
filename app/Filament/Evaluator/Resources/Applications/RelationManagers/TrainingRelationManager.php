@@ -31,6 +31,12 @@ class TrainingRelationManager extends RelationManager
                     ->label('Hours')
                     ->suffix(' hrs')
                     ->sortable(),
+
+                Tables\Columns\TextColumn::make('training_date')
+                    ->label('Month and Year')
+                    ->date('F Y')
+                    ->placeholder('Not provided')
+                    ->sortable(),
             ])
             ->headerActions([
                 CreateAction::make(),
@@ -61,9 +67,23 @@ class TrainingRelationManager extends RelationManager
                 ->minValue(1)
                 ->suffix('hrs'),
 
-            Forms\Components\Textarea::make('details')
-                ->label('Details / Description')
-                ->rows(3)
+            Forms\Components\TextInput::make('training_date')
+                ->label('Month and Year of Training')
+                ->type('month')
+                ->formatStateUsing(
+                    fn ($state): ?string => filled($state)
+                        ? \Carbon\Carbon::parse($state)->format('Y-m')
+                        : null
+                )
+                ->dehydrateStateUsing(
+                    fn ($state): ?string => filled($state)
+                        ? $state.'-01'
+                        : null
+                )
+                ->rules(['nullable', 'date_format:Y-m'])
+                ->extraInputAttributes([
+                    'max' => now()->format('Y-m'),
+                ])
                 ->columnSpanFull(),
         ]);
     }
