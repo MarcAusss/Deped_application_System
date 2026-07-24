@@ -20,7 +20,7 @@ class UsersTable
                 IconColumn::make('is_approved')->boolean(),
             ])
             ->filters([
-                //
+                 
             ])
             ->recordActions([
                 Action::make('approve')

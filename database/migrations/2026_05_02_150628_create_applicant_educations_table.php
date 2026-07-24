@@ -6,9 +6,9 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
+    
+
+
     public function up(): void
     {
         Schema::create('applicant_educations', function (Blueprint $table) {
@@ -16,7 +16,7 @@ return new class extends Migration
 
             $table->foreignId('application_id')->constrained()->cascadeOnDelete();
 
-            $table->string('level'); // Elementary, College, etc
+            $table->string('level');  
             $table->string('school')->nullable();
             $table->string('degree')->nullable();
             $table->string('year_graduated')->nullable();
@@ -25,9 +25,9 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
+    
+
+
     public function down(): void
     {
         Schema::dropIfExists('applicant_educations');

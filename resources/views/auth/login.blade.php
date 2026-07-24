@@ -77,30 +77,30 @@
 
 <body class="min-h-screen flex items-center justify-center p-5">
 
-    <!-- MAIN CARD -->
+     
     <div
          class="login-card w-full max-w-7xl rounded-[35px] overflow-hidden grid grid-cols-1 lg:grid-cols-[3fr_2fr]">
 
-        <!-- LEFT SIDE IMAGE -->
+         
         <div class="relative hidden lg:block min-h-[700px]">
 
-            <!-- BACKGROUND IMAGE -->
+             
             <img
                 src="{{ asset('images/SDO-ALBAY.webp') }}"
                class="absolute inset-0 w-full h-full object-cover object-[42%_center]"
                 alt="Background Image">
 
-            <!-- WHITE OVERLAY -->
+             
             <div class="absolute inset-0 bg-white/70"></div>
 
-            <!-- CONTENT -->
+             
             <div class="relative z-10 flex flex-col items-center justify-center h-full px-10 text-center">
 
-                <!-- LOGO -->
+                 
                 <div
                     class="w-32 h-32 rounded-full bg-white shadow-2xl flex items-center justify-center border border-white">
 
-                    <!-- Replace with your logo -->
+                     
                     <img
                         src="{{ asset('images/depedalbay.png') }}"
                         alt="Logo"
@@ -120,12 +120,12 @@
 
         </div>
 
-        <!-- RIGHT SIDE LOGIN -->
+         
         <div class="bg-white px-8 md:px-16 py-14 flex items-center">
 
             <div class="w-full">
 
-                <!-- MOBILE LOGO -->
+                 
                 <div class="lg:hidden flex justify-center mb-8">
 
                     <div
@@ -152,12 +152,12 @@
 
                 </div>
 
-                <!-- LOGIN FORM -->
+                 
                 <form method="POST" action="/login" class="space-y-6">
 
                     @csrf
 
-                    <!-- EMAIL -->
+                     
                     <div class="field">
 
                         <input
@@ -173,7 +173,7 @@
 
                     </div>
 
-                    <!-- PASSWORD -->
+                     
                     <div class="field">
 
                         <input
@@ -189,7 +189,7 @@
 
                     </div>
 
-                    <!-- REMEMBER + FORGOT -->
+                     
                     <div class="flex items-center justify-between text-sm">
 
                         <label class="flex items-center gap-2 text-gray-600">
@@ -209,7 +209,7 @@
 
                     </div>
 
-                    <!-- ERROR -->
+                     
                     @if ($errors->any())
                         <div
                             class="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-2xl text-sm">
@@ -217,7 +217,7 @@
                         </div>
                     @endif
 
-                    <!-- BUTTON -->
+                     
                     <button
                         type="submit"
                         class="login-btn w-full text-white py-4 rounded-2xl font-bold text-lg">

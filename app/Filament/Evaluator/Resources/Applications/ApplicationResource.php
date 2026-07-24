@@ -40,11 +40,11 @@ class ApplicationResource extends Resource
         return 'Applications';
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | FORM
-    |--------------------------------------------------------------------------
-    */
+    
+
+
+
+
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
@@ -146,11 +146,11 @@ class ApplicationResource extends Resource
         ]);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | TABLE
-    |--------------------------------------------------------------------------
-    */
+    
+
+
+
+
     public static function table(Table $table): Table
     {
         return $table
@@ -237,7 +237,7 @@ class ApplicationResource extends Resource
                             ->placeholder('e.g. DEP-2025-0001'),
                     ])
                     ->action(function ($record, array $data) {
-                        // Manual unique check to avoid the broken query
+                         
                         $exists = ApplicationControlNumber::where(
                             'control_number', $data['control_number']
                         )->exists();
@@ -273,27 +273,27 @@ class ApplicationResource extends Resource
                     ->url(fn ($record) => static::getUrl('edit', ['record' => $record])),
             ])
 
-            // ->headerActions([
-            //     Action::make('export')
-            //         ->label('Export to Excel')
-            //         ->icon('heroicon-o-arrow-down-tray')
-            //         ->color('success')
-            //         ->action(function () {
-            //             return Excel::download(
-            //                 new ApplicationsExport,
-            //                 'applications.xlsx'
-            //             );
-            //         }),
-            // ])
+             
+             
+             
+             
+             
+             
+             
+             
+             
+             
+             
+             
 
             ->bulkActions([]);
     }
 
-    /*
-|--------------------------------------------------------------------------
-| RELATION MANAGERS
-|--------------------------------------------------------------------------
-*/
+    
+
+
+
+
 public static function getRelations(): array
 {
     return [
@@ -304,11 +304,11 @@ public static function getRelations(): array
         RelationManagers\DocumentsRelationManager::class,
     ];
 }
-    /*
-    |--------------------------------------------------------------------------
-    | PAGES
-    |--------------------------------------------------------------------------
-    */
+    
+
+
+
+
     public static function getPages(): array
     {
         return [

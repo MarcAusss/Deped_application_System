@@ -45,7 +45,7 @@ class ApplicationsExport implements WithMultipleSheets
         $applications
             ->groupBy(fn ($application) => (string) ($application->job_position_id ?? 'unassigned'))
             ->each(function (Collection $positionApplications) use (&$sheets, &$usedTitles): void {
-                /** @var JobPosition|null $position */
+                 
                 $position = $positionApplications->first()?->jobPosition;
                 $sheetTitle = $this->uniqueSheetTitle(
                     $position?->title ?: 'Unassigned Position',

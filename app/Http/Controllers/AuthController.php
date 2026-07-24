@@ -7,25 +7,25 @@ use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
-    /*
-    |--------------------------------------------------------------------------
-    | SHOW LOGIN PAGE
-    |--------------------------------------------------------------------------
-    */
+    
+
+
+
+
 
     public function showLogin()
     {
-        // Already logged in
+         
         if (auth()->check()) {
 
             $user = auth()->user();
 
-            // ADMIN
+             
             if ($user->role === 'admin') {
                 return redirect('/admin');
             }
 
-            // EVALUATOR
+             
             if ($user->role === 'evaluator') {
                 return redirect('/evaluator');
             }
@@ -34,11 +34,11 @@ class AuthController extends Controller
         return view('auth.login');
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | LOGIN
-    |--------------------------------------------------------------------------
-    */
+    
+
+
+
+
 
     public function login(Request $request)
     {
@@ -53,17 +53,17 @@ class AuthController extends Controller
 
             $user = Auth::user();
 
-            // ADMIN
+             
             if ($user->role === 'admin') {
                 return redirect('/admin');
             }
 
-            // EVALUATOR
+             
             if ($user->role === 'evaluator') {
                 return redirect('/evaluator');
             }
 
-            // INVALID ROLE
+             
             Auth::logout();
 
             return back()->withErrors([
@@ -76,11 +76,11 @@ class AuthController extends Controller
         ]);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | LOGOUT
-    |--------------------------------------------------------------------------
-    */
+    
+
+
+
+
 
     public function logout(Request $request)
     {

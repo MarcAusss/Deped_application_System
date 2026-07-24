@@ -10,7 +10,7 @@ use Filament\Forms;
 use Filament\Schemas\Schema;
 use App\Filament\Resources\JobPositions\Pages;
 
-// ✅ Filament v5 uses this for all actions
+ 
 use Filament\Actions\Action;
 
 class JobPositionResource extends Resource

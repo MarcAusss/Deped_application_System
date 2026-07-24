@@ -13,10 +13,10 @@ class JobPositionsTable
     {
         return $table
             ->columns([
-                //
+                 
             ])
             ->filters([
-                //
+                 
             ])
             ->recordActions([
                 EditAction::make(),

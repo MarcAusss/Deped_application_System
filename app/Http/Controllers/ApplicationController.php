@@ -12,11 +12,11 @@ use Throwable;
 
 class ApplicationController extends Controller
 {
-    /*
-    |--------------------------------------------------------------------------
-    | SHOW AVAILABLE JOB POSITIONS
-    |--------------------------------------------------------------------------
-    */
+    
+
+
+
+
 
     public function jobs(): View
     {
@@ -28,11 +28,11 @@ class ApplicationController extends Controller
         return view('jobs', compact('jobs'));
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | SHOW APPLICATION FORM
-    |--------------------------------------------------------------------------
-    */
+    
+
+
+
+
 
     public function create(JobPosition $job): View
     {
@@ -43,11 +43,11 @@ class ApplicationController extends Controller
         return view('apply', compact('job'));
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | STORE APPLICATION
-    |--------------------------------------------------------------------------
-    */
+    
+
+
+
+
 
     public function store(Request $request, JobPosition $job): RedirectResponse
     {
@@ -56,11 +56,11 @@ class ApplicationController extends Controller
         }
 
         $validated = $request->validate([
-            /*
-            |--------------------------------------------------------------------------
-            | Personal Information
-            |--------------------------------------------------------------------------
-            */
+            
+
+
+
+
 
             'full_name' => [
                 'required',
@@ -122,11 +122,11 @@ class ApplicationController extends Controller
                 'max:255',
             ],
 
-            /*
-            |--------------------------------------------------------------------------
-            | Education
-            |--------------------------------------------------------------------------
-            */
+            
+
+
+
+
 
             'education' => [
                 'nullable',
@@ -157,11 +157,11 @@ class ApplicationController extends Controller
                 'max:20',
             ],
 
-            /*
-            |--------------------------------------------------------------------------
-            | Work Experience
-            |--------------------------------------------------------------------------
-            */
+            
+
+
+
+
 
             'experience' => [
                 'nullable',
@@ -192,11 +192,11 @@ class ApplicationController extends Controller
                 'max:2000',
             ],
 
-            /*
-            |--------------------------------------------------------------------------
-            | Trainings
-            |--------------------------------------------------------------------------
-            */
+            
+
+
+
+
 
             'training' => [
                 'nullable',
@@ -221,11 +221,11 @@ class ApplicationController extends Controller
                 'max:2000',
             ],
 
-            /*
-            |--------------------------------------------------------------------------
-            | Eligibility
-            |--------------------------------------------------------------------------
-            */
+            
+
+
+
+
 
             'eligibility' => [
                 'nullable',
@@ -254,11 +254,11 @@ class ApplicationController extends Controller
                 'boolean',
             ],
 
-            /*
-            |--------------------------------------------------------------------------
-            | Documents
-            |--------------------------------------------------------------------------
-            */
+            
+
+
+
+
 
             'letter_of_intent' => [
                 'nullable',
@@ -338,11 +338,11 @@ class ApplicationController extends Controller
                     'status' => 'pending',
                 ]);
 
-                /*
-                |--------------------------------------------------------------------------
-                | Applicant Profile
-                |--------------------------------------------------------------------------
-                */
+                
+
+
+
+
 
                 $application->profile()->create([
                     'full_name' => $validated['full_name'],
@@ -357,11 +357,11 @@ class ApplicationController extends Controller
                     'ethnic_group' => $validated['ethnic_group'] ?? null,
                 ]);
 
-                /*
-                |--------------------------------------------------------------------------
-                | Education
-                |--------------------------------------------------------------------------
-                */
+                
+
+
+
+
 
                 foreach ($validated['education'] ?? [] as $education) {
                     if (! $this->hasEnteredData($education)) {
@@ -376,11 +376,11 @@ class ApplicationController extends Controller
                     ]);
                 }
 
-                /*
-                |--------------------------------------------------------------------------
-                | Experience
-                |--------------------------------------------------------------------------
-                */
+                
+
+
+
+
 
                 foreach ($validated['experience'] ?? [] as $experience) {
                     if (! $this->hasEnteredData($experience)) {
@@ -395,11 +395,11 @@ class ApplicationController extends Controller
                     ]);
                 }
 
-                /*
-                |--------------------------------------------------------------------------
-                | Trainings
-                |--------------------------------------------------------------------------
-                */
+                
+
+
+
+
 
                 foreach ($validated['training'] ?? [] as $training) {
                     if (! $this->hasEnteredData($training)) {
@@ -413,11 +413,11 @@ class ApplicationController extends Controller
                     ]);
                 }
 
-                /*
-                |--------------------------------------------------------------------------
-                | Eligibilities
-                |--------------------------------------------------------------------------
-                */
+                
+
+
+
+
 
                 foreach ($validated['eligibility'] ?? [] as $eligibility) {
                     if (! $this->hasEnteredData($eligibility)) {
@@ -438,11 +438,11 @@ class ApplicationController extends Controller
                     ]);
                 }
 
-                /*
-                |--------------------------------------------------------------------------
-                | Uploaded Documents
-                |--------------------------------------------------------------------------
-                */
+                
+
+
+
+
 
                 $documentFields = [
                     'letter_of_intent',

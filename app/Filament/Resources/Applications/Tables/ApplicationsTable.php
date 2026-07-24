@@ -47,7 +47,7 @@ class ApplicationsTable
                     ->boolean(),
             ])
             ->filters([
-                //
+                 
             ])
             ->recordActions([
                 EditAction::make(),

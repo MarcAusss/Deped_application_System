@@ -13,10 +13,10 @@ class EvaluatorsTable
     {
         return $table
             ->columns([
-                //
+                 
             ])
             ->filters([
-                //
+                 
             ])
             ->recordActions([
                 EditAction::make(),

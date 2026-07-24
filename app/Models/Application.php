@@ -12,11 +12,11 @@ class Application extends Model
         'status',
     ];
 
-    /*
-    |-------------------------
-    | RELATIONSHIPS
-    |-------------------------
-    */
+    
+
+
+
+
 
     public function jobPosition(): BelongsTo
     {

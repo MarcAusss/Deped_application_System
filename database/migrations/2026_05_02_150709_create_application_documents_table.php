@@ -6,9 +6,9 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
+    
+
+
     public function up(): void
     {
      Schema::create('application_documents', function (Blueprint $table) {
@@ -16,16 +16,16 @@ return new class extends Migration
 
             $table->foreignId('application_id')->constrained()->cascadeOnDelete();
 
-            $table->string('type'); // TOR, PRC, LOI, etc
+            $table->string('type');  
             $table->string('file_path');
 
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
+    
+
+
     public function down(): void
     {
         Schema::dropIfExists('application_documents');

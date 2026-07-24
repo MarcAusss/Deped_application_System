@@ -31,11 +31,11 @@ class ApplicationResource extends Resource
         return 'Applications';
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | FORM (Read-only view of application details)
-    |--------------------------------------------------------------------------
-    */
+    
+
+
+
+
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
@@ -139,11 +139,11 @@ class ApplicationResource extends Resource
                         ]);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | TABLE
-    |--------------------------------------------------------------------------
-    */
+    
+
+
+
+
     public static function table(Table $table): Table
     {
         return $table
@@ -262,11 +262,11 @@ class ApplicationResource extends Resource
             ->bulkActions([]);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | RELATION MANAGERS
-    |--------------------------------------------------------------------------
-    */
+    
+
+
+
+
     public static function getRelations(): array
     {
         return [
@@ -278,11 +278,11 @@ class ApplicationResource extends Resource
         ];
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | PAGES
-    |--------------------------------------------------------------------------
-    */
+    
+
+
+
+
     public static function getPages(): array
     {
         return [
