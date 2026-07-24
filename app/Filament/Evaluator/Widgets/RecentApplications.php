@@ -4,21 +4,19 @@ namespace App\Filament\Evaluator\Widgets;
 
 use App\Filament\Evaluator\Resources\Applications\ApplicationResource;
 use App\Models\Application;
-use Filament\Actions\BulkActionGroup;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget;
-use Illuminate\Database\Eloquent\Builder;
 
 class RecentApplications extends TableWidget
 {
-    protected static ?string $heading = 'Recent Applications';
-
     protected int|string|array $columnSpan = 2;
 
     public function table(Table $table): Table
     {
         return $table
+            ->heading('Latest applications')
+            ->description('New records that may require evaluator review.')
             ->query(
                 Application::query()
                     ->with([
@@ -27,6 +25,7 @@ class RecentApplications extends TableWidget
                         'controlNumber',
                     ])
                     ->latest()
+                    ->limit(6)
             )
 
             ->columns([
@@ -37,7 +36,9 @@ class RecentApplications extends TableWidget
 
                 Tables\Columns\TextColumn::make('profile.full_name')
                     ->label('Applicant')
-                    ->searchable(),
+                    ->searchable()
+                    ->weight('bold')
+                    ->description(fn (Application $record): ?string => $record->profile?->email),
 
                 Tables\Columns\TextColumn::make('jobPosition.title')
                     ->label('Position'),
@@ -61,12 +62,11 @@ class RecentApplications extends TableWidget
                 'record' => $record,
             ]))
 
-            ->paginated([5])
+            ->paginated(false)
 
             ->defaultSort('created_at', 'desc')
-
-            ->toolbarActions([
-                BulkActionGroup::make([]),
-            ]);
+            ->emptyStateHeading('No applications yet')
+            ->emptyStateDescription('New applicant submissions will appear here.')
+            ->emptyStateIcon('heroicon-o-document-text');
     }
 }

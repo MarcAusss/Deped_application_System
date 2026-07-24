@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets;
 
+use App\Filament\Resources\Applications\ApplicationResource;
 use App\Models\Application;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -13,31 +14,35 @@ class RecentApplicants extends TableWidget
 
     protected int|string|array $columnSpan = 'full';
 
-    protected static ?string $heading = 'Recent Applicants';
-
     public function table(Table $table): Table
     {
         return $table
+            ->heading('Recent applicant activity')
+            ->description('Latest submissions across all open and closed positions.')
             ->query(
                 Application::query()
-                    ->with('jobPosition')
+                    ->with([
+                        'controlNumber',
+                        'jobPosition',
+                        'profile',
+                    ])
                     ->latest()
-                    ->limit(5)
+                    ->limit(6)
             )
             ->columns([
-                TextColumn::make('full_name')
-                    ->label('Applicant')
-                    ->searchable()
-                    ->weight('bold'),
-
-                TextColumn::make('email')
-                    ->label('Email')
-                    ->searchable()
+                TextColumn::make('controlNumber.control_number')
+                    ->label('Control No.')
+                    ->placeholder('Not assigned')
                     ->copyable(),
 
+                TextColumn::make('profile.full_name')
+                    ->label('Applicant')
+                    ->searchable()
+                    ->weight('bold')
+                    ->description(fn (Application $record): ?string => $record->profile?->email),
+
                 TextColumn::make('jobPosition.title')
-                    ->label('Job Position')
-                    ->badge()
+                    ->label('Position')
                     ->placeholder('No position'),
 
                 TextColumn::make('status')
@@ -64,6 +69,9 @@ class RecentApplicants extends TableWidget
                     ->dateTime('M d, Y h:i A')
                     ->sortable(),
             ])
+            ->recordUrl(fn (Application $record): string => ApplicationResource::getUrl('view', [
+                'record' => $record,
+            ]))
             ->paginated(false)
             ->emptyStateHeading('No applications yet')
             ->emptyStateDescription(

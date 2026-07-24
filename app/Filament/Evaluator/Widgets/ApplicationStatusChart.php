@@ -7,8 +7,14 @@ use Filament\Widgets\ChartWidget;
 
 class ApplicationStatusChart extends ChartWidget
 {
-    protected ?string $heading = 'Application Status Distribution';
+    protected ?string $heading = 'Queue by status';
+
+    protected ?string $description = 'Current applications across the evaluation and decision stages.';
+
     protected int|string|array $columnSpan = 2;
+
+    protected ?string $maxHeight = '310px';
+
     protected function getData(): array
     {
         $statuses = [
@@ -27,6 +33,16 @@ class ApplicationStatusChart extends ChartWidget
                 [
                     'label' => 'Applications',
                     'data' => $counts,
+                    'backgroundColor' => [
+                        '#94a3b8',
+                        '#f59e0b',
+                        '#10b981',
+                        '#f43f5e',
+                    ],
+                    'borderWidth' => 0,
+                    'borderRadius' => 8,
+                    'borderSkipped' => false,
+                    'barThickness' => 23,
                 ],
             ],
 
@@ -41,6 +57,36 @@ class ApplicationStatusChart extends ChartWidget
 
     protected function getType(): string
     {
-        return 'doughnut';
+        return 'bar';
+    }
+
+    protected function getOptions(): array
+    {
+        return [
+            'responsive' => true,
+            'maintainAspectRatio' => false,
+            'indexAxis' => 'y',
+            'plugins' => [
+                'legend' => [
+                    'display' => false,
+                ],
+            ],
+            'scales' => [
+                'x' => [
+                    'beginAtZero' => true,
+                    'ticks' => [
+                        'precision' => 0,
+                    ],
+                    'grid' => [
+                        'color' => 'rgba(148, 163, 184, 0.18)',
+                    ],
+                ],
+                'y' => [
+                    'grid' => [
+                        'display' => false,
+                    ],
+                ],
+            ],
+        ];
     }
 }

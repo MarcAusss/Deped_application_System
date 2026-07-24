@@ -2,37 +2,60 @@
 
 namespace App\Filament\Evaluator\Pages;
 
-use Filament\Pages\Dashboard as BaseDashboard;
-
 use App\Filament\Evaluator\Widgets\ApplicationStats;
-use App\Filament\Evaluator\Widgets\ApplicationsPerPositionChart;
 use App\Filament\Evaluator\Widgets\ApplicationStatusChart;
+use App\Filament\Evaluator\Widgets\ApplicationsPerPositionChart;
 use App\Filament\Evaluator\Widgets\MonthlyApplicationsChart;
 use App\Filament\Evaluator\Widgets\RecentApplications;
 use App\Filament\Evaluator\Widgets\RecentEvaluations;
+use App\Models\Application;
+use App\Models\ApplicationEvaluation;
+use Filament\Pages\Dashboard as BaseDashboard;
+use Illuminate\Contracts\View\View;
 
 class Dashboard extends BaseDashboard
 {
-    protected static ?string $title = 'Evaluator Dashboard';
+    protected static ?string $title = 'Evaluation Workspace';
 
-    protected function getHeaderWidgets(): array
+    public function getHeader(): ?View
+    {
+        $evaluatorId = auth()->id();
+
+        return view('filament.evaluator.pages.dashboard-header', [
+            'pendingCount' => Application::where('status', 'pending')->count(),
+            'evaluatedTodayCount' => ApplicationEvaluation::query()
+                ->where('evaluator_id', $evaluatorId)
+                ->whereDate('evaluated_at', today())
+                ->count(),
+            'recommendedCount' => ApplicationEvaluation::query()
+                ->where('evaluator_id', $evaluatorId)
+                ->where('recommended', true)
+                ->count(),
+        ]);
+    }
+
+    public function getPageClasses(): array
+    {
+        return ['recruitment-dashboard-page'];
+    }
+
+    public function getWidgets(): array
     {
         return [
             ApplicationStats::class,
-
+            MonthlyApplicationsChart::class,
             ApplicationsPerPositionChart::class,
             ApplicationStatusChart::class,
-
-            MonthlyApplicationsChart::class,
-
             RecentApplications::class,
-
             RecentEvaluations::class,
         ];
     }
 
-    public function getHeaderWidgetsColumns(): int|array
+    public function getColumns(): int|array
     {
-        return 4;
+        return [
+            'default' => 1,
+            'lg' => 4,
+        ];
     }
 }

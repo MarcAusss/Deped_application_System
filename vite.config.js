@@ -10,6 +10,7 @@ export default defineConfig({
                 'resources/js/app.js',
                 'resources/css/apply.css',
                 'resources/js/apply.js',
+                'resources/css/filament/shared/theme.css',
             ],
             refresh: true,
         }),

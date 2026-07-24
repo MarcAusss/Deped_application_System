@@ -7,9 +7,15 @@ use Filament\Widgets\ChartWidget;
 
 class ApplicationsPerPositionChart extends ChartWidget
 {
-    protected ?string $heading = 'Applications per Position';
-protected int|string|array $columnSpan = 2;
+    protected ?string $heading = 'Position workload';
+
+    protected ?string $description = 'Application volume currently associated with each position.';
+
+    protected int|string|array $columnSpan = 2;
+
     protected static ?int $sort = 2;
+
+    protected ?string $maxHeight = '310px';
 
     protected function getData(): array
     {
@@ -24,6 +30,11 @@ protected int|string|array $columnSpan = 2;
                 [
                     'label' => 'Applications',
                     'data' => $applications->pluck('total')->toArray(),
+                    'backgroundColor' => '#4f46e5',
+                    'borderColor' => '#3730a3',
+                    'borderWidth' => 1,
+                    'borderRadius' => 7,
+                    'borderSkipped' => false,
                 ],
             ],
 
@@ -36,5 +47,34 @@ protected int|string|array $columnSpan = 2;
     protected function getType(): string
     {
         return 'bar';
+    }
+
+    protected function getOptions(): array
+    {
+        return [
+            'responsive' => true,
+            'maintainAspectRatio' => false,
+            'plugins' => [
+                'legend' => [
+                    'display' => false,
+                ],
+            ],
+            'scales' => [
+                'y' => [
+                    'beginAtZero' => true,
+                    'ticks' => [
+                        'precision' => 0,
+                    ],
+                    'grid' => [
+                        'color' => 'rgba(148, 163, 184, 0.18)',
+                    ],
+                ],
+                'x' => [
+                    'grid' => [
+                        'display' => false,
+                    ],
+                ],
+            ],
+        ];
     }
 }

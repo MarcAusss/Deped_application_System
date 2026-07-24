@@ -13,6 +13,17 @@ class AdminStats extends StatsOverviewWidget
 
     protected int|string|array $columnSpan = 'full';
 
+    protected ?string $heading = 'Recruitment portfolio';
+
+    protected ?string $description = 'A concise view of workload, decisions, and staffing capacity.';
+
+    protected int|array|null $columns = [
+        'default' => 1,
+        'sm' => 2,
+        'lg' => 3,
+        '2xl' => 6,
+    ];
+
     protected function getStats(): array
     {
         $totalApplications = Application::count();
@@ -26,49 +37,55 @@ class AdminStats extends StatsOverviewWidget
                 'Evaluators',
                 User::where('role', 'evaluator')->count()
             )
-                ->description('Registered evaluator accounts')
-                ->descriptionIcon('heroicon-m-user-group')
-                ->color('primary'),
+                ->icon('heroicon-o-user-group')
+                ->description('Registered accounts')
+                ->color('primary')
+                ->extraAttributes(['class' => 'metric-indigo']),
 
             Stat::make(
                 'Total Applicants',
                 $totalApplications
             )
-                ->description('All submitted applications')
-                ->descriptionIcon('heroicon-m-document-text')
-                ->color('info'),
+                ->icon('heroicon-o-document-duplicate')
+                ->description('All submissions')
+                ->color('info')
+                ->extraAttributes(['class' => 'metric-teal']),
 
             Stat::make(
-                'Pending Applicants',
+                'Awaiting Evaluation',
                 $pendingApplications
             )
-                ->description('Waiting for evaluation')
-                ->descriptionIcon('heroicon-m-clock')
-                ->color('gray'),
+                ->icon('heroicon-o-clock')
+                ->description('In evaluator queue')
+                ->color('gray')
+                ->extraAttributes(['class' => 'metric-slate']),
 
             Stat::make(
-                'For Approval',
+                'For Final Action',
                 $forApprovalApplications
             )
-                ->description('Already evaluated')
-                ->descriptionIcon('heroicon-m-document-check')
-                ->color('warning'),
+                ->icon('heroicon-o-shield-check')
+                ->description('Evaluation complete')
+                ->color('warning')
+                ->extraAttributes(['class' => 'metric-amber']),
 
             Stat::make(
                 'Approved',
                 $approvedApplications
             )
-                ->description('Approved applications')
-                ->descriptionIcon('heroicon-m-check-circle')
-                ->color('success'),
+                ->icon('heroicon-o-check-circle')
+                ->description('Final approvals')
+                ->color('success')
+                ->extraAttributes(['class' => 'metric-emerald']),
 
             Stat::make(
                 'Rejected',
                 $rejectedApplications
             )
-                ->description('Rejected applications')
-                ->descriptionIcon('heroicon-m-x-circle')
-                ->color('danger'),
+                ->icon('heroicon-o-x-circle')
+                ->description('Final rejections')
+                ->color('danger')
+                ->extraAttributes(['class' => 'metric-rose']),
         ];
     }
 }

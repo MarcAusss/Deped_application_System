@@ -10,6 +10,7 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\Support\Enums\Width;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -30,42 +31,28 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
-
-            /*
-            |--------------------------------------------------------------------------
-            | Branding
-            |--------------------------------------------------------------------------
-            */
-
-            ->brandName('Applicant Management System')
-
-            /*
-            |--------------------------------------------------------------------------
-            | Color Scheme
-            |--------------------------------------------------------------------------
-            */
-
+            ->viteTheme('resources/css/filament/shared/theme.css')
+            ->brandName('DepEd Recruitment')
+            ->brandLogo(fn () => view('filament.components.brand', [
+                'workspace' => 'Administration',
+            ]))
+            ->brandLogoHeight('2.5rem')
+            ->darkMode(false)
             ->colors([
-                'primary' => Color::Blue,
+                'primary' => Color::Indigo,
+                'info' => Color::Cyan,
+                'success' => Color::Emerald,
+                'warning' => Color::Amber,
+                'danger' => Color::Rose,
+                'gray' => Color::Slate,
             ])
-
-            /*
-            |--------------------------------------------------------------------------
-            | Resources
-            |--------------------------------------------------------------------------
-            */
-
+            ->maxContentWidth(Width::Full)
+            ->sidebarCollapsibleOnDesktop()
+            ->sidebarWidth('18rem')
             ->discoverResources(
                 in: app_path('Filament/Resources'),
                 for: 'App\\Filament\\Resources'
             )
-
-            /*
-            |--------------------------------------------------------------------------
-            | Pages
-            |--------------------------------------------------------------------------
-            */
-
             ->discoverPages(
                 in: app_path('Filament/Pages'),
                 for: 'App\\Filament\\Pages'
@@ -73,13 +60,6 @@ class AdminPanelProvider extends PanelProvider
             ->pages([
                 Dashboard::class,
             ])
-
-            /*
-            |--------------------------------------------------------------------------
-            | Widgets
-            |--------------------------------------------------------------------------
-            */
-
             ->discoverWidgets(
                 in: app_path('Filament/Widgets'),
                 for: 'App\\Filament\\Widgets'
@@ -90,14 +70,6 @@ class AdminPanelProvider extends PanelProvider
                 ApplicationsPerJobChart::class,
                 RecentApplicants::class,
             ])
-
-
-            /*
-            |--------------------------------------------------------------------------
-            | Middleware
-            |--------------------------------------------------------------------------
-            */
-
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

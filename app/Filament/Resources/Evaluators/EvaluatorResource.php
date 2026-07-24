@@ -17,6 +17,8 @@ class EvaluatorResource extends Resource
 {
     protected static ?string $model = Evaluator::class;
 
+    protected static bool $shouldRegisterNavigation = false;
+
     protected static string|null|\UnitEnum $navigationGroup = 'Recruitment';
 
     public static function form(Schema $schema): Schema

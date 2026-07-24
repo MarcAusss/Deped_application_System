@@ -7,9 +7,13 @@ use Filament\Widgets\ChartWidget;
 
 class ApplicationStatusChart extends ChartWidget
 {
-    protected ?string $heading = 'Application Status';
+    protected ?string $heading = 'Recruitment pipeline';
+
+    protected ?string $description = 'Current volume at every decision stage.';
 
     protected static ?int $sort = 2;
+
+    protected ?string $maxHeight = '315px';
 
     protected int|string|array $columnSpan = [
         'default' => 'full',
@@ -36,16 +40,13 @@ class ApplicationStatusChart extends ChartWidget
                     'backgroundColor' => [
                         '#94a3b8',
                         '#f59e0b',
-                        '#22c55e',
-                        '#ef4444',
+                        '#10b981',
+                        '#f43f5e',
                     ],
-                    'borderColor' => [
-                        '#64748b',
-                        '#d97706',
-                        '#16a34a',
-                        '#dc2626',
-                    ],
-                    'borderWidth' => 1,
+                    'borderWidth' => 0,
+                    'borderRadius' => 8,
+                    'borderSkipped' => false,
+                    'barThickness' => 24,
                 ],
             ],
 
@@ -60,7 +61,7 @@ class ApplicationStatusChart extends ChartWidget
 
     protected function getType(): string
     {
-        return 'doughnut';
+        return 'bar';
     }
 
     protected function getOptions(): array
@@ -68,10 +69,27 @@ class ApplicationStatusChart extends ChartWidget
         return [
             'plugins' => [
                 'legend' => [
-                    'position' => 'bottom',
+                    'display' => false,
                 ],
             ],
+            'indexAxis' => 'y',
             'maintainAspectRatio' => false,
+            'scales' => [
+                'x' => [
+                    'beginAtZero' => true,
+                    'ticks' => [
+                        'precision' => 0,
+                    ],
+                    'grid' => [
+                        'color' => 'rgba(148, 163, 184, 0.18)',
+                    ],
+                ],
+                'y' => [
+                    'grid' => [
+                        'display' => false,
+                    ],
+                ],
+            ],
         ];
     }
 }

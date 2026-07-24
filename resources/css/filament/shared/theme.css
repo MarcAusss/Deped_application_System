@@ -1,0 +1,678 @@
+@import '../../../../vendor/filament/filament/resources/css/theme.css';
+
+@source '../../../../app/Filament/**/*';
+@source '../../../../resources/views/filament/**/*';
+
+:root {
+    --recruitment-ink: #172033;
+    --recruitment-muted: #667085;
+    --recruitment-line: #dfe3ea;
+    --recruitment-canvas: #f4f6fa;
+    --recruitment-indigo: #4338ca;
+    --recruitment-indigo-dark: #25205f;
+    --recruitment-teal: #0f766e;
+    --recruitment-amber: #b45309;
+}
+
+.fi-body {
+    background:
+        linear-gradient(180deg, #fafbfc 0, var(--recruitment-canvas) 24rem);
+    color: var(--recruitment-ink);
+}
+
+.fi-topbar {
+    min-height: 4.5rem;
+    border-bottom: 1px solid rgba(203, 213, 225, 0.78);
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: none;
+    backdrop-filter: blur(18px);
+}
+
+.fi-sidebar {
+    border-right: 1px solid var(--recruitment-line);
+    background: #ffffff;
+}
+
+.fi-sidebar-nav {
+    gap: 1.75rem;
+    padding: 1.5rem 1rem;
+}
+
+.fi-sidebar-nav-groups {
+    gap: 1.6rem;
+}
+
+.fi-sidebar-group-label {
+    color: #98a2b3;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.fi-sidebar-item-btn {
+    min-height: 2.65rem;
+    border: 1px solid transparent;
+    border-radius: 0.7rem;
+    padding-inline: 0.8rem;
+}
+
+.fi-sidebar-item-label {
+    color: #475467;
+    font-size: 0.83rem;
+    font-weight: 650;
+}
+
+.fi-sidebar-item-btn > .fi-icon {
+    color: #98a2b3;
+}
+
+.fi-sidebar-item.fi-sidebar-item-has-url > .fi-sidebar-item-btn:hover {
+    border-color: #e4e7ec;
+    background: #f8fafc;
+}
+
+.fi-sidebar-item.fi-active > .fi-sidebar-item-btn {
+    border-color: #c7d2fe;
+    background: #eef2ff;
+    box-shadow: inset 3px 0 0 var(--recruitment-indigo);
+}
+
+.fi-sidebar-item.fi-active > .fi-sidebar-item-btn > .fi-icon,
+.fi-sidebar-item.fi-active > .fi-sidebar-item-btn > .fi-sidebar-item-label {
+    color: #3730a3;
+}
+
+.fi-main {
+    padding-inline: clamp(1rem, 2.3vw, 2.5rem);
+}
+
+.recruitment-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.7rem;
+    color: var(--recruitment-ink);
+}
+
+.recruitment-brand__mark {
+    display: grid;
+    width: 2.3rem;
+    height: 2.3rem;
+    flex: 0 0 auto;
+    place-items: center;
+    border: 1px solid #312e81;
+    border-radius: 0.7rem;
+    background: #312e81;
+    color: #ffffff;
+    font-size: 0.72rem;
+    font-weight: 850;
+    letter-spacing: 0.04em;
+    box-shadow: 0 7px 16px rgba(49, 46, 129, 0.2);
+}
+
+.recruitment-brand__copy {
+    display: grid;
+    min-width: 0;
+    line-height: 1.05;
+}
+
+.recruitment-brand__name {
+    overflow: hidden;
+    color: #1d2939;
+    font-size: 0.84rem;
+    font-weight: 800;
+    letter-spacing: -0.015em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.recruitment-brand__workspace {
+    margin-top: 0.25rem;
+    overflow: hidden;
+    color: #7f56d9;
+    font-size: 0.61rem;
+    font-weight: 800;
+    letter-spacing: 0.11em;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.recruitment-dashboard-page .fi-page-content {
+    gap: 1.25rem;
+    padding-bottom: 2.5rem;
+}
+
+.recruitment-command {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1.65fr) minmax(17rem, 0.72fr);
+    overflow: hidden;
+    border: 1px solid #312e81;
+    border-radius: 1.15rem;
+    background:
+        radial-gradient(circle at 72% -15%, rgba(45, 212, 191, 0.27), transparent 35%),
+        linear-gradient(118deg, #211d55 0%, #3730a3 64%, #0f766e 128%);
+    color: #ffffff;
+    box-shadow: 0 18px 45px rgba(30, 27, 75, 0.17);
+}
+
+.recruitment-command::after {
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+    background-size: 34px 34px;
+    content: '';
+    mask-image: linear-gradient(90deg, transparent 34%, #000);
+    pointer-events: none;
+}
+
+.recruitment-command__main,
+.recruitment-command__brief {
+    position: relative;
+    z-index: 1;
+}
+
+.recruitment-command__main {
+    padding: clamp(1.55rem, 3vw, 2.45rem);
+}
+
+.recruitment-command__eyebrow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.65rem;
+    margin-bottom: 1.1rem;
+    color: #c7d2fe;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+}
+
+.recruitment-command__live {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.42rem;
+    border: 1px solid rgba(153, 246, 228, 0.28);
+    border-radius: 999px;
+    background: rgba(15, 118, 110, 0.24);
+    color: #ccfbf1;
+    padding: 0.32rem 0.62rem;
+    letter-spacing: 0.06em;
+}
+
+.recruitment-command__live::before {
+    width: 0.42rem;
+    height: 0.42rem;
+    border-radius: 999px;
+    background: #5eead4;
+    box-shadow: 0 0 0 4px rgba(94, 234, 212, 0.13);
+    content: '';
+}
+
+.recruitment-command__title {
+    max-width: 46rem;
+    margin: 0;
+    color: #ffffff;
+    font-size: clamp(1.65rem, 3.2vw, 2.55rem);
+    font-weight: 760;
+    letter-spacing: -0.035em;
+    line-height: 1.08;
+}
+
+.recruitment-command__description {
+    max-width: 44rem;
+    margin: 0.85rem 0 0;
+    color: #d8dcf8;
+    font-size: 0.9rem;
+    line-height: 1.65;
+}
+
+.recruitment-command__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.7rem;
+    margin-top: 1.45rem;
+}
+
+.recruitment-command__action {
+    display: inline-flex;
+    min-height: 2.65rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 0.7rem;
+    padding: 0.62rem 0.95rem;
+    color: #ffffff;
+    font-size: 0.76rem;
+    font-weight: 750;
+    transition:
+        transform 150ms ease,
+        background-color 150ms ease,
+        border-color 150ms ease;
+}
+
+.recruitment-command__action:hover {
+    border-color: rgba(255, 255, 255, 0.45);
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-1px);
+}
+
+.recruitment-command__action--primary {
+    border-color: #ffffff;
+    background: #ffffff;
+    color: #312e81;
+}
+
+.recruitment-command__action--primary:hover {
+    border-color: #e0e7ff;
+    background: #e0e7ff;
+}
+
+.recruitment-command__action .fi-icon {
+    width: 1rem;
+    height: 1rem;
+}
+
+.recruitment-command__brief {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    border-left: 1px solid rgba(255, 255, 255, 0.13);
+    background: rgba(11, 16, 44, 0.2);
+    padding: clamp(1.35rem, 2.5vw, 2rem);
+}
+
+.recruitment-command__brief-label {
+    color: #a5b4fc;
+    font-size: 0.64rem;
+    font-weight: 800;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+}
+
+.recruitment-command__brief-date {
+    margin-top: 0.35rem;
+    color: #ffffff;
+    font-size: 0.98rem;
+    font-weight: 700;
+}
+
+.recruitment-command__brief-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: 1.25rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.recruitment-command__brief-item {
+    min-width: 0;
+    padding: 1rem 0.75rem 0 0;
+}
+
+.recruitment-command__brief-item + .recruitment-command__brief-item {
+    border-left: 1px solid rgba(255, 255, 255, 0.13);
+    padding-left: 0.75rem;
+}
+
+.recruitment-command__brief-value {
+    display: block;
+    color: #ffffff;
+    font-size: 1.45rem;
+    font-weight: 780;
+    letter-spacing: -0.035em;
+}
+
+.recruitment-command__brief-name {
+    display: block;
+    margin-top: 0.22rem;
+    color: #c7d2fe;
+    font-size: 0.62rem;
+    font-weight: 650;
+    line-height: 1.35;
+}
+
+.recruitment-dashboard-page .fi-wi-stats-overview {
+    margin-top: 0.15rem;
+}
+
+.recruitment-dashboard-page
+    .fi-wi-stats-overview
+    .fi-section.fi-section-not-contained {
+    gap: 1.1rem;
+    border: 1px solid var(--recruitment-line);
+    border-radius: 1rem;
+    background: #ffffff;
+    padding: 1.25rem;
+    box-shadow: 0 10px 28px rgba(16, 24, 40, 0.055);
+}
+
+.recruitment-dashboard-page
+    .fi-wi-stats-overview
+    .fi-section.fi-section-not-contained
+    > .fi-section-header {
+    position: relative;
+    border: 0;
+    background: transparent;
+    padding: 0 0 0.95rem 1rem;
+}
+
+.recruitment-dashboard-page
+    .fi-wi-stats-overview
+    .fi-section.fi-section-not-contained
+    > .fi-section-header::before {
+    position: absolute;
+    inset: 0.1rem auto 1.05rem 0;
+    width: 4px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, #4f46e5, #0f766e);
+    content: '';
+}
+
+.recruitment-dashboard-page
+    .fi-wi-stats-overview
+    .fi-section-header-heading {
+    color: #101828;
+    font-size: 1rem;
+    font-weight: 780;
+    letter-spacing: -0.018em;
+}
+
+.recruitment-dashboard-page
+    .fi-wi-stats-overview
+    .fi-section-header-description {
+    color: #7a8496;
+    font-size: 0.76rem;
+}
+
+.recruitment-dashboard-page
+    .fi-wi-stats-overview
+    .fi-section-content-ctn {
+    gap: 0;
+}
+
+.recruitment-dashboard-page .fi-wi-stats-overview-stat {
+    overflow: hidden;
+    border: 1px solid var(--recruitment-line);
+    border-radius: 0.85rem;
+    background: #ffffff;
+    padding: 1.1rem 1.15rem 1rem;
+    box-shadow: none;
+    transition:
+        border-color 150ms ease,
+        box-shadow 150ms ease,
+        transform 150ms ease;
+}
+
+.recruitment-dashboard-page .fi-wi-stats-overview-stat::before {
+    position: absolute;
+    inset: 0 0 auto;
+    width: auto;
+    height: 3px;
+    background: #667085;
+    content: '';
+}
+
+.recruitment-dashboard-page .fi-wi-stats-overview-stat:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 10px 22px rgba(16, 24, 40, 0.075);
+    transform: translateY(-2px);
+}
+
+.recruitment-dashboard-page .fi-wi-stats-overview-stat.metric-indigo {
+    background: linear-gradient(145deg, #ffffff 58%, #eef2ff 130%);
+}
+
+.recruitment-dashboard-page .fi-wi-stats-overview-stat.metric-teal {
+    background: linear-gradient(145deg, #ffffff 58%, #ecfdf5 130%);
+}
+
+.recruitment-dashboard-page .fi-wi-stats-overview-stat.metric-amber {
+    background: linear-gradient(145deg, #ffffff 58%, #fffbeb 130%);
+}
+
+.recruitment-dashboard-page .fi-wi-stats-overview-stat.metric-emerald {
+    background: linear-gradient(145deg, #ffffff 58%, #ecfdf5 130%);
+}
+
+.recruitment-dashboard-page .fi-wi-stats-overview-stat.metric-rose {
+    background: linear-gradient(145deg, #ffffff 58%, #fff1f2 130%);
+}
+
+.recruitment-dashboard-page .fi-wi-stats-overview-stat.metric-slate {
+    background: linear-gradient(145deg, #ffffff 58%, #f1f5f9 130%);
+}
+
+.recruitment-dashboard-page .fi-wi-stats-overview-stat.metric-indigo::before {
+    background: #4f46e5;
+}
+
+.recruitment-dashboard-page .fi-wi-stats-overview-stat.metric-teal::before {
+    background: #0f766e;
+}
+
+.recruitment-dashboard-page .fi-wi-stats-overview-stat.metric-amber::before {
+    background: #d97706;
+}
+
+.recruitment-dashboard-page .fi-wi-stats-overview-stat.metric-emerald::before {
+    background: #059669;
+}
+
+.recruitment-dashboard-page .fi-wi-stats-overview-stat.metric-rose::before {
+    background: #e11d48;
+}
+
+.recruitment-dashboard-page .fi-wi-stats-overview-stat.metric-slate::before {
+    background: #64748b;
+}
+
+.recruitment-dashboard-page
+    .fi-wi-stats-overview-stat
+    .fi-wi-stats-overview-stat-content {
+    gap: 0.4rem;
+    min-height: 6.6rem;
+    align-content: center;
+    padding-right: 3.15rem;
+}
+
+.recruitment-dashboard-page
+    .fi-wi-stats-overview-stat
+    .fi-wi-stats-overview-stat-label-ctn
+    > .fi-icon {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 2.45rem;
+    height: 2.45rem;
+    border: 1px solid transparent;
+    border-radius: 0.72rem;
+    padding: 0.58rem;
+}
+
+.recruitment-dashboard-page
+    .fi-wi-stats-overview-stat.metric-indigo
+    .fi-wi-stats-overview-stat-label-ctn
+    > .fi-icon {
+    border-color: #c7d2fe;
+    background: #eef2ff;
+    color: #4f46e5;
+}
+
+.recruitment-dashboard-page
+    .fi-wi-stats-overview-stat.metric-teal
+    .fi-wi-stats-overview-stat-label-ctn
+    > .fi-icon {
+    border-color: #99f6e4;
+    background: #f0fdfa;
+    color: #0f766e;
+}
+
+.recruitment-dashboard-page
+    .fi-wi-stats-overview-stat.metric-amber
+    .fi-wi-stats-overview-stat-label-ctn
+    > .fi-icon {
+    border-color: #fde68a;
+    background: #fffbeb;
+    color: #d97706;
+}
+
+.recruitment-dashboard-page
+    .fi-wi-stats-overview-stat.metric-emerald
+    .fi-wi-stats-overview-stat-label-ctn
+    > .fi-icon {
+    border-color: #a7f3d0;
+    background: #ecfdf5;
+    color: #059669;
+}
+
+.recruitment-dashboard-page
+    .fi-wi-stats-overview-stat.metric-rose
+    .fi-wi-stats-overview-stat-label-ctn
+    > .fi-icon {
+    border-color: #fecdd3;
+    background: #fff1f2;
+    color: #e11d48;
+}
+
+.recruitment-dashboard-page
+    .fi-wi-stats-overview-stat.metric-slate
+    .fi-wi-stats-overview-stat-label-ctn
+    > .fi-icon {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+    color: #64748b;
+}
+
+.recruitment-dashboard-page .fi-wi-stats-overview-stat-label {
+    color: #667085;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.055em;
+    text-transform: uppercase;
+}
+
+.recruitment-dashboard-page .fi-wi-stats-overview-stat-value {
+    color: #101828;
+    font-size: 2.15rem;
+    font-weight: 790;
+    letter-spacing: -0.045em;
+    line-height: 1;
+}
+
+.recruitment-dashboard-page .fi-wi-stats-overview-stat-description {
+    margin-top: 0.15rem;
+    font-size: 0.7rem;
+    font-weight: 650;
+}
+
+.recruitment-dashboard-page .fi-wi-chart .fi-section,
+.recruitment-dashboard-page .fi-ta-ctn {
+    overflow: hidden;
+    border: 1px solid var(--recruitment-line);
+    border-radius: 0.9rem;
+    background: #ffffff;
+    box-shadow: 0 8px 24px rgba(16, 24, 40, 0.05);
+}
+
+.recruitment-dashboard-page .fi-section-header,
+.recruitment-dashboard-page .fi-ta-header {
+    border-bottom: 1px solid #eaecf0;
+    background: #fcfcfd;
+}
+
+.recruitment-dashboard-page .fi-section-header-heading,
+.recruitment-dashboard-page .fi-ta-header-heading {
+    color: #1d2939;
+    font-weight: 760;
+    letter-spacing: -0.012em;
+}
+
+.recruitment-dashboard-page .fi-section-header-description,
+.recruitment-dashboard-page .fi-ta-header-description {
+    color: #7b8496;
+    font-size: 0.76rem;
+}
+
+.recruitment-dashboard-page .fi-ta-header-cell {
+    background: #f8fafc;
+}
+
+.recruitment-dashboard-page .fi-ta-header-cell-label {
+    color: #667085;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.045em;
+    text-transform: uppercase;
+}
+
+.recruitment-dashboard-page .fi-ta-row {
+    transition: background-color 120ms ease;
+}
+
+.recruitment-dashboard-page .fi-ta-row:hover {
+    background: #f8fafc;
+}
+
+.recruitment-dashboard-page .fi-badge {
+    border-radius: 0.42rem;
+    font-weight: 750;
+}
+
+@media (max-width: 1100px) {
+    .recruitment-command {
+        grid-template-columns: 1fr;
+    }
+
+    .recruitment-command__brief {
+        border-top: 1px solid rgba(255, 255, 255, 0.13);
+        border-left: 0;
+    }
+}
+
+@media (max-width: 640px) {
+    .fi-main {
+        padding-inline: 0.8rem;
+    }
+
+    .recruitment-command {
+        border-radius: 0.9rem;
+    }
+
+    .recruitment-command__main,
+    .recruitment-command__brief {
+        padding: 1.25rem;
+    }
+
+    .recruitment-command__title {
+        font-size: 1.65rem;
+    }
+
+    .recruitment-command__action {
+        width: 100%;
+    }
+
+    .recruitment-command__brief-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .recruitment-command__brief-item {
+        padding: 0.85rem 0;
+    }
+
+    .recruitment-command__brief-item + .recruitment-command__brief-item {
+        border-top: 1px solid rgba(255, 255, 255, 0.13);
+        border-left: 0;
+        padding-left: 0;
+    }
+
+    .recruitment-dashboard-page
+        .fi-wi-stats-overview
+        .fi-section.fi-section-not-contained {
+        padding: 1rem;
+    }
+}

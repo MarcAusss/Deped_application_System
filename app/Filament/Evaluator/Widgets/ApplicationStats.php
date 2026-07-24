@@ -10,58 +10,60 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 class ApplicationStats extends StatsOverviewWidget
 {
     protected int|string|array $columnSpan = 'full';
+
+    protected ?string $heading = 'Your evaluation desk';
+
+    protected ?string $description = 'Workload and recommendation activity assigned to the evaluation role.';
+
+    protected int|array|null $columns = [
+        'default' => 1,
+        'sm' => 2,
+        'xl' => 4,
+    ];
+
     protected function getStats(): array
     {
-        return [
+        $evaluatorId = auth()->id();
 
+        return [
             Stat::make(
                 'Total Applications',
                 Application::count()
             )
-                ->description('All submitted applications')
-                ->descriptionIcon('heroicon-m-document-text')
-                ->color('primary'),
+                ->icon('heroicon-o-document-duplicate')
+                ->description('All submissions')
+                ->color('primary')
+                ->extraAttributes(['class' => 'metric-indigo']),
 
             Stat::make(
-                'Pending',
+                'Pending Queue',
                 Application::where('status', 'pending')->count()
             )
-                ->description('Waiting for evaluation')
-                ->descriptionIcon('heroicon-m-clock')
-                ->color('gray'),
+                ->icon('heroicon-o-clock')
+                ->description('Waiting for review')
+                ->color('warning')
+                ->extraAttributes(['class' => 'metric-amber']),
 
             Stat::make(
-                'Evaluated',
-                Application::where('status', 'evaluated')->count()
+                'Evaluated by You',
+                ApplicationEvaluation::where('evaluator_id', $evaluatorId)->count()
             )
-                ->description('Already evaluated')
-                ->descriptionIcon('heroicon-m-clipboard-document-check')
-                ->color('warning'),
+                ->icon('heroicon-o-clipboard-document-check')
+                ->description('Completed assessments')
+                ->color('info')
+                ->extraAttributes(['class' => 'metric-teal']),
 
             Stat::make(
-                'Approved',
-                Application::where('status', 'approved')->count()
+                'Recommended by You',
+                ApplicationEvaluation::query()
+                    ->where('evaluator_id', $evaluatorId)
+                    ->where('recommended', true)
+                    ->count()
             )
-                ->description('Qualified applicants')
-                ->descriptionIcon('heroicon-m-check-circle')
-                ->color('success'),
-
-            Stat::make(
-                'Rejected',
-                Application::where('status', 'rejected')->count()
-            )
-                ->description('Not qualified')
-                ->descriptionIcon('heroicon-m-x-circle')
-                ->color('danger'),
-
-            Stat::make(
-                'Recommended',
-                ApplicationEvaluation::where('recommended', true)->count()
-            )
-                ->description('Recommended by evaluators')
-                ->descriptionIcon('heroicon-m-star')
-                ->color('info'),
-
+                ->icon('heroicon-o-star')
+                ->description('Positive recommendations')
+                ->color('success')
+                ->extraAttributes(['class' => 'metric-emerald']),
         ];
     }
 }

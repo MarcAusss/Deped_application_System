@@ -7,9 +7,13 @@ use Filament\Widgets\ChartWidget;
 
 class ApplicationsPerJobChart extends ChartWidget
 {
-    protected ?string $heading = 'Applications Per Job Position';
+    protected ?string $heading = 'Applicant demand';
+
+    protected ?string $description = 'Share of applications received by position.';
 
     protected static ?int $sort = 3;
+
+    protected ?string $maxHeight = '315px';
 
     protected int|string|array $columnSpan = [
         'default' => 'full',
@@ -32,10 +36,17 @@ class ApplicationsPerJobChart extends ChartWidget
                         ->values()
                         ->all(),
 
-                    'backgroundColor' => '#3b82f6',
-                    'borderColor' => '#2563eb',
-                    'borderWidth' => 1,
-                    'borderRadius' => 6,
+                    'backgroundColor' => [
+                        '#4f46e5',
+                        '#0f766e',
+                        '#f59e0b',
+                        '#64748b',
+                        '#db2777',
+                        '#0891b2',
+                    ],
+                    'borderColor' => '#ffffff',
+                    'borderWidth' => 3,
+                    'hoverOffset' => 5,
                 ],
             ],
 
@@ -48,7 +59,7 @@ class ApplicationsPerJobChart extends ChartWidget
 
     protected function getType(): string
     {
-        return 'bar';
+        return 'doughnut';
     }
 
     protected function getOptions(): array
@@ -59,18 +70,16 @@ class ApplicationsPerJobChart extends ChartWidget
 
             'plugins' => [
                 'legend' => [
-                    'display' => false,
-                ],
-            ],
-
-            'scales' => [
-                'y' => [
-                    'beginAtZero' => true,
-                    'ticks' => [
-                        'precision' => 0,
+                    'display' => true,
+                    'position' => 'bottom',
+                    'labels' => [
+                        'usePointStyle' => true,
+                        'boxWidth' => 8,
+                        'padding' => 16,
                     ],
                 ],
             ],
+            'cutout' => '68%',
         ];
     }
 }
