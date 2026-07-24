@@ -10,7 +10,6 @@ use Filament\Forms;
 use Filament\Schemas\Schema;
 use App\Filament\Resources\Evaluators\Pages;
 
-// ✅ Correct for Filament v5
 use Filament\Actions\Action;
 
 class EvaluatorResource extends Resource
