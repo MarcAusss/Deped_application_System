@@ -72,6 +72,11 @@ class JobPositionResource extends Resource
                 Tables\Columns\IconColumn::make('is_open')
                     ->boolean()
                     ->label('Open'),
+
+                Tables\Columns\ViewColumn::make('application_link')
+                    ->label('Application Link')
+                    ->view('filament.tables.columns.copy-application-link')
+                    ->alignCenter(),
             ])
             ->actions([
                 Action::make('toggle')
