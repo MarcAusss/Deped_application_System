@@ -4,6 +4,7 @@
 
 @if ($record->is_open)
 <div
+    class="w-full flex justify-center"
     x-data="{
         copied: false,
 
