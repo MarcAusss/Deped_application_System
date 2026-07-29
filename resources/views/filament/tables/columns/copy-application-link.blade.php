@@ -52,5 +52,9 @@
     </x-filament::button>
 </div>
 @else
-    <x-filament::badge color="gray">Closed</x-filament::badge>
+    <div class="w-full flex justify-center">
+    <x-filament::badge color="black">
+        Closed
+    </x-filament::badge>
+</div>
 @endif
