@@ -65,8 +65,9 @@ class DocumentsRelationManager extends RelationManager
 
             Forms\Components\FileUpload::make('file_path')
                 ->label('Upload File')
+                ->disk('public')
                 ->directory('applications/documents')
-                ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png'])
+                ->acceptedFileTypes(['application/pdf'])
                 ->maxSize(5120)
                 ->required(),
         ]);
