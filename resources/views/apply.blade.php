@@ -507,12 +507,16 @@
                     </div>
 
                     <div class="grid gap-4 md:grid-cols-2">
-                        <input
-                            type="text"
-                            name="education[${educationIndex}][level]"
-                            placeholder="Education level"
+                        
+                        <select
+                            name="education[${educationIndex}][Education level]"
                             class="${inputClass}"
                         >
+                            <option value="" disabled selected hidden>Education level</option>
+                            <option value="Bachelor's Degree">Bachelor's Degree</option>
+                            <option value="Master's Degree">Master's Degree</option>
+                            <option value="Doctorate Degree">Doctorate Degree</option>
+                        </select>
 
                         <input
                             type="text"
@@ -577,8 +581,15 @@
 
                         <input
                             type="text"
-                            name="experience[${experienceIndex}][years_months]"
-                            placeholder="Years and months"
+                            name="experience[${experienceIndex}][first_day]"
+                            placeholder="First Day of Service (Years and Months)"
+                            class="${inputClass}"
+                        >
+                        
+                        <input
+                            type="text"
+                            name="experience[${experienceIndex}][last_day]"
+                            placeholder="Last Day of Service (Years and Months)"
                             class="${inputClass}"
                         >
 
@@ -634,7 +645,22 @@
                                 for="training_date_${trainingIndex}"
                                 class="mb-2 block text-sm font-bold text-government-dark"
                             >
-                                Month and Year of Training
+                                Start of Training
+                            </label>
+
+                            <input
+                                id="training_date_${trainingIndex}"
+                                type="month"
+                                name="training[${trainingIndex}][training_date]"
+                                max="{{ now()->format('Y-m') }}"
+                                class="${inputClass}"
+                            >
+
+                            <label
+                                for="training_date_${trainingIndex}"
+                                class="mb-2 block text-sm font-bold text-government-dark"
+                            >
+                                End of Training
                             </label>
 
                             <input
