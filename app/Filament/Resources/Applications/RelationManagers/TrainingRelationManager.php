@@ -33,7 +33,13 @@ class TrainingRelationManager extends RelationManager
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('training_date')
-                    ->label('Month and Year')
+                    ->label('Start')
+                    ->date('F Y')
+                    ->placeholder('Not provided')
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('training_end_date')
+                    ->label('End')
                     ->date('F Y')
                     ->placeholder('Not provided')
                     ->sortable(),
@@ -68,7 +74,7 @@ class TrainingRelationManager extends RelationManager
                 ->suffix('hrs'),
 
             Forms\Components\TextInput::make('training_date')
-                ->label('Month and Year of Training')
+                ->label('Start of Training')
                 ->type('month')
                 ->formatStateUsing(
                     fn ($state): ?string => filled($state)
@@ -83,8 +89,25 @@ class TrainingRelationManager extends RelationManager
                 ->rules(['nullable', 'date_format:Y-m'])
                 ->extraInputAttributes([
                     'max' => now()->format('Y-m'),
-                ])
-                ->columnSpanFull(),
+                ]),
+
+            Forms\Components\TextInput::make('training_end_date')
+                ->label('End of Training')
+                ->type('month')
+                ->formatStateUsing(
+                    fn ($state): ?string => filled($state)
+                        ? \Carbon\Carbon::parse($state)->format('Y-m')
+                        : null
+                )
+                ->dehydrateStateUsing(
+                    fn ($state): ?string => filled($state)
+                        ? $state.'-01'
+                        : null
+                )
+                ->rules(['nullable', 'date_format:Y-m'])
+                ->extraInputAttributes([
+                    'max' => now()->format('Y-m'),
+                ]),
         ]);
     }
 }

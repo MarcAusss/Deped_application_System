@@ -9,6 +9,7 @@ use App\Models\ApplicationStatusLog;
 use App\Exports\ApplicationsExport;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Filament\Evaluator\Resources\Applications\Pages;
+use App\Support\IerApplicationFormatter;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Section;
@@ -21,7 +22,10 @@ use Filament\Forms\Components\Placeholder;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Actions\Action;
+use Filament\Actions\BulkAction;
 use Filament\Notifications\Notification;
+use Filament\Support\Enums\Width;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Facades\Auth;
 use App\Filament\Evaluator\Resources\Applications\RelationManagers;
 
@@ -208,6 +212,8 @@ class ApplicationResource extends Resource
 
             ->defaultSort('created_at', 'desc')
 
+            ->recordActionsColumnLabel('Actions')
+
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->label('Filter by Status')
@@ -286,7 +292,68 @@ class ApplicationResource extends Resource
              
              
 
-            ->bulkActions([]);
+            ->bulkActions([
+                BulkAction::make('export_selected')
+                    ->label('Preview & Export Selected IER')
+                    ->icon('heroicon-o-document-magnifying-glass')
+                    ->color('success')
+                    ->modalHeading('Initial Evaluation Result Preview')
+                    ->modalDescription('Review the selected records below before creating the Excel workbook.')
+                    ->modalWidth(Width::Full)
+                    ->stickyModalHeader()
+                    ->stickyModalFooter()
+                    ->modalSubmitActionLabel('Export Excel')
+                    ->modalCancelActionLabel('Cancel')
+                    ->modalContent(function (EloquentCollection $records) {
+                        $applications = Application::query()
+                            ->whereIn('id', $records->pluck('id'))
+                            ->with([
+                                'profile',
+                                'jobPosition',
+                                'controlNumber',
+                                'educations',
+                                'trainings',
+                                'experiences',
+                                'eligibilities',
+                                'evaluation',
+                            ])
+                            ->get();
+
+                        $groups = $applications
+                            ->groupBy(fn ($application) => (string) ($application->job_position_id ?? 'unassigned'))
+                            ->map(function ($positionApplications): array {
+                                $position = $positionApplications->first()?->jobPosition;
+
+                                return [
+                                    'position' => IerApplicationFormatter::positionSummary($position),
+                                    'rows' => $positionApplications
+                                        ->take(10)
+                                        ->values()
+                                        ->map(fn ($application, int $index) => IerApplicationFormatter::row(
+                                            $application,
+                                            $index + 1
+                                        ))
+                                        ->all(),
+                                    'total' => $positionApplications->count(),
+                                ];
+                            })
+                            ->values();
+
+                        return view('filament.evaluator.actions.ier-export-preview', [
+                            'groups' => $groups,
+                            'totalApplications' => $applications->count(),
+                        ]);
+                    })
+                    ->action(function (EloquentCollection $records) {
+                        $query = Application::query()->whereIn('id', $records->pluck('id'));
+
+                        return Excel::download(
+                            new ApplicationsExport($query),
+                            'initial-evaluation-result-selected-'.now()->format('Y-m-d-His').'.xlsx'
+                        );
+                    })
+                    ->deselectRecordsAfterCompletion(),
+            ]);
     }
 
     

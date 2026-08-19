@@ -10,6 +10,7 @@ class ApplicantEducation extends Model
     protected $fillable = [
         'application_id',
         'level',
+        'level_specify',
         'school',
         'degree',
         'year_graduated',

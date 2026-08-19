@@ -61,7 +61,13 @@ final class IerApplicationFormatter
     private static function education(Application $application): string
     {
         $entries = $application->educations->map(function ($education): string {
-            $qualification = $education->degree ?: $education->level;
+            $level = $education->level;
+
+            if ($level === "Other's" && filled($education->level_specify)) {
+                $level .= ' - '.$education->level_specify;
+            }
+
+            $qualification = $education->degree ?: $level;
             $text = collect([$qualification, $education->school])
                 ->filter(fn ($value) => filled($value))
                 ->implode(' — ');
@@ -84,6 +90,11 @@ final class IerApplicationFormatter
 
                 if (filled($training->training_date)) {
                     $date = Carbon::parse($training->training_date)->format('F Y');
+
+                    if (filled($training->training_end_date)) {
+                        $date .= ' - '.Carbon::parse($training->training_end_date)->format('F Y');
+                    }
+
                     $title .= ($title !== '' ? ' ' : '').'('.$date.')';
                 }
 
@@ -122,7 +133,17 @@ final class IerApplicationFormatter
     private static function experienceYears(Application $application): string
     {
         $entries = $application->experiences
-            ->pluck('years_months')
+            ->map(function ($experience): ?string {
+                if (filled($experience->years_months)) {
+                    return $experience->years_months;
+                }
+
+                $range = collect([$experience->first_day, $experience->last_day])
+                    ->filter(fn ($value) => filled($value))
+                    ->implode(' - ');
+
+                return filled($range) ? $range : null;
+            })
             ->filter(fn ($value) => filled($value));
 
         return $entries->isNotEmpty() ? $entries->implode("\n") : '—';
@@ -133,12 +154,23 @@ final class IerApplicationFormatter
         $entries = $application->eligibilities->map(function ($eligibility): string {
             $details = collect([
                 filled($eligibility->rating) ? 'Rating: '.$eligibility->rating : null,
-                filled($eligibility->valid_until)
-                    ? 'Valid until: '.Carbon::parse($eligibility->valid_until)->format('M d, Y')
+                filled($eligibility->date_issued)
+                    ? 'Date issued: '.Carbon::parse($eligibility->date_issued)->format('M d, Y')
                     : null,
+                $eligibility->never_expires
+                    ? 'Valid until: Never Expires'
+                    : (filled($eligibility->valid_until)
+                        ? 'Valid until: '.Carbon::parse($eligibility->valid_until)->format('M d, Y')
+                        : null),
             ])->filter()->implode('; ');
 
-            return trim(($eligibility->license_name ?: '').($details !== '' ? ' ('.$details.')' : ''));
+            $name = $eligibility->license_name ?: '';
+
+            if (in_array($name, ['RA1080', "Other's"], true) && filled($eligibility->license_specify)) {
+                $name .= ' - '.$eligibility->license_specify;
+            }
+
+            return trim($name.($details !== '' ? ' ('.$details.')' : ''));
         })->filter();
 
         return $entries->isNotEmpty() ? $entries->implode("\n") : '—';

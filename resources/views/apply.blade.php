@@ -487,6 +487,18 @@
             button.closest('.dynamic-entry').remove();
         }
 
+        function toggleEducationSpecify(selectEl) {
+            const entry = selectEl.closest('.dynamic-entry');
+            const specifyInput = entry.querySelector('[data-role="education-specify"]');
+
+            if (selectEl.value === "Other's") {
+                specifyInput.classList.remove('hidden');
+            } else {
+                specifyInput.classList.add('hidden');
+                specifyInput.value = '';
+            }
+        }
+
         function addEducation() {
             const wrapper = document.getElementById('educationWrapper');
 
@@ -509,14 +521,24 @@
                     <div class="grid gap-4 md:grid-cols-2">
                         
                         <select
-                            name="education[${educationIndex}][Education level]"
+                            name="education[${educationIndex}][level]"
                             class="${inputClass}"
+                            onchange="toggleEducationSpecify(this)"
                         >
                             <option value="" disabled selected hidden>Education level</option>
                             <option value="Bachelor's Degree">Bachelor's Degree</option>
                             <option value="Master's Degree">Master's Degree</option>
                             <option value="Doctorate Degree">Doctorate Degree</option>
+                            <option value="Other's">Other's</option>
                         </select>
+
+                        <input
+                            type="text"
+                            name="education[${educationIndex}][level_specify]"
+                            data-role="education-specify"
+                            placeholder="Please specify"
+                            class="${inputClass} hidden"
+                        >
 
                         <input
                             type="text"
@@ -582,14 +604,14 @@
                         <input
                             type="text"
                             name="experience[${experienceIndex}][first_day]"
-                            placeholder="First Day of Service (Years and Months)"
+                            placeholder="First Day of Service (Month and Year)"
                             class="${inputClass}"
                         >
                         
                         <input
                             type="text"
                             name="experience[${experienceIndex}][last_day]"
-                            placeholder="Last Day of Service (Years and Months)"
+                            placeholder="Last Day of Service (Month and Year)"
                             class="${inputClass}"
                         >
 
@@ -642,14 +664,14 @@
 
                         <div class="md:col-span-2">
                             <label
-                                for="training_date_${trainingIndex}"
+                                for="training_start_${trainingIndex}"
                                 class="mb-2 block text-sm font-bold text-government-dark"
                             >
                                 Start of Training
                             </label>
 
                             <input
-                                id="training_date_${trainingIndex}"
+                                id="training_start_${trainingIndex}"
                                 type="month"
                                 name="training[${trainingIndex}][training_date]"
                                 max="{{ now()->format('Y-m') }}"
@@ -657,22 +679,22 @@
                             >
 
                             <label
-                                for="training_date_${trainingIndex}"
+                                for="training_end_${trainingIndex}"
                                 class="mb-2 block text-sm font-bold text-government-dark"
                             >
                                 End of Training
                             </label>
 
                             <input
-                                id="training_date_${trainingIndex}"
+                                id="training_end_${trainingIndex}"
                                 type="month"
-                                name="training[${trainingIndex}][training_date]"
+                                name="training[${trainingIndex}][training_end_date]"
                                 max="{{ now()->format('Y-m') }}"
                                 class="${inputClass}"
                             >
 
                             <p class="mt-2 text-xs text-slate-500">
-                                Select the month and year when the training or seminar was completed.
+                                Select the month and year when the training or seminar started and ended.
                             </p>
                         </div>
                     </div>
@@ -680,6 +702,31 @@
             `);
 
             trainingIndex++;
+        }
+
+        function toggleEligibilitySpecify(selectEl) {
+            const entry = selectEl.closest('.dynamic-entry');
+            const specifyInput = entry.querySelector('[data-role="eligibility-specify"]');
+
+            if (selectEl.value === 'RA1080' || selectEl.value === "Other's") {
+                specifyInput.classList.remove('hidden');
+            } else {
+                specifyInput.classList.add('hidden');
+                specifyInput.value = '';
+            }
+        }
+
+        function toggleNeverExpires(checkboxEl) {
+            const entry = checkboxEl.closest('.dynamic-entry');
+            const validUntilWrapper = entry.querySelector('[data-role="valid-until-wrapper"]');
+            const validUntilInput = validUntilWrapper.querySelector('input');
+
+            if (checkboxEl.checked) {
+                validUntilWrapper.classList.add('hidden');
+                validUntilInput.value = '';
+            } else {
+                validUntilWrapper.classList.remove('hidden');
+            }
         }
 
         function addEligibility() {
@@ -702,11 +749,24 @@
                     </div>
 
                     <div class="grid gap-4 md:grid-cols-2">
+                        <select
+                            name="eligibility[${eligibilityIndex}][license_name]"
+                            class="${inputClass}"
+                            onchange="toggleEligibilitySpecify(this)"
+                        >
+                            <option value="" disabled selected hidden>Eligibility or license name</option>
+                            <option value="CS Sub-Professional">CS Sub-Professional</option>
+                            <option value="CSC Professional">CSC Professional</option>
+                            <option value="RA1080">RA1080</option>
+                            <option value="Other's">Other's</option>
+                        </select>
+
                         <input
                             type="text"
-                            name="eligibility[${eligibilityIndex}][license_name]"
-                            placeholder="Eligibility or license name"
-                            class="${inputClass}"
+                            name="eligibility[${eligibilityIndex}][license_specify]"
+                            data-role="eligibility-specify"
+                            placeholder="Please specify"
+                            class="${inputClass} hidden"
                         >
 
                         <input
@@ -716,21 +776,40 @@
                             class="${inputClass}"
                         >
 
-                        <input
-                            type="date"
-                            name="eligibility[${eligibilityIndex}][valid_until]"
-                            class="${inputClass}"
-                        >
+                        <div>
+                            <label class="mb-2 block text-sm font-bold text-government-dark">
+                                Date Issued
+                            </label>
 
-                        <label class="flex items-center gap-3 rounded-xl border border-slate-300 bg-white px-4 py-3">
+                            <input
+                                type="date"
+                                name="eligibility[${eligibilityIndex}][date_issued]"
+                                class="${inputClass}"
+                            >
+                        </div>
+
+                        <div data-role="valid-until-wrapper">
+                            <label class="mb-2 block text-sm font-bold text-government-dark">
+                                Valid Until
+                            </label>
+
+                            <input
+                                type="date"
+                                name="eligibility[${eligibilityIndex}][valid_until]"
+                                class="${inputClass}"
+                            >
+                        </div>
+
+                        <label class="mt-1 ml-auto flex w-fit items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 md:col-span-2">
                             <input
                                 type="checkbox"
                                 name="eligibility[${eligibilityIndex}][never_expires]"
                                 value="1"
-                                class="h-5 w-5 rounded border-slate-300 text-government-navy"
+                                class="h-4 w-4 rounded border-slate-300 text-government-navy"
+                                onchange="toggleNeverExpires(this)"
                             >
 
-                            <span class="text-sm font-semibold text-slate-700">
+                            <span class="text-xs font-semibold text-slate-700">
                                 Never expires
                             </span>
                         </label>

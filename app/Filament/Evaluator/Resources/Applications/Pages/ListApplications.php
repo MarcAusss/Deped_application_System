@@ -14,6 +14,11 @@ class ListApplications extends ListRecords
 {
     protected static string $resource = ApplicationResource::class;
 
+    public function getPageClasses(): array
+    {
+        return [...parent::getPageClasses(), 'applications-list-page'];
+    }
+
     protected function getHeaderActions(): array
     {
         return [

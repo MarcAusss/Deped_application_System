@@ -9,6 +9,8 @@ class ApplicantExperience extends Model
         'application_id',
         'title',
         'company',
+        'first_day',
+        'last_day',
         'years_months',
         'details',
     ];

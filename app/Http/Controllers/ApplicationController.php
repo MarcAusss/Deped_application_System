@@ -140,6 +140,12 @@ class ApplicationController extends Controller
                 'max:255',
             ],
 
+            'education.*.level_specify' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+
             'education.*.school' => [
                 'nullable',
                 'string',
@@ -179,6 +185,18 @@ class ApplicationController extends Controller
                 'nullable',
                 'string',
                 'max:255',
+            ],
+
+            'experience.*.first_day' => [
+                'nullable',
+                'string',
+                'max:100',
+            ],
+
+            'experience.*.last_day' => [
+                'nullable',
+                'string',
+                'max:100',
             ],
 
             'experience.*.years_months' => [
@@ -222,6 +240,12 @@ class ApplicationController extends Controller
                 'before_or_equal:'.now()->format('Y-m'),
             ],
 
+            'training.*.training_end_date' => [
+                'nullable',
+                'date_format:Y-m',
+                'before_or_equal:'.now()->format('Y-m'),
+            ],
+
             /*
             |--------------------------------------------------------------------------
             | Eligibility
@@ -239,10 +263,21 @@ class ApplicationController extends Controller
                 'max:255',
             ],
 
+            'eligibility.*.license_specify' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+
             'eligibility.*.rating' => [
                 'nullable',
                 'string',
                 'max:100',
+            ],
+
+            'eligibility.*.date_issued' => [
+                'nullable',
+                'date',
             ],
 
             'eligibility.*.valid_until' => [
@@ -371,6 +406,9 @@ class ApplicationController extends Controller
 
                     $application->educations()->create([
                         'level' => $education['level'] ?? null,
+                        'level_specify' => ($education['level'] ?? null) === "Other's"
+                            ? ($education['level_specify'] ?? null)
+                            : null,
                         'school' => $education['school'] ?? null,
                         'degree' => $education['degree'] ?? null,
                         'year_graduated' => $education['year_graduated'] ?? null,
@@ -391,6 +429,8 @@ class ApplicationController extends Controller
                     $application->experiences()->create([
                         'title' => $experience['title'] ?? null,
                         'company' => $experience['company'] ?? null,
+                        'first_day' => $experience['first_day'] ?? null,
+                        'last_day' => $experience['last_day'] ?? null,
                         'years_months' => $experience['years_months'] ?? null,
                         'details' => $experience['details'] ?? null,
                     ]);
@@ -413,6 +453,9 @@ class ApplicationController extends Controller
                         'training_date' => filled($training['training_date'] ?? null)
                             ? Carbon::createFromFormat('!Y-m', $training['training_date'])->toDateString()
                             : null,
+                        'training_end_date' => filled($training['training_end_date'] ?? null)
+                            ? Carbon::createFromFormat('!Y-m', $training['training_end_date'])->toDateString()
+                            : null,
                     ]);
                 }
 
@@ -434,10 +477,15 @@ class ApplicationController extends Controller
 
                     $application->eligibilities()->create([
                         'license_name' => $eligibility['license_name'] ?? null,
+                        'license_specify' => in_array($eligibility['license_name'] ?? null, ['RA1080', "Other's"], true)
+                            ? ($eligibility['license_specify'] ?? null)
+                            : null,
                         'rating' => $eligibility['rating'] ?? null,
+                        'date_issued' => $eligibility['date_issued'] ?? null,
                         'valid_until' => $neverExpires
                             ? null
                             : ($eligibility['valid_until'] ?? null),
+                        'never_expires' => $neverExpires,
                     ]);
                 }
 

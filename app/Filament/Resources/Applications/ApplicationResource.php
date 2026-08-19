@@ -191,6 +191,9 @@ class ApplicationResource extends Resource
 
             ->defaultSort('created_at', 'desc')
 
+            ->recordActionsColumnLabel('Actions')
+            ->recordActionsAlignment(\Filament\Support\Enums\Alignment::Center->value)
+
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->label('Filter by Status')
@@ -215,8 +218,9 @@ class ApplicationResource extends Resource
     Action::make('approve')
         ->label('Approve')
         ->icon('heroicon-o-check-circle')
-        ->color('success')
-        ->visible(fn ($record) => $record->status === 'evaluated')
+        ->color(fn ($record) => $record->status === 'evaluated' ? 'success' : 'gray')
+        ->disabled(fn ($record) => $record->status !== 'evaluated')
+        ->tooltip(fn ($record) => $record->status !== 'evaluated' ? 'Only evaluated applications can be approved.' : null)
         ->requiresConfirmation()
         ->modalHeading('Approve Application')
         ->modalDescription('Are you sure you want to approve this application? This finalizes the hiring decision.')
@@ -238,8 +242,9 @@ class ApplicationResource extends Resource
             Action::make('reject')
                 ->label('Reject')
                 ->icon('heroicon-o-x-circle')
-                ->color('danger')
-                ->visible(fn ($record) => $record->status === 'evaluated')
+                ->color(fn ($record) => $record->status === 'evaluated' ? 'danger' : 'gray')
+                ->disabled(fn ($record) => $record->status !== 'evaluated')
+                ->tooltip(fn ($record) => $record->status !== 'evaluated' ? 'Only evaluated applications can be rejected.' : null)
                 ->requiresConfirmation()
                 ->modalHeading('Reject Application')
                 ->modalDescription('Are you sure you want to reject this application? This action cannot be undone.')

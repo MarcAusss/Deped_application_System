@@ -31,8 +31,19 @@ class ExperienceRelationManager extends RelationManager
                     ->label('Company')
                     ->searchable(),
 
-                Tables\Columns\TextColumn::make('years_months')
-                    ->label('Duration'),
+                Tables\Columns\TextColumn::make('first_day')
+                    ->label('First Day of Service')
+                    ->placeholder('Not provided'),
+
+                Tables\Columns\TextColumn::make('last_day')
+                    ->label('Last Day of Service')
+                    ->placeholder('Not provided'),
+
+                Tables\Columns\TextColumn::make('details')
+                    ->label('Responsibilities or Details')
+                    ->placeholder('Not provided')
+                    ->wrap()
+                    ->limit(150),
             ])
             ->headerActions([
                 CreateAction::make(),
@@ -60,12 +71,20 @@ class ExperienceRelationManager extends RelationManager
                 ->label('Company / Organization')
                 ->maxLength(255),
 
+            Forms\Components\TextInput::make('first_day')
+                ->label('First Day of Service (Month and Year)')
+                ->maxLength(100),
+
+            Forms\Components\TextInput::make('last_day')
+                ->label('Last Day of Service (Month and Year)')
+                ->maxLength(100),
+
             Forms\Components\TextInput::make('years_months')
                 ->label('Duration (e.g. 2 years 3 months)')
                 ->maxLength(100),
 
             Forms\Components\Textarea::make('details')
-                ->label('Key Responsibilities / Details')
+                ->label('Responsibilities or Details')
                 ->rows(3)
                 ->columnSpanFull(),
         ]);

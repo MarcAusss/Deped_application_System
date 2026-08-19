@@ -623,6 +623,28 @@
     font-weight: 750;
 }
 
+.fi-ta-header-cell.fi-align-end {
+    text-align: center;
+}
+
+.applications-list-page th.fi-ta-selection-cell {
+    position: relative;
+}
+
+.applications-list-page th.fi-ta-selection-cell input[type="checkbox"] {
+    display: none;
+}
+
+.applications-list-page th.fi-ta-selection-cell::before {
+    content: 'Select IER';
+    display: block;
+    white-space: nowrap;
+    color: var(--gray-950);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--tw-leading, var(--text-sm--line-height));
+}
+
 @media (max-width: 1100px) {
     .recruitment-command {
         grid-template-columns: 1fr;
