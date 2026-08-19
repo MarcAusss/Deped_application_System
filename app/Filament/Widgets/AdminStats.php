@@ -83,7 +83,7 @@ class AdminStats extends StatsOverviewWidget
                 $rejectedApplications
             )
                 ->icon('heroicon-o-x-circle')
-                ->description('Final rejections')
+                ->description('In Archive')
                 ->color('danger')
                 ->extraAttributes(['class' => 'metric-rose']),
         ];

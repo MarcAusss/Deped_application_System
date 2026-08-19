@@ -31,6 +31,19 @@ class ApplicationResource extends Resource
         return 'Applications';
     }
 
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getEloquentQuery()->where('status', '!=', 'rejected');
+    }
+
+    public static function getRecordRouteBindingEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        // Rejected applications are excluded from the list query above (they
+        // live in the Archive instead), but the View page still needs to
+        // resolve them — e.g. from the Archive's "View" link.
+        return parent::getEloquentQuery();
+    }
+
     
 
 
@@ -201,7 +214,6 @@ class ApplicationResource extends Resource
                         'pending'   => 'Pending',
                         'evaluated' => 'Evaluated',
                         'approved'  => 'Approved',
-                        'rejected'  => 'Rejected',
                     ]),
 
                 Tables\Filters\SelectFilter::make('job_position_id')
@@ -247,7 +259,7 @@ class ApplicationResource extends Resource
                 ->tooltip(fn ($record) => $record->status !== 'evaluated' ? 'Only evaluated applications can be rejected.' : null)
                 ->requiresConfirmation()
                 ->modalHeading('Reject Application')
-                ->modalDescription('Are you sure you want to reject this application? This action cannot be undone.')
+                ->modalDescription('Are you sure you want to reject this application? This application will be move to archive.')
                 ->modalSubmitActionLabel('Yes, reject')
                 ->action(function ($record) {
                     $record->update(['status' => 'rejected']);
