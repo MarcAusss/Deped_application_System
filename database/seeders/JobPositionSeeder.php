@@ -24,11 +24,11 @@ class JobPositionSeeder extends Seeder
                 'training_requirement' => null,
                 'experience_requirement' => null,
                 'eligibility_requirement' => null,
-                'is_open' => 1,
+                'is_open' => 0,
                 'posted_at' => '2026-07-22',
                 'until' => null,
                 'created_at' => '2026-07-22 07:53:42',
-                'updated_at' => '2026-07-27 06:57:54',
+                'updated_at' => '2026-08-20 13:43:48',
             ],
             [
                 'id' => 2,
@@ -44,7 +44,7 @@ class JobPositionSeeder extends Seeder
                 'posted_at' => '2026-07-22',
                 'until' => null,
                 'created_at' => '2026-07-22 07:53:42',
-                'updated_at' => '2026-07-30 05:36:42',
+                'updated_at' => '2026-08-20 13:44:48',
             ],
             [
                 'id' => 3,
@@ -73,10 +73,10 @@ class JobPositionSeeder extends Seeder
                 'experience_requirement' => null,
                 'eligibility_requirement' => null,
                 'is_open' => 1,
-                'posted_at' => '2026-07-22',
-                'until' => null,
+                'posted_at' => '2026-08-04',
+                'until' => '2026-08-27',
                 'created_at' => '2026-07-22 07:53:42',
-                'updated_at' => '2026-07-22 07:53:42',
+                'updated_at' => '2026-08-20 13:55:48',
             ],
             [
                 'id' => 5,
@@ -138,9 +138,9 @@ class JobPositionSeeder extends Seeder
                 'eligibility_requirement' => null,
                 'is_open' => 1,
                 'posted_at' => '2026-07-28',
-                'until' => null,
+                'until' => '2026-08-06',
                 'created_at' => '2026-07-28 08:51:25',
-                'updated_at' => '2026-07-28 08:51:25',
+                'updated_at' => '2026-08-20 14:09:51',
             ],
         ]
         );
