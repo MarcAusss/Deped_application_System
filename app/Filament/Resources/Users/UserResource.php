@@ -40,10 +40,20 @@ class UserResource extends Resource
 
                     TextInput::make('password')
                         ->password()
-                        ->required(fn ($record) => $record === null)
-                        ->dehydrateStateUsing(fn ($state) => filled($state) ? bcrypt($state) : null)
-                        ->dehydrated(fn ($state) => filled($state))
-                        ->label(fn ($record) => $record ? 'New Password (leave blank to keep)' : 'Password'),
+                        ->required()
+                        ->regex('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/')
+                        ->validationMessages([
+                            'regex' => 'At least 8 characters, with Uppercase, lowercase, number, and symbol.',
+                        ])
+                        ->dehydrateStateUsing(fn ($state) => bcrypt($state))
+                        ->label(fn ($record) => $record ? 'New Password' : 'Password'),
+
+                    TextInput::make('passwordConfirmation')
+                        ->password()
+                        ->dehydrated(false)
+                        ->required()
+                        ->same('password')
+                        ->label(fn ($record) => $record ? 'Confirm New Password' : 'Confirm Password'),
 
                     Select::make('role')
                         ->options([
