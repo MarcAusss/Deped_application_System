@@ -72,7 +72,7 @@
         </div>
     </header>
 
-    <section class="bg-gradient-to-r from-government-dark to-government-blue text-white">
+    <section class="relative overflow-hidden bg-gradient-to-r from-government-dark to-government-blue text-white">
         <div class="mx-auto max-w-5xl px-4 py-12 text-center sm:px-6 lg:px-8">
             <p class="text-sm font-bold uppercase tracking-widest text-yellow-300">
                 Online Recruitment
@@ -89,6 +89,34 @@
                 </span>
             </p>
         </div>
+
+        @if($job->posted_at || $job->until)
+            <div class="mx-4 mb-4 flex flex-col items-end gap-3 sm:mx-6 sm:mb-6 sm:flex-row sm:justify-end sm:gap-6 lg:absolute lg:bottom-6 lg:right-8 lg:mx-0 lg:mb-0">
+                @if($job->posted_at)
+                    <div class="text-right">
+                        <span class="text-xs font-bold uppercase tracking-wider text-yellow-300">
+                            Posted:
+                        </span>
+
+                        <span class="font-bold text-white">
+                            {{ $job->posted_at->format('F d, Y') }}
+                        </span>
+                    </div>
+                @endif
+
+                @if($job->until)
+                    <div class="text-right">
+                        <span class="text-xs font-bold uppercase tracking-wider text-yellow-300">
+                            Until:
+                        </span>
+
+                        <span class="font-bold text-white">
+                            {{ $job->until->format('F d, Y') }}
+                        </span>
+                    </div>
+                @endif
+            </div>
+        @endif
     </section>
 
     <main class="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">

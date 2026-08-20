@@ -17,11 +17,15 @@ class JobPosition extends Model
         'experience_requirement',
         'eligibility_requirement',
         'is_open',
+        'posted_at',
+        'until',
     ];
 
     protected $casts = [
         'monthly_salary' => 'decimal:2',
         'is_open' => 'boolean',
+        'posted_at' => 'date',
+        'until' => 'date',
     ];
 
     public function applications(): HasMany

@@ -3,42 +3,146 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\JobPosition;
+use Illuminate\Support\Facades\DB;
 
 class JobPositionSeeder extends Seeder
 {
+    /**
+     * Snapshot of the real job positions currently in the system.
+     */
     public function run(): void
     {
-        $positions = $positions = [
+        DB::table('job_positions')->insert(
             [
+            [
+                'id' => 1,
                 'title' => 'Teacher I',
-                'is_open' => true,
-                'description' => 'Entry-level teaching position for elementary education.'
+                'description' => 'Entry-level teaching position for elementary education.',
+                'salary_grade' => null,
+                'monthly_salary' => null,
+                'education_requirement' => null,
+                'training_requirement' => null,
+                'experience_requirement' => null,
+                'eligibility_requirement' => null,
+                'is_open' => 1,
+                'posted_at' => '2026-07-22',
+                'until' => null,
+                'created_at' => '2026-07-22 07:53:42',
+                'updated_at' => '2026-07-27 06:57:54',
             ],
             [
+                'id' => 2,
                 'title' => 'Teacher II',
-                'is_open' => true,
-                'description' => 'Mid-level teaching position requiring experience.'
+                'description' => 'Mid-level teaching position requiring experience.',
+                'salary_grade' => '12',
+                'monthly_salary' => null,
+                'education_requirement' => null,
+                'training_requirement' => null,
+                'experience_requirement' => null,
+                'eligibility_requirement' => null,
+                'is_open' => 0,
+                'posted_at' => '2026-07-22',
+                'until' => null,
+                'created_at' => '2026-07-22 07:53:42',
+                'updated_at' => '2026-07-30 05:36:42',
             ],
             [
+                'id' => 3,
                 'title' => 'School Clerk',
-                'is_open' => false,
-                'description' => 'Administrative support for school operations.'
+                'description' => 'Administrative support for school operations.',
+                'salary_grade' => null,
+                'monthly_salary' => null,
+                'education_requirement' => null,
+                'training_requirement' => null,
+                'experience_requirement' => null,
+                'eligibility_requirement' => null,
+                'is_open' => 0,
+                'posted_at' => '2026-07-22',
+                'until' => null,
+                'created_at' => '2026-07-22 07:53:42',
+                'updated_at' => '2026-07-29 03:05:47',
             ],
             [
+                'id' => 4,
                 'title' => 'Guidance Counselor',
-                'is_open' => true,
-                'description' => 'Provides student counseling and support services.'
+                'description' => 'Provides student counseling and support services.',
+                'salary_grade' => null,
+                'monthly_salary' => null,
+                'education_requirement' => null,
+                'training_requirement' => null,
+                'experience_requirement' => null,
+                'eligibility_requirement' => null,
+                'is_open' => 1,
+                'posted_at' => '2026-07-22',
+                'until' => null,
+                'created_at' => '2026-07-22 07:53:42',
+                'updated_at' => '2026-07-22 07:53:42',
             ],
             [
+                'id' => 5,
                 'title' => 'Principal I',
-                'is_open' => false,
-                'description' => 'School head responsible for overall administration.'
+                'description' => 'School head responsible for overall administration.',
+                'salary_grade' => null,
+                'monthly_salary' => null,
+                'education_requirement' => null,
+                'training_requirement' => null,
+                'experience_requirement' => null,
+                'eligibility_requirement' => null,
+                'is_open' => 1,
+                'posted_at' => '2026-07-22',
+                'until' => null,
+                'created_at' => '2026-07-22 07:53:42',
+                'updated_at' => '2026-07-27 07:10:27',
             ],
-        ];
-
-        foreach ($positions as $position) {
-            JobPosition::create($position);
-        }
+            [
+                'id' => 6,
+                'title' => 'Administrative Assistant II',
+                'description' => 'Provides clerical, administrative, and records management support.',
+                'salary_grade' => null,
+                'monthly_salary' => null,
+                'education_requirement' => null,
+                'training_requirement' => null,
+                'experience_requirement' => null,
+                'eligibility_requirement' => null,
+                'is_open' => 1,
+                'posted_at' => '2026-07-22',
+                'until' => null,
+                'created_at' => '2026-07-22 07:53:42',
+                'updated_at' => '2026-07-30 08:42:14',
+            ],
+            [
+                'id' => 8,
+                'title' => 'Head Teacher I',
+                'description' => 'Manages a school\'s daily operations, leads teaching and learning, and supports staff',
+                'salary_grade' => '14',
+                'monthly_salary' => '38764.00',
+                'education_requirement' => null,
+                'training_requirement' => null,
+                'experience_requirement' => null,
+                'eligibility_requirement' => null,
+                'is_open' => 1,
+                'posted_at' => '2026-07-27',
+                'until' => null,
+                'created_at' => '2026-07-27 06:59:52',
+                'updated_at' => '2026-07-27 07:15:07',
+            ],
+            [
+                'id' => 9,
+                'title' => 'Technical Assistant I',
+                'description' => 'Support role typically hired under a Contract of Service (COS) to handle program implementation, draft official communications, and maintain databases for specific regional or division projects like school sports, health, or feeding programs',
+                'salary_grade' => '10',
+                'monthly_salary' => '29257.00',
+                'education_requirement' => null,
+                'training_requirement' => null,
+                'experience_requirement' => null,
+                'eligibility_requirement' => null,
+                'is_open' => 1,
+                'posted_at' => '2026-07-28',
+                'until' => null,
+                'created_at' => '2026-07-28 08:51:25',
+                'updated_at' => '2026-07-28 08:51:25',
+            ],
+        ]
+        );
     }
 }

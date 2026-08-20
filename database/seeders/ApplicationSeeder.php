@@ -4,618 +4,1713 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 
 class ApplicationSeeder extends Seeder
 {
     /**
-     * Run the database seeds.
+     * Snapshot of every real application currently in the system, along
+     * with all of its related records (profile, education, experience,
+     * training, eligibility, uploaded document metadata, control number,
+     * evaluation, and status history).
+     *
+     * Note: this reproduces the database rows only. Uploaded document
+     * files themselves (resumes, PDS, etc.) live under
+     * storage/app/public and are NOT copied by this seeder — the
+     * storage folder needs to be copied separately for document
+     * downloads/previews to work on a fresh install.
      */
     public function run(): void
     {
         DB::transaction(function (): void {
-
-            /*
-            |--------------------------------------------------------------------------
-            | CREATE OR GET ADMIN USER
-            |--------------------------------------------------------------------------
-            */
-
-            DB::table('users')->updateOrInsert(
-                ['email' => 'admin@deped.gov.ph'],
+            DB::table('applications')->insert(
                 [
-                    'name' => 'System Administrator',
-                    'password' => Hash::make('password'),
-                    'role' => 'admin',
-                    'is_approved' => true,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]
-            );
-
-            $adminId = DB::table('users')
-                ->where('email', 'admin@deped.gov.ph')
-                ->value('id');
-
-            /*
-            |--------------------------------------------------------------------------
-            | CREATE OR GET APPROVED EVALUATOR USER
-            |--------------------------------------------------------------------------
-            */
-
-            DB::table('users')->updateOrInsert(
-                ['email' => 'evaluator@deped.gov.ph'],
                 [
-                    'name' => 'Juan Dela Cruz',
-                    'password' => Hash::make('password'),
-                    'role' => 'evaluator',
-                    'is_approved' => true,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]
-            );
-
-            $evaluatorId = DB::table('users')
-                ->where('email', 'evaluator@deped.gov.ph')
-                ->value('id');
-
-            /*
-            |--------------------------------------------------------------------------
-            | CREATE EVALUATOR PROFILE
-            |--------------------------------------------------------------------------
-            */
-
-            DB::table('evaluators')->updateOrInsert(
-                ['email' => 'evaluator@deped.gov.ph'],
-                [
-                    'name' => 'Juan Dela Cruz',
-                    'status' => 'approved',
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]
-            );
-
-            /*
-            |--------------------------------------------------------------------------
-            | CREATE JOB POSITIONS
-            |--------------------------------------------------------------------------
-            */
-
-            $jobPositions = [
-                [
-                    'title' => 'Teacher I',
-                    'description' => 'Entry-level teaching position for elementary education.',
+                    'id' => 1,
+                    'job_position_id' => 1,
+                    'status' => 'evaluated',
+                    'created_at' => '2026-07-21 07:53:42',
+                    'updated_at' => '2026-07-30 08:27:36',
+                    'resume_checked' => 0,
+                    'credentials_valid' => 0,
+                    'recommended' => 0,
                 ],
                 [
-                    'title' => 'Administrative Assistant II',
-                    'description' => 'Provides clerical, administrative, and records management support.',
-                ],
-                [
-                    'title' => 'Education Program Specialist II',
-                    'description' => 'Assists in planning, implementing, and evaluating education programs.',
-                ],
-            ];
-
-            foreach ($jobPositions as $position) {
-                DB::table('job_positions')->updateOrInsert(
-                    ['title' => $position['title']],
-                    [
-                        'description' => $position['description'],
-                        'is_open' => true,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]
-                );
-            }
-
-            $teacherId = DB::table('job_positions')
-                ->where('title', 'Teacher I')
-                ->value('id');
-
-            $adminAssistantId = DB::table('job_positions')
-                ->where('title', 'Administrative Assistant II')
-                ->value('id');
-
-            $educationSpecialistId = DB::table('job_positions')
-                ->where('title', 'Education Program Specialist II')
-                ->value('id');
-
-            /*
-            |--------------------------------------------------------------------------
-            | SAMPLE APPLICATION DATA
-            |--------------------------------------------------------------------------
-            */
-
-            $applications = [
-                /*
-                |--------------------------------------------------------------------------
-                | PENDING / SUBMITTED FOR EVALUATION
-                |--------------------------------------------------------------------------
-                */
-
-                [
-                    'job_position_id' => $teacherId,
+                    'id' => 2,
+                    'job_position_id' => 6,
                     'status' => 'pending',
+                    'created_at' => '2026-07-20 07:53:42',
+                    'updated_at' => '2026-07-20 07:53:42',
+                    'resume_checked' => 0,
+                    'credentials_valid' => 0,
+                    'recommended' => 0,
+                ],
+                [
+                    'id' => 4,
+                    'job_position_id' => 1,
+                    'status' => 'evaluated',
+                    'created_at' => '2026-07-18 07:53:42',
+                    'updated_at' => '2026-07-18 07:53:42',
+                    'resume_checked' => 1,
+                    'credentials_valid' => 1,
+                    'recommended' => 1,
+                ],
+                [
+                    'id' => 5,
+                    'job_position_id' => 6,
+                    'status' => 'evaluated',
+                    'created_at' => '2026-07-17 07:53:42',
+                    'updated_at' => '2026-07-17 07:53:42',
+                    'resume_checked' => 1,
+                    'credentials_valid' => 1,
+                    'recommended' => 1,
+                ],
+                [
+                    'id' => 7,
+                    'job_position_id' => 1,
+                    'status' => 'approved',
+                    'created_at' => '2026-07-15 07:53:42',
+                    'updated_at' => '2026-07-15 07:53:42',
+                    'resume_checked' => 1,
+                    'credentials_valid' => 1,
+                    'recommended' => 1,
+                ],
+                [
+                    'id' => 8,
+                    'job_position_id' => 6,
+                    'status' => 'approved',
+                    'created_at' => '2026-07-14 07:53:42',
+                    'updated_at' => '2026-07-14 07:53:42',
+                    'resume_checked' => 1,
+                    'credentials_valid' => 1,
+                    'recommended' => 1,
+                ],
+                [
+                    'id' => 9,
+                    'job_position_id' => 1,
+                    'status' => 'approved',
+                    'created_at' => '2026-07-13 07:53:42',
+                    'updated_at' => '2026-08-19 14:38:24',
+                    'resume_checked' => 1,
+                    'credentials_valid' => 0,
+                    'recommended' => 0,
+                ],
+                [
+                    'id' => 12,
+                    'job_position_id' => 3,
+                    'status' => 'approved',
+                    'created_at' => '2026-07-22 08:56:35',
+                    'updated_at' => '2026-07-22 09:03:08',
+                    'resume_checked' => 0,
+                    'credentials_valid' => 0,
+                    'recommended' => 0,
+                ],
+                [
+                    'id' => 16,
+                    'job_position_id' => 8,
+                    'status' => 'evaluated',
+                    'created_at' => '2026-07-27 07:22:46',
+                    'updated_at' => '2026-08-19 14:18:35',
+                    'resume_checked' => 0,
+                    'credentials_valid' => 0,
+                    'recommended' => 0,
+                ],
+                [
+                    'id' => 17,
+                    'job_position_id' => 1,
+                    'status' => 'evaluated',
+                    'created_at' => '2026-08-19 10:01:51',
+                    'updated_at' => '2026-08-19 13:33:09',
+                    'resume_checked' => 0,
+                    'credentials_valid' => 0,
+                    'recommended' => 0,
+                ],
+                [
+                    'id' => 18,
+                    'job_position_id' => 9,
+                    'status' => 'rejected',
+                    'created_at' => '2026-08-19 10:07:26',
+                    'updated_at' => '2026-08-19 14:17:54',
+                    'resume_checked' => 0,
+                    'credentials_valid' => 0,
+                    'recommended' => 0,
+                ],
+                [
+                    'id' => 23,
+                    'job_position_id' => 8,
+                    'status' => 'rejected',
+                    'created_at' => '2026-08-19 11:12:50',
+                    'updated_at' => '2026-08-19 14:10:33',
+                    'resume_checked' => 0,
+                    'credentials_valid' => 0,
+                    'recommended' => 0,
+                ],
+            ]
+            );
+
+            DB::table('applicant_profiles')->insert(
+                [
+                [
+                    'id' => 1,
+                    'application_id' => 1,
                     'full_name' => 'Maria Santos',
                     'email' => 'maria.santos@example.com',
                     'phone' => '09171234501',
                     'address' => 'Legazpi City, Albay',
+                    'birth_date' => null,
+                    'sex' => null,
+                    'civil_status' => null,
+                    'religion' => null,
                     'disability' => null,
                     'ethnic_group' => null,
-                    'degree' => 'Bachelor of Elementary Education',
-                    'school' => 'Bicol University',
-                    'year_graduated' => '2022',
-                    'position_title' => 'Substitute Teacher',
-                    'company' => 'Legazpi Elementary School',
-                    'years_months' => '1 year',
-                    'training_title' => 'Classroom Management Seminar',
-                    'training_hours' => 16,
-                    'license_name' => 'Licensure Examination for Teachers',
-                    'rating' => '84.50',
-                    'valid_until' => null,
-                    'remarks' => 'Submitted and waiting for evaluator review.',
-                    'days_ago' => 1,
+                    'created_at' => '2026-07-21 07:53:42',
+                    'updated_at' => '2026-07-21 07:53:42',
                 ],
                 [
-                    'job_position_id' => $adminAssistantId,
-                    'status' => 'pending',
+                    'id' => 2,
+                    'application_id' => 2,
                     'full_name' => 'Carlo Reyes',
                     'email' => 'carlo.reyes@example.com',
                     'phone' => '09171234502',
                     'address' => 'Daraga, Albay',
+                    'birth_date' => null,
+                    'sex' => null,
+                    'civil_status' => null,
+                    'religion' => null,
                     'disability' => null,
                     'ethnic_group' => null,
-                    'degree' => 'Bachelor of Science in Office Administration',
-                    'school' => 'Divine Word College of Legazpi',
-                    'year_graduated' => '2023',
-                    'position_title' => 'Office Clerk',
-                    'company' => 'ABC Trading',
-                    'years_months' => '8 months',
-                    'training_title' => 'Records Management Training',
-                    'training_hours' => 8,
-                    'license_name' => 'Civil Service Professional',
-                    'rating' => '82.10',
-                    'valid_until' => null,
-                    'remarks' => 'Application submitted for initial evaluation.',
-                    'days_ago' => 2,
+                    'created_at' => '2026-07-20 07:53:42',
+                    'updated_at' => '2026-07-20 07:53:42',
                 ],
                 [
-                    'job_position_id' => $educationSpecialistId,
-                    'status' => 'pending',
-                    'full_name' => 'Angela Mendoza',
-                    'email' => 'angela.mendoza@example.com',
-                    'phone' => '09171234503',
-                    'address' => 'Tabaco City, Albay',
-                    'disability' => null,
-                    'ethnic_group' => null,
-                    'degree' => 'Master of Arts in Education',
-                    'school' => 'Bicol University Graduate School',
-                    'year_graduated' => '2024',
-                    'position_title' => 'Project Assistant',
-                    'company' => 'Regional Education Office',
-                    'years_months' => '2 years',
-                    'training_title' => 'Program Monitoring and Evaluation',
-                    'training_hours' => 24,
-                    'license_name' => 'Licensure Examination for Teachers',
-                    'rating' => '86.25',
-                    'valid_until' => null,
-                    'remarks' => 'Waiting for assignment to an evaluator.',
-                    'days_ago' => 3,
-                ],
-
-                /*
-                |--------------------------------------------------------------------------
-                | EVALUATED / FOR ADMIN APPROVAL
-                |--------------------------------------------------------------------------
-                */
-
-                [
-                    'job_position_id' => $teacherId,
-                    'status' => 'evaluated',
+                    'id' => 4,
+                    'application_id' => 4,
                     'full_name' => 'Joshua Navarro',
                     'email' => 'joshua.navarro@example.com',
                     'phone' => '09171234504',
                     'address' => 'Ligao City, Albay',
+                    'birth_date' => null,
+                    'sex' => null,
+                    'civil_status' => null,
+                    'religion' => null,
                     'disability' => null,
                     'ethnic_group' => null,
-                    'degree' => 'Bachelor of Secondary Education',
-                    'school' => 'Bicol University',
-                    'year_graduated' => '2021',
-                    'position_title' => 'Private School Teacher',
-                    'company' => 'Saint Michael Academy',
-                    'years_months' => '3 years',
-                    'training_title' => 'Teaching Strategies Workshop',
-                    'training_hours' => 24,
-                    'license_name' => 'Licensure Examination for Teachers',
-                    'rating' => '88.20',
-                    'valid_until' => null,
-                    'remarks' => 'Documents complete. Recommended for admin approval.',
-                    'resume_checked' => true,
-                    'credentials_valid' => true,
-                    'recommended' => true,
-                    'days_ago' => 4,
+                    'created_at' => '2026-07-18 07:53:42',
+                    'updated_at' => '2026-07-18 07:53:42',
                 ],
                 [
-                    'job_position_id' => $adminAssistantId,
-                    'status' => 'evaluated',
+                    'id' => 5,
+                    'application_id' => 5,
                     'full_name' => 'Patricia Gomez',
                     'email' => 'patricia.gomez@example.com',
                     'phone' => '09171234505',
                     'address' => 'Guinobatan, Albay',
+                    'birth_date' => null,
+                    'sex' => null,
+                    'civil_status' => null,
+                    'religion' => null,
                     'disability' => null,
                     'ethnic_group' => null,
-                    'degree' => 'Bachelor of Science in Business Administration',
-                    'school' => 'University of Santo Tomas-Legazpi',
-                    'year_graduated' => '2020',
-                    'position_title' => 'Administrative Aide',
-                    'company' => 'Municipal Government Office',
-                    'years_months' => '4 years',
-                    'training_title' => 'Government Records Administration',
-                    'training_hours' => 16,
-                    'license_name' => 'Civil Service Professional',
-                    'rating' => '85.10',
-                    'valid_until' => null,
-                    'remarks' => 'Qualified and recommended for further processing.',
-                    'resume_checked' => true,
-                    'credentials_valid' => true,
-                    'recommended' => true,
-                    'days_ago' => 5,
+                    'created_at' => '2026-07-17 07:53:42',
+                    'updated_at' => '2026-07-17 07:53:42',
                 ],
                 [
-                    'job_position_id' => $educationSpecialistId,
-                    'status' => 'evaluated',
-                    'full_name' => 'Ramon Villanueva',
-                    'email' => 'ramon.villanueva@example.com',
-                    'phone' => '09171234506',
-                    'address' => 'Sorsogon City, Sorsogon',
-                    'disability' => null,
-                    'ethnic_group' => null,
-                    'degree' => 'Master in Public Administration',
-                    'school' => 'Bicol University',
-                    'year_graduated' => '2019',
-                    'position_title' => 'Planning Officer',
-                    'company' => 'Local Government Unit',
-                    'years_months' => '5 years',
-                    'training_title' => 'Project Planning and Development',
-                    'training_hours' => 32,
-                    'license_name' => 'Civil Service Professional',
-                    'rating' => '89.00',
-                    'valid_until' => null,
-                    'remarks' => 'Evaluation completed. For admin decision.',
-                    'resume_checked' => true,
-                    'credentials_valid' => true,
-                    'recommended' => true,
-                    'days_ago' => 6,
-                ],
-
-                /*
-                |--------------------------------------------------------------------------
-                | APPROVED
-                |--------------------------------------------------------------------------
-                */
-
-                [
-                    'job_position_id' => $teacherId,
-                    'status' => 'approved',
+                    'id' => 7,
+                    'application_id' => 7,
                     'full_name' => 'Elaine Flores',
                     'email' => 'elaine.flores@example.com',
                     'phone' => '09171234507',
                     'address' => 'Naga City, Camarines Sur',
+                    'birth_date' => null,
+                    'sex' => null,
+                    'civil_status' => null,
+                    'religion' => null,
                     'disability' => null,
                     'ethnic_group' => null,
-                    'degree' => 'Bachelor of Elementary Education',
-                    'school' => 'Ateneo de Naga University',
-                    'year_graduated' => '2018',
-                    'position_title' => 'Teacher',
-                    'company' => 'Naga Learning Center',
-                    'years_months' => '5 years',
-                    'training_title' => 'Inclusive Education Training',
-                    'training_hours' => 40,
-                    'license_name' => 'Licensure Examination for Teachers',
-                    'rating' => '91.50',
-                    'valid_until' => null,
-                    'remarks' => 'Application approved by the administrator.',
-                    'resume_checked' => true,
-                    'credentials_valid' => true,
-                    'recommended' => true,
-                    'days_ago' => 7,
+                    'created_at' => '2026-07-15 07:53:42',
+                    'updated_at' => '2026-07-15 07:53:42',
                 ],
                 [
-                    'job_position_id' => $adminAssistantId,
-                    'status' => 'approved',
+                    'id' => 8,
+                    'application_id' => 8,
                     'full_name' => 'Miguel Bautista',
                     'email' => 'miguel.bautista@example.com',
                     'phone' => '09171234508',
                     'address' => 'Pili, Camarines Sur',
+                    'birth_date' => null,
+                    'sex' => null,
+                    'civil_status' => null,
+                    'religion' => null,
                     'disability' => null,
                     'ethnic_group' => null,
-                    'degree' => 'Bachelor of Science in Information Technology',
-                    'school' => 'Camarines Sur Polytechnic Colleges',
-                    'year_graduated' => '2020',
-                    'position_title' => 'Administrative Staff',
-                    'company' => 'Provincial Government Office',
-                    'years_months' => '3 years',
-                    'training_title' => 'Office Productivity Tools',
-                    'training_hours' => 24,
-                    'license_name' => 'Civil Service Professional',
-                    'rating' => '87.30',
-                    'valid_until' => null,
-                    'remarks' => 'Qualified applicant. Application approved.',
-                    'resume_checked' => true,
-                    'credentials_valid' => true,
-                    'recommended' => true,
-                    'days_ago' => 8,
+                    'created_at' => '2026-07-14 07:53:42',
+                    'updated_at' => '2026-07-14 07:53:42',
                 ],
-
-                /*
-                |--------------------------------------------------------------------------
-                | REJECTED
-                |--------------------------------------------------------------------------
-                */
-
                 [
-                    'job_position_id' => $teacherId,
-                    'status' => 'rejected',
+                    'id' => 9,
+                    'application_id' => 9,
                     'full_name' => 'Noel Garcia',
                     'email' => 'noel.garcia@example.com',
                     'phone' => '09171234509',
                     'address' => 'Masbate City, Masbate',
+                    'birth_date' => null,
+                    'sex' => null,
+                    'civil_status' => null,
+                    'religion' => null,
                     'disability' => null,
                     'ethnic_group' => null,
-                    'degree' => 'Bachelor of Arts',
-                    'school' => 'Masbate Colleges',
-                    'year_graduated' => '2022',
-                    'position_title' => 'Tutor',
-                    'company' => 'Private Tutorial Center',
-                    'years_months' => '1 year',
-                    'training_title' => 'Basic Teaching Workshop',
-                    'training_hours' => 8,
-                    'license_name' => null,
-                    'rating' => null,
-                    'valid_until' => null,
-                    'remarks' => 'Required teaching eligibility was not submitted.',
-                    'resume_checked' => true,
-                    'credentials_valid' => false,
-                    'recommended' => false,
-                    'days_ago' => 9,
+                    'created_at' => '2026-07-13 07:53:42',
+                    'updated_at' => '2026-07-13 07:53:42',
                 ],
                 [
-                    'job_position_id' => $educationSpecialistId,
-                    'status' => 'rejected',
-                    'full_name' => 'Sofia Ramos',
-                    'email' => 'sofia.ramos@example.com',
-                    'phone' => '09171234510',
-                    'address' => 'Virac, Catanduanes',
+                    'id' => 12,
+                    'application_id' => 12,
+                    'full_name' => 'Jay Noel Alpapara',
+                    'email' => 'jaynalpapara@gmail.com',
+                    'phone' => '09954005382',
+                    'address' => 'Barangay. Guilid, Ligao City',
+                    'birth_date' => null,
+                    'sex' => null,
+                    'civil_status' => null,
+                    'religion' => null,
+                    'disability' => 'N/A',
+                    'ethnic_group' => 'N/A',
+                    'created_at' => '2026-07-22 08:56:35',
+                    'updated_at' => '2026-07-22 08:56:35',
+                ],
+                [
+                    'id' => 13,
+                    'application_id' => 16,
+                    'full_name' => 'Ethyl Alcohol',
+                    'email' => 'ethyl@gmail.com',
+                    'phone' => '09954005628',
+                    'address' => 'Kapitolyo, Pasig, Metro Manila',
+                    'birth_date' => '1999-01-01',
+                    'sex' => 'Female',
+                    'civil_status' => 'Single',
+                    'religion' => 'Roman Catholic',
                     'disability' => null,
                     'ethnic_group' => null,
-                    'degree' => 'Bachelor of Science in Management',
-                    'school' => 'Catanduanes State University',
-                    'year_graduated' => '2023',
-                    'position_title' => 'Office Assistant',
-                    'company' => 'Private Company',
-                    'years_months' => '6 months',
-                    'training_title' => 'Basic Project Management',
-                    'training_hours' => 8,
-                    'license_name' => 'Civil Service Subprofessional',
-                    'rating' => '78.20',
-                    'valid_until' => null,
-                    'remarks' => 'Applicant does not meet the required experience.',
-                    'resume_checked' => true,
-                    'credentials_valid' => true,
-                    'recommended' => false,
-                    'days_ago' => 10,
+                    'created_at' => '2026-07-27 07:22:46',
+                    'updated_at' => '2026-07-27 07:22:46',
                 ],
-            ];
+                [
+                    'id' => 14,
+                    'application_id' => 17,
+                    'full_name' => 'xqwefxwfc',
+                    'email' => 'vqwfqwvffsdf@gmail.com',
+                    'phone' => '50114984180',
+                    'address' => 'adadcaawfcwf',
+                    'birth_date' => '2026-08-14',
+                    'sex' => 'Female',
+                    'civil_status' => 'Single',
+                    'religion' => null,
+                    'disability' => null,
+                    'ethnic_group' => null,
+                    'created_at' => '2026-08-19 10:01:51',
+                    'updated_at' => '2026-08-19 10:01:51',
+                ],
+                [
+                    'id' => 15,
+                    'application_id' => 18,
+                    'full_name' => 'sagsaegdgd',
+                    'email' => 'sfsafdfasf@gmail.com',
+                    'phone' => '8494848048',
+                    'address' => 'safdfasfsaf',
+                    'birth_date' => '2026-08-06',
+                    'sex' => null,
+                    'civil_status' => 'Married',
+                    'religion' => null,
+                    'disability' => null,
+                    'ethnic_group' => null,
+                    'created_at' => '2026-08-19 10:07:26',
+                    'updated_at' => '2026-08-19 10:07:26',
+                ],
+                [
+                    'id' => 20,
+                    'application_id' => 23,
+                    'full_name' => 'asdfasgasg',
+                    'email' => 'asgasdfgag@gmail.com',
+                    'phone' => '564489489',
+                    'address' => 'safsadfasf',
+                    'birth_date' => '2026-08-06',
+                    'sex' => 'Male',
+                    'civil_status' => 'Separated',
+                    'religion' => 'fdasfsdfasf',
+                    'disability' => 'sdfsadf',
+                    'ethnic_group' => 'sdfsdfsaf',
+                    'created_at' => '2026-08-19 11:12:50',
+                    'updated_at' => '2026-08-19 11:12:50',
+                ],
+            ]
+            );
 
-            /*
-            |--------------------------------------------------------------------------
-            | INSERT APPLICATIONS AND RELATED RECORDS
-            |--------------------------------------------------------------------------
-            */
-
-            foreach ($applications as $index => $data) {
-                $createdAt = now()->subDays($data['days_ago']);
-
-                /*
-                |--------------------------------------------------------------------------
-                | Avoid duplicate seeded applications
-                |--------------------------------------------------------------------------
-                */
-
-                $existingApplicationId = DB::table('applicant_profiles')
-                    ->where('email', $data['email'])
-                    ->value('application_id');
-
-                if ($existingApplicationId) {
-                    continue;
-                }
-
-                $applicationId = DB::table('applications')->insertGetId([
-                    'job_position_id' => $data['job_position_id'],
-                    'status' => $data['status'],
-
-                    // These fields exist in your additional applications migration.
-                    'resume_checked' => $data['resume_checked'] ?? false,
-                    'credentials_valid' => $data['credentials_valid'] ?? false,
-                    'recommended' => $data['recommended'] ?? false,
-
-                    'created_at' => $createdAt,
-                    'updated_at' => $createdAt,
-                ]);
-
-                /*
-                |--------------------------------------------------------------------------
-                | Applicant profile
-                |--------------------------------------------------------------------------
-                */
-
-                DB::table('applicant_profiles')->insert([
-                    'application_id' => $applicationId,
-                    'full_name' => $data['full_name'],
-                    'email' => $data['email'],
-                    'phone' => $data['phone'],
-                    'address' => $data['address'],
-                    'disability' => $data['disability'],
-                    'ethnic_group' => $data['ethnic_group'],
-                    'created_at' => $createdAt,
-                    'updated_at' => $createdAt,
-                ]);
-
-                /*
-                |--------------------------------------------------------------------------
-                | Education
-                |--------------------------------------------------------------------------
-                */
-
-                DB::table('applicant_educations')->insert([
-                    'application_id' => $applicationId,
+            DB::table('applicant_educations')->insert(
+                [
+                [
+                    'id' => 1,
+                    'application_id' => 1,
                     'level' => 'College',
-                    'school' => $data['school'],
-                    'degree' => $data['degree'],
-                    'year_graduated' => $data['year_graduated'],
-                    'created_at' => $createdAt,
-                    'updated_at' => $createdAt,
-                ]);
+                    'level_specify' => null,
+                    'school' => 'Bicol University',
+                    'degree' => 'Bachelor of Elementary Education',
+                    'year_graduated' => '2022',
+                    'created_at' => '2026-07-21 07:53:42',
+                    'updated_at' => '2026-07-21 07:53:42',
+                ],
+                [
+                    'id' => 2,
+                    'application_id' => 2,
+                    'level' => 'College',
+                    'level_specify' => null,
+                    'school' => 'Divine Word College of Legazpi',
+                    'degree' => 'Bachelor of Science in Office Administration',
+                    'year_graduated' => '2023',
+                    'created_at' => '2026-07-20 07:53:42',
+                    'updated_at' => '2026-07-20 07:53:42',
+                ],
+                [
+                    'id' => 4,
+                    'application_id' => 4,
+                    'level' => 'College',
+                    'level_specify' => null,
+                    'school' => 'Bicol University',
+                    'degree' => 'Bachelor of Secondary Education',
+                    'year_graduated' => '2021',
+                    'created_at' => '2026-07-18 07:53:42',
+                    'updated_at' => '2026-07-18 07:53:42',
+                ],
+                [
+                    'id' => 5,
+                    'application_id' => 5,
+                    'level' => 'College',
+                    'level_specify' => null,
+                    'school' => 'University of Santo Tomas-Legazpi',
+                    'degree' => 'Bachelor of Science in Business Administration',
+                    'year_graduated' => '2020',
+                    'created_at' => '2026-07-17 07:53:42',
+                    'updated_at' => '2026-07-17 07:53:42',
+                ],
+                [
+                    'id' => 7,
+                    'application_id' => 7,
+                    'level' => 'College',
+                    'level_specify' => null,
+                    'school' => 'Ateneo de Naga University',
+                    'degree' => 'Bachelor of Elementary Education',
+                    'year_graduated' => '2018',
+                    'created_at' => '2026-07-15 07:53:42',
+                    'updated_at' => '2026-07-15 07:53:42',
+                ],
+                [
+                    'id' => 8,
+                    'application_id' => 8,
+                    'level' => 'College',
+                    'level_specify' => null,
+                    'school' => 'Camarines Sur Polytechnic Colleges',
+                    'degree' => 'Bachelor of Science in Information Technology',
+                    'year_graduated' => '2020',
+                    'created_at' => '2026-07-14 07:53:42',
+                    'updated_at' => '2026-07-14 07:53:42',
+                ],
+                [
+                    'id' => 9,
+                    'application_id' => 9,
+                    'level' => 'College',
+                    'level_specify' => null,
+                    'school' => 'Masbate Colleges',
+                    'degree' => 'Bachelor of Arts',
+                    'year_graduated' => '2022',
+                    'created_at' => '2026-07-13 07:53:42',
+                    'updated_at' => '2026-07-13 07:53:42',
+                ],
+                [
+                    'id' => 12,
+                    'application_id' => 12,
+                    'level' => 'College',
+                    'level_specify' => null,
+                    'school' => null,
+                    'degree' => 'BSED',
+                    'year_graduated' => '2024',
+                    'created_at' => '2026-07-22 08:56:35',
+                    'updated_at' => '2026-07-22 08:56:35',
+                ],
+                [
+                    'id' => 13,
+                    'application_id' => 16,
+                    'level' => 'College',
+                    'level_specify' => null,
+                    'school' => 'University of Santo Tomas Legazpi',
+                    'degree' => 'Bachelor of Science in Education',
+                    'year_graduated' => '2024',
+                    'created_at' => '2026-07-27 07:22:46',
+                    'updated_at' => '2026-07-27 07:22:46',
+                ],
+                [
+                    'id' => 14,
+                    'application_id' => 17,
+                    'level' => 'Bachelor\'s Degree',
+                    'level_specify' => null,
+                    'school' => 'sdfasdfasfasf',
+                    'degree' => 'sdfsadfas',
+                    'year_graduated' => '1411',
+                    'created_at' => '2026-08-19 10:01:51',
+                    'updated_at' => '2026-08-19 10:01:51',
+                ],
+                [
+                    'id' => 15,
+                    'application_id' => 18,
+                    'level' => 'Other\'s',
+                    'level_specify' => 'fasdfsadfasfs',
+                    'school' => 'asdfasfafdsaf',
+                    'degree' => 'fasdfsafsaf',
+                    'year_graduated' => '2025',
+                    'created_at' => '2026-08-19 10:07:26',
+                    'updated_at' => '2026-08-19 10:07:26',
+                ],
+                [
+                    'id' => 16,
+                    'application_id' => 23,
+                    'level' => 'Other\'s',
+                    'level_specify' => 'fsdfasdf',
+                    'school' => 'sdfsadfsdaf',
+                    'degree' => 'dsfasdafasf',
+                    'year_graduated' => '2030',
+                    'created_at' => '2026-08-19 11:12:50',
+                    'updated_at' => '2026-08-19 11:12:50',
+                ],
+            ]
+            );
 
-                /*
-                |--------------------------------------------------------------------------
-                | Experience
-                |--------------------------------------------------------------------------
-                */
-
-                DB::table('applicant_experiences')->insert([
-                    'application_id' => $applicationId,
-                    'title' => $data['position_title'],
-                    'company' => $data['company'],
-                    'years_months' => $data['years_months'],
+            DB::table('applicant_experiences')->insert(
+                [
+                [
+                    'id' => 1,
+                    'application_id' => 1,
+                    'title' => 'Substitute Teacher',
+                    'company' => 'Legazpi Elementary School',
+                    'first_day' => null,
+                    'last_day' => null,
+                    'years_months' => '1 year',
                     'details' => 'Sample work experience generated by the application seeder.',
-                    'created_at' => $createdAt,
-                    'updated_at' => $createdAt,
-                ]);
+                    'created_at' => '2026-07-21 07:53:42',
+                    'updated_at' => '2026-07-21 07:53:42',
+                ],
+                [
+                    'id' => 2,
+                    'application_id' => 2,
+                    'title' => 'Office Clerk',
+                    'company' => 'ABC Trading',
+                    'first_day' => null,
+                    'last_day' => null,
+                    'years_months' => '8 months',
+                    'details' => 'Sample work experience generated by the application seeder.',
+                    'created_at' => '2026-07-20 07:53:42',
+                    'updated_at' => '2026-07-20 07:53:42',
+                ],
+                [
+                    'id' => 4,
+                    'application_id' => 4,
+                    'title' => 'Private School Teacher',
+                    'company' => 'Saint Michael Academy',
+                    'first_day' => null,
+                    'last_day' => null,
+                    'years_months' => '3 years',
+                    'details' => 'Sample work experience generated by the application seeder.',
+                    'created_at' => '2026-07-18 07:53:42',
+                    'updated_at' => '2026-07-18 07:53:42',
+                ],
+                [
+                    'id' => 5,
+                    'application_id' => 5,
+                    'title' => 'Administrative Aide',
+                    'company' => 'Municipal Government Office',
+                    'first_day' => null,
+                    'last_day' => null,
+                    'years_months' => '4 years',
+                    'details' => 'Sample work experience generated by the application seeder.',
+                    'created_at' => '2026-07-17 07:53:42',
+                    'updated_at' => '2026-07-17 07:53:42',
+                ],
+                [
+                    'id' => 7,
+                    'application_id' => 7,
+                    'title' => 'Teacher',
+                    'company' => 'Naga Learning Center',
+                    'first_day' => null,
+                    'last_day' => null,
+                    'years_months' => '5 years',
+                    'details' => 'Sample work experience generated by the application seeder.',
+                    'created_at' => '2026-07-15 07:53:42',
+                    'updated_at' => '2026-07-15 07:53:42',
+                ],
+                [
+                    'id' => 8,
+                    'application_id' => 8,
+                    'title' => 'Administrative Staff',
+                    'company' => 'Provincial Government Office',
+                    'first_day' => null,
+                    'last_day' => null,
+                    'years_months' => '3 years',
+                    'details' => 'Sample work experience generated by the application seeder.',
+                    'created_at' => '2026-07-14 07:53:42',
+                    'updated_at' => '2026-07-14 07:53:42',
+                ],
+                [
+                    'id' => 9,
+                    'application_id' => 9,
+                    'title' => 'Tutor',
+                    'company' => 'Private Tutorial Center',
+                    'first_day' => null,
+                    'last_day' => null,
+                    'years_months' => '2 year',
+                    'details' => 'Sample work experience generated by the application seeder.',
+                    'created_at' => '2026-07-13 07:53:42',
+                    'updated_at' => '2026-07-30 07:04:26',
+                ],
+                [
+                    'id' => 12,
+                    'application_id' => 12,
+                    'title' => 'Administrative Office IV',
+                    'company' => 'Bureau of Internal Revenue',
+                    'first_day' => null,
+                    'last_day' => null,
+                    'years_months' => '1',
+                    'details' => 'adasdasdasfasf',
+                    'created_at' => '2026-07-22 08:56:35',
+                    'updated_at' => '2026-07-22 08:56:35',
+                ],
+                [
+                    'id' => 13,
+                    'application_id' => 16,
+                    'title' => 'Administrative Assistant II',
+                    'company' => 'Bureau of Internal Revenue',
+                    'first_day' => null,
+                    'last_day' => null,
+                    'years_months' => '1',
+                    'details' => 'Tax Complain',
+                    'created_at' => '2026-07-27 07:22:46',
+                    'updated_at' => '2026-07-27 07:22:46',
+                ],
+                [
+                    'id' => 14,
+                    'application_id' => 17,
+                    'title' => 'fasdfasdf',
+                    'company' => 'fsdfasdfasf',
+                    'first_day' => null,
+                    'last_day' => null,
+                    'years_months' => null,
+                    'details' => 'asdfasdfasdfaf',
+                    'created_at' => '2026-08-19 10:01:51',
+                    'updated_at' => '2026-08-19 10:01:51',
+                ],
+                [
+                    'id' => 15,
+                    'application_id' => 18,
+                    'title' => 'safasdfsadf',
+                    'company' => 'sadfsdfaf',
+                    'first_day' => null,
+                    'last_day' => null,
+                    'years_months' => null,
+                    'details' => 'sadfsdfsfsdf',
+                    'created_at' => '2026-08-19 10:07:26',
+                    'updated_at' => '2026-08-19 10:07:26',
+                ],
+                [
+                    'id' => 16,
+                    'application_id' => 23,
+                    'title' => 'sfsadfsdaf',
+                    'company' => 'sdfsafsadfs',
+                    'first_day' => null,
+                    'last_day' => null,
+                    'years_months' => null,
+                    'details' => 'dfsafsafasfdawsf',
+                    'created_at' => '2026-08-19 11:12:50',
+                    'updated_at' => '2026-08-19 11:12:50',
+                ],
+            ]
+            );
 
-                /*
-                |--------------------------------------------------------------------------
-                | Training
-                |--------------------------------------------------------------------------
-                */
+            DB::table('applicant_trainings')->insert(
+                [
+                [
+                    'id' => 1,
+                    'application_id' => 1,
+                    'title' => 'Classroom Management Seminar',
+                    'hours' => 16,
+                    'training_date' => null,
+                    'training_end_date' => null,
+                    'details' => 'Sample training record generated for testing.',
+                    'created_at' => '2026-07-21 07:53:42',
+                    'updated_at' => '2026-07-21 07:53:42',
+                ],
+                [
+                    'id' => 2,
+                    'application_id' => 2,
+                    'title' => 'Records Management Training',
+                    'hours' => 8,
+                    'training_date' => null,
+                    'training_end_date' => null,
+                    'details' => 'Sample training record generated for testing.',
+                    'created_at' => '2026-07-20 07:53:42',
+                    'updated_at' => '2026-07-20 07:53:42',
+                ],
+                [
+                    'id' => 4,
+                    'application_id' => 4,
+                    'title' => 'Teaching Strategies Workshop',
+                    'hours' => 24,
+                    'training_date' => null,
+                    'training_end_date' => null,
+                    'details' => 'Sample training record generated for testing.',
+                    'created_at' => '2026-07-18 07:53:42',
+                    'updated_at' => '2026-07-18 07:53:42',
+                ],
+                [
+                    'id' => 5,
+                    'application_id' => 5,
+                    'title' => 'Government Records Administration',
+                    'hours' => 16,
+                    'training_date' => null,
+                    'training_end_date' => null,
+                    'details' => 'Sample training record generated for testing.',
+                    'created_at' => '2026-07-17 07:53:42',
+                    'updated_at' => '2026-07-17 07:53:42',
+                ],
+                [
+                    'id' => 7,
+                    'application_id' => 7,
+                    'title' => 'Inclusive Education Training',
+                    'hours' => 40,
+                    'training_date' => null,
+                    'training_end_date' => null,
+                    'details' => 'Sample training record generated for testing.',
+                    'created_at' => '2026-07-15 07:53:42',
+                    'updated_at' => '2026-07-15 07:53:42',
+                ],
+                [
+                    'id' => 8,
+                    'application_id' => 8,
+                    'title' => 'Office Productivity Tools',
+                    'hours' => 24,
+                    'training_date' => null,
+                    'training_end_date' => null,
+                    'details' => 'Sample training record generated for testing.',
+                    'created_at' => '2026-07-14 07:53:42',
+                    'updated_at' => '2026-07-14 07:53:42',
+                ],
+                [
+                    'id' => 9,
+                    'application_id' => 9,
+                    'title' => 'Basic Teaching Workshop',
+                    'hours' => 8,
+                    'training_date' => '2026-07-01',
+                    'training_end_date' => null,
+                    'details' => 'Sample training record generated for testing.',
+                    'created_at' => '2026-07-13 07:53:42',
+                    'updated_at' => '2026-07-30 07:05:36',
+                ],
+                [
+                    'id' => 11,
+                    'application_id' => 12,
+                    'title' => 'Taxpayer\'s Orientation Seminar',
+                    'hours' => 8,
+                    'training_date' => null,
+                    'training_end_date' => null,
+                    'details' => 'yukyjkytjtjdrthdrhdrtyhdrthydr',
+                    'created_at' => '2026-07-22 08:56:35',
+                    'updated_at' => '2026-07-22 08:56:35',
+                ],
+                [
+                    'id' => 12,
+                    'application_id' => 16,
+                    'title' => 'Tax Compliance Seminar',
+                    'hours' => 48,
+                    'training_date' => '2021-08-01',
+                    'training_end_date' => null,
+                    'details' => null,
+                    'created_at' => '2026-07-27 07:22:46',
+                    'updated_at' => '2026-07-27 07:22:46',
+                ],
+                [
+                    'id' => 13,
+                    'application_id' => 9,
+                    'title' => 'Practice Teaching',
+                    'hours' => 8,
+                    'training_date' => '2026-03-01',
+                    'training_end_date' => null,
+                    'details' => null,
+                    'created_at' => '2026-07-30 07:05:18',
+                    'updated_at' => '2026-07-30 07:05:54',
+                ],
+                [
+                    'id' => 14,
+                    'application_id' => 17,
+                    'title' => 'asdfsadfsadfsaf',
+                    'hours' => 45,
+                    'training_date' => '2026-08-01',
+                    'training_end_date' => null,
+                    'details' => null,
+                    'created_at' => '2026-08-19 10:01:51',
+                    'updated_at' => '2026-08-19 10:01:51',
+                ],
+                [
+                    'id' => 15,
+                    'application_id' => 18,
+                    'title' => 'sdafsdfasf',
+                    'hours' => 55,
+                    'training_date' => '2026-06-01',
+                    'training_end_date' => null,
+                    'details' => null,
+                    'created_at' => '2026-08-19 10:07:26',
+                    'updated_at' => '2026-08-19 10:07:26',
+                ],
+                [
+                    'id' => 17,
+                    'application_id' => 23,
+                    'title' => 'fasdfsadfa',
+                    'hours' => 88,
+                    'training_date' => '2026-03-01',
+                    'training_end_date' => '2026-05-01',
+                    'details' => null,
+                    'created_at' => '2026-08-19 11:12:50',
+                    'updated_at' => '2026-08-19 11:12:50',
+                ],
+            ]
+            );
 
-                DB::table('applicant_trainings')->insert([
-                    'application_id' => $applicationId,
-                    'title' => $data['training_title'],
-                    'hours' => $data['training_hours'],
-                    'training_date' => $createdAt
-                        ->copy()
-                        ->subMonths(6)
-                        ->startOfMonth()
-                        ->toDateString(),
-                    'created_at' => $createdAt,
-                    'updated_at' => $createdAt,
-                ]);
+            DB::table('applicant_eligibilities')->insert(
+                [
+                [
+                    'id' => 1,
+                    'application_id' => 1,
+                    'license_name' => 'Licensure Examination for Teachers',
+                    'license_specify' => null,
+                    'rating' => '84.50',
+                    'date_issued' => null,
+                    'valid_until' => null,
+                    'never_expires' => 0,
+                    'created_at' => '2026-07-21 07:53:42',
+                    'updated_at' => '2026-07-21 07:53:42',
+                ],
+                [
+                    'id' => 2,
+                    'application_id' => 2,
+                    'license_name' => 'Civil Service Professional',
+                    'license_specify' => null,
+                    'rating' => '82.10',
+                    'date_issued' => null,
+                    'valid_until' => null,
+                    'never_expires' => 0,
+                    'created_at' => '2026-07-20 07:53:42',
+                    'updated_at' => '2026-07-20 07:53:42',
+                ],
+                [
+                    'id' => 4,
+                    'application_id' => 4,
+                    'license_name' => 'Licensure Examination for Teachers',
+                    'license_specify' => null,
+                    'rating' => '88.20',
+                    'date_issued' => null,
+                    'valid_until' => null,
+                    'never_expires' => 0,
+                    'created_at' => '2026-07-18 07:53:42',
+                    'updated_at' => '2026-07-18 07:53:42',
+                ],
+                [
+                    'id' => 5,
+                    'application_id' => 5,
+                    'license_name' => 'Civil Service Professional',
+                    'license_specify' => null,
+                    'rating' => '85.10',
+                    'date_issued' => null,
+                    'valid_until' => null,
+                    'never_expires' => 0,
+                    'created_at' => '2026-07-17 07:53:42',
+                    'updated_at' => '2026-07-17 07:53:42',
+                ],
+                [
+                    'id' => 7,
+                    'application_id' => 7,
+                    'license_name' => 'Licensure Examination for Teachers',
+                    'license_specify' => null,
+                    'rating' => '91.50',
+                    'date_issued' => null,
+                    'valid_until' => null,
+                    'never_expires' => 0,
+                    'created_at' => '2026-07-15 07:53:42',
+                    'updated_at' => '2026-07-15 07:53:42',
+                ],
+                [
+                    'id' => 8,
+                    'application_id' => 8,
+                    'license_name' => 'Civil Service Professional',
+                    'license_specify' => null,
+                    'rating' => '87.30',
+                    'date_issued' => null,
+                    'valid_until' => null,
+                    'never_expires' => 0,
+                    'created_at' => '2026-07-14 07:53:42',
+                    'updated_at' => '2026-07-14 07:53:42',
+                ],
+                [
+                    'id' => 10,
+                    'application_id' => 12,
+                    'license_name' => 'License Professional Teacher',
+                    'license_specify' => null,
+                    'rating' => '95',
+                    'date_issued' => null,
+                    'valid_until' => null,
+                    'never_expires' => 0,
+                    'created_at' => '2026-07-22 08:56:35',
+                    'updated_at' => '2026-07-22 08:56:35',
+                ],
+                [
+                    'id' => 11,
+                    'application_id' => 16,
+                    'license_name' => 'License Professional Teacher',
+                    'license_specify' => null,
+                    'rating' => '90',
+                    'date_issued' => null,
+                    'valid_until' => null,
+                    'never_expires' => 0,
+                    'created_at' => '2026-07-27 07:22:46',
+                    'updated_at' => '2026-07-27 07:22:46',
+                ],
+                [
+                    'id' => 12,
+                    'application_id' => 17,
+                    'license_name' => 'CSCS Professional',
+                    'license_specify' => null,
+                    'rating' => '99',
+                    'date_issued' => null,
+                    'valid_until' => null,
+                    'never_expires' => 0,
+                    'created_at' => '2026-08-19 10:01:51',
+                    'updated_at' => '2026-08-19 10:01:51',
+                ],
+                [
+                    'id' => 13,
+                    'application_id' => 18,
+                    'license_name' => 'Other\'s',
+                    'license_specify' => 'asdfasdfaf',
+                    'rating' => '100',
+                    'date_issued' => null,
+                    'valid_until' => null,
+                    'never_expires' => 0,
+                    'created_at' => '2026-08-19 10:07:26',
+                    'updated_at' => '2026-08-19 10:07:26',
+                ],
+                [
+                    'id' => 17,
+                    'application_id' => 23,
+                    'license_name' => 'Other\'s',
+                    'license_specify' => 'rtgergegeg',
+                    'rating' => '99.5',
+                    'date_issued' => '2026-08-12',
+                    'valid_until' => null,
+                    'never_expires' => 1,
+                    'created_at' => '2026-08-19 11:12:50',
+                    'updated_at' => '2026-08-19 11:12:50',
+                ],
+            ]
+            );
 
-                /*
-                |--------------------------------------------------------------------------
-                | Eligibility
-                |--------------------------------------------------------------------------
-                */
+            DB::table('application_documents')->insert(
+                [
+                [
+                    'id' => 1,
+                    'application_id' => 12,
+                    'type' => 'letter_of_intent',
+                    'file_path' => 'documents/23lmiQXTvE87IbcaI78zFRuWBpDzn5QaM75FY2ww.pdf',
+                    'created_at' => '2026-07-22 08:56:35',
+                    'updated_at' => '2026-07-22 08:56:35',
+                ],
+                [
+                    'id' => 2,
+                    'application_id' => 12,
+                    'type' => 'tor_diploma',
+                    'file_path' => 'documents/czIKM8DzAT7NR5KHkJxopyl3dJBNPDQtxznMerKx.pdf',
+                    'created_at' => '2026-07-22 08:56:35',
+                    'updated_at' => '2026-07-22 08:56:35',
+                ],
+                [
+                    'id' => 3,
+                    'application_id' => 12,
+                    'type' => 'prc_license',
+                    'file_path' => 'documents/Zy8rXZ8G1wQ4FcT5RLtWBGj3pNuhpb2CLEmSTnGH.pdf',
+                    'created_at' => '2026-07-22 08:56:35',
+                    'updated_at' => '2026-07-22 08:56:35',
+                ],
+                [
+                    'id' => 4,
+                    'application_id' => 12,
+                    'type' => 'eligibility_file',
+                    'file_path' => 'documents/UOe8wWxI47DVAScr7jF7ArUb5QgMegSJyoLTVklJ.pdf',
+                    'created_at' => '2026-07-22 08:56:35',
+                    'updated_at' => '2026-07-22 08:56:35',
+                ],
+                [
+                    'id' => 5,
+                    'application_id' => 12,
+                    'type' => 'training_certificates',
+                    'file_path' => 'documents/4dxqxcxari7D2E6L7mnyMaelIQt1FRxUB0WdsgCo.pdf',
+                    'created_at' => '2026-07-22 08:56:35',
+                    'updated_at' => '2026-07-22 08:56:35',
+                ],
+                [
+                    'id' => 6,
+                    'application_id' => 12,
+                    'type' => 'employment_records',
+                    'file_path' => 'documents/KPIxiCjwntvH5MXR9pAzz6ij4sRLEaHpfJhTROvq.pdf',
+                    'created_at' => '2026-07-22 08:56:35',
+                    'updated_at' => '2026-07-22 08:56:35',
+                ],
+                [
+                    'id' => 7,
+                    'application_id' => 12,
+                    'type' => 'latest_appointment',
+                    'file_path' => 'documents/steo1lwjKMVwRGv90mqwPBrtHBHpBfwFg2YrrKCk.pdf',
+                    'created_at' => '2026-07-22 08:56:35',
+                    'updated_at' => '2026-07-22 08:56:35',
+                ],
+                [
+                    'id' => 8,
+                    'application_id' => 12,
+                    'type' => 'performance_rating',
+                    'file_path' => 'documents/sJ3NZwtShIIs0IVsxDMeO8p99D9Kegt1YaTZO1Hb.pdf',
+                    'created_at' => '2026-07-22 08:56:35',
+                    'updated_at' => '2026-07-22 08:56:35',
+                ],
+                [
+                    'id' => 9,
+                    'application_id' => 12,
+                    'type' => 'cav',
+                    'file_path' => 'documents/qRekDV3TNpFvQiekgWDWOTvToA3oD8nytDZiA1dy.pdf',
+                    'created_at' => '2026-07-22 08:56:35',
+                    'updated_at' => '2026-07-22 08:56:35',
+                ],
+                [
+                    'id' => 10,
+                    'application_id' => 12,
+                    'type' => 'movs',
+                    'file_path' => 'documents/u8GrNMabcm0gCffQpLu9uXbxVQjKRz0uZYvPhMjq.pdf',
+                    'created_at' => '2026-07-22 08:56:35',
+                    'updated_at' => '2026-07-22 08:56:35',
+                ],
+                [
+                    'id' => 11,
+                    'application_id' => 16,
+                    'type' => 'letter_of_intent',
+                    'file_path' => 'documents/GB2orPBnqhOocX0F64SaOO3CwPRZ5XDDT7UuZ8Y7.pdf',
+                    'created_at' => '2026-07-27 07:22:46',
+                    'updated_at' => '2026-07-27 07:22:46',
+                ],
+                [
+                    'id' => 12,
+                    'application_id' => 16,
+                    'type' => 'tor_diploma',
+                    'file_path' => 'documents/uAcWPFy59EAcHAXsVmScAS8JyhX8OxKicjHKWaCp.pdf',
+                    'created_at' => '2026-07-27 07:22:46',
+                    'updated_at' => '2026-07-27 07:22:46',
+                ],
+                [
+                    'id' => 13,
+                    'application_id' => 16,
+                    'type' => 'prc_license',
+                    'file_path' => 'documents/cDcsdm7gtmZNJmq2v9i7S8rJIlV9G5FKmwfdQm6P.pdf',
+                    'created_at' => '2026-07-27 07:22:46',
+                    'updated_at' => '2026-07-27 07:22:46',
+                ],
+                [
+                    'id' => 14,
+                    'application_id' => 16,
+                    'type' => 'eligibility_file',
+                    'file_path' => 'documents/dJ8e93dY4rczuy5QIuJEibNdMysJGVFMv8v3TrMI.pdf',
+                    'created_at' => '2026-07-27 07:22:46',
+                    'updated_at' => '2026-07-27 07:22:46',
+                ],
+                [
+                    'id' => 15,
+                    'application_id' => 16,
+                    'type' => 'training_certificates',
+                    'file_path' => 'documents/29cuMzpLbKIrWfaL68HwsBNwEsE23NuVKRzwj9dZ.pdf',
+                    'created_at' => '2026-07-27 07:22:46',
+                    'updated_at' => '2026-07-27 07:22:46',
+                ],
+                [
+                    'id' => 16,
+                    'application_id' => 16,
+                    'type' => 'employment_records',
+                    'file_path' => 'documents/djonfUtq4vQkV3VkN4a3WmXRfboEZngHdDjWrDkR.pdf',
+                    'created_at' => '2026-07-27 07:22:46',
+                    'updated_at' => '2026-07-27 07:22:46',
+                ],
+                [
+                    'id' => 17,
+                    'application_id' => 16,
+                    'type' => 'latest_appointment',
+                    'file_path' => 'documents/FQVaRpyrgrl1vUpccyJ6RWgNFJsXd5UUVicxZJJH.pdf',
+                    'created_at' => '2026-07-27 07:22:46',
+                    'updated_at' => '2026-07-27 07:22:46',
+                ],
+                [
+                    'id' => 18,
+                    'application_id' => 16,
+                    'type' => 'performance_rating',
+                    'file_path' => 'documents/RvLBYv8I0I4tOnoJYpUiD1rmHesTOxBWzccDzqxj.pdf',
+                    'created_at' => '2026-07-27 07:22:46',
+                    'updated_at' => '2026-07-27 07:22:46',
+                ],
+                [
+                    'id' => 19,
+                    'application_id' => 16,
+                    'type' => 'cav',
+                    'file_path' => 'documents/48L4YBkRpLB2HDmZ0983dSlsuQWXQytpVYISE2dc.pdf',
+                    'created_at' => '2026-07-27 07:22:46',
+                    'updated_at' => '2026-07-27 07:22:46',
+                ],
+                [
+                    'id' => 20,
+                    'application_id' => 16,
+                    'type' => 'movs',
+                    'file_path' => 'documents/moPFO3sOSyZMlnnEj7tpEnrETvuTCFn9apt533pV.pdf',
+                    'created_at' => '2026-07-27 07:22:46',
+                    'updated_at' => '2026-07-27 07:22:46',
+                ],
+                [
+                    'id' => 24,
+                    'application_id' => 9,
+                    'type' => 'Diploma',
+                    'file_path' => 'applications/documents/01KYS1N369YYR6998SMN38ESHW.pdf',
+                    'created_at' => '2026-07-30 08:18:32',
+                    'updated_at' => '2026-07-30 08:18:32',
+                ],
+                [
+                    'id' => 25,
+                    'application_id' => 1,
+                    'type' => 'Transcript',
+                    'file_path' => 'applications/documents/01KYS1X68X4CWVA8J5934AR0D7.pdf',
+                    'created_at' => '2026-07-30 08:22:57',
+                    'updated_at' => '2026-07-30 08:22:57',
+                ],
+            ]
+            );
 
-                if (! empty($data['license_name'])) {
-                    DB::table('applicant_eligibilities')->insert([
-                        'application_id' => $applicationId,
-                        'license_name' => $data['license_name'],
-                        'rating' => $data['rating'],
-                        'valid_until' => $data['valid_until'],
-                        'created_at' => $createdAt,
-                        'updated_at' => $createdAt,
-                    ]);
-                }
+            DB::table('application_control_numbers')->insert(
+                [
+                [
+                    'id' => 1,
+                    'application_id' => 1,
+                    'control_number' => 'DEPED-2026-00001',
+                    'generated_by' => 2,
+                    'created_at' => '2026-07-21 07:53:42',
+                    'updated_at' => '2026-07-21 07:53:42',
+                ],
+                [
+                    'id' => 2,
+                    'application_id' => 2,
+                    'control_number' => 'DEPED-2026-00002',
+                    'generated_by' => 2,
+                    'created_at' => '2026-07-20 07:53:42',
+                    'updated_at' => '2026-07-20 07:53:42',
+                ],
+                [
+                    'id' => 4,
+                    'application_id' => 4,
+                    'control_number' => 'DEPED-2026-00004',
+                    'generated_by' => 2,
+                    'created_at' => '2026-07-18 07:53:42',
+                    'updated_at' => '2026-07-18 07:53:42',
+                ],
+                [
+                    'id' => 5,
+                    'application_id' => 5,
+                    'control_number' => 'DEPED-2026-00005',
+                    'generated_by' => 2,
+                    'created_at' => '2026-07-17 07:53:42',
+                    'updated_at' => '2026-07-17 07:53:42',
+                ],
+                [
+                    'id' => 7,
+                    'application_id' => 7,
+                    'control_number' => 'DEPED-2026-00007',
+                    'generated_by' => 2,
+                    'created_at' => '2026-07-15 07:53:42',
+                    'updated_at' => '2026-07-15 07:53:42',
+                ],
+                [
+                    'id' => 8,
+                    'application_id' => 8,
+                    'control_number' => 'DEPED-2026-00008',
+                    'generated_by' => 2,
+                    'created_at' => '2026-07-14 07:53:42',
+                    'updated_at' => '2026-07-14 07:53:42',
+                ],
+                [
+                    'id' => 9,
+                    'application_id' => 9,
+                    'control_number' => 'DEPED-2026-00009',
+                    'generated_by' => 2,
+                    'created_at' => '2026-07-13 07:53:42',
+                    'updated_at' => '2026-07-13 07:53:42',
+                ],
+                [
+                    'id' => 11,
+                    'application_id' => 12,
+                    'control_number' => 'DepED-000101',
+                    'generated_by' => 5,
+                    'created_at' => '2026-07-22 08:58:06',
+                    'updated_at' => '2026-07-22 08:58:06',
+                ],
+                [
+                    'id' => 12,
+                    'application_id' => 16,
+                    'control_number' => 'DepEd-010101',
+                    'generated_by' => 5,
+                    'created_at' => '2026-08-10 01:18:04',
+                    'updated_at' => '2026-08-10 01:18:04',
+                ],
+            ]
+            );
 
-                /*
-                |--------------------------------------------------------------------------
-                | Control number
-                |--------------------------------------------------------------------------
-                */
+            DB::table('application_evaluations')->insert(
+                [
+                [
+                    'id' => 1,
+                    'application_id' => 4,
+                    'evaluator_id' => 3,
+                    'resume_checked' => 1,
+                    'credentials_valid' => 1,
+                    'recommended' => 1,
+                    'remarks' => 'Documents complete. Recommended for admin approval.',
+                    'evaluated_at' => '2026-07-19 07:53:42',
+                    'created_at' => '2026-07-19 07:53:42',
+                    'updated_at' => '2026-07-19 07:53:42',
+                ],
+                [
+                    'id' => 2,
+                    'application_id' => 5,
+                    'evaluator_id' => 3,
+                    'resume_checked' => 1,
+                    'credentials_valid' => 1,
+                    'recommended' => 1,
+                    'remarks' => 'Qualified and recommended for further processing.',
+                    'evaluated_at' => '2026-07-18 07:53:42',
+                    'created_at' => '2026-07-18 07:53:42',
+                    'updated_at' => '2026-07-18 07:53:42',
+                ],
+                [
+                    'id' => 4,
+                    'application_id' => 7,
+                    'evaluator_id' => 3,
+                    'resume_checked' => 1,
+                    'credentials_valid' => 1,
+                    'recommended' => 1,
+                    'remarks' => 'Application approved by the administrator.',
+                    'evaluated_at' => '2026-07-16 07:53:42',
+                    'created_at' => '2026-07-16 07:53:42',
+                    'updated_at' => '2026-07-16 07:53:42',
+                ],
+                [
+                    'id' => 5,
+                    'application_id' => 8,
+                    'evaluator_id' => 3,
+                    'resume_checked' => 1,
+                    'credentials_valid' => 1,
+                    'recommended' => 1,
+                    'remarks' => 'Qualified applicant. Application approved.',
+                    'evaluated_at' => '2026-07-15 07:53:42',
+                    'created_at' => '2026-07-15 07:53:42',
+                    'updated_at' => '2026-07-15 07:53:42',
+                ],
+                [
+                    'id' => 6,
+                    'application_id' => 9,
+                    'evaluator_id' => 5,
+                    'resume_checked' => 1,
+                    'credentials_valid' => 1,
+                    'recommended' => 1,
+                    'remarks' => null,
+                    'evaluated_at' => '2026-08-19 14:38:08',
+                    'created_at' => '2026-07-14 07:53:42',
+                    'updated_at' => '2026-08-19 14:38:08',
+                ],
+                [
+                    'id' => 8,
+                    'application_id' => 12,
+                    'evaluator_id' => 5,
+                    'resume_checked' => 1,
+                    'credentials_valid' => 1,
+                    'recommended' => 1,
+                    'remarks' => 'Good Credentials
+                    ',
+                    'evaluated_at' => '2026-07-22 09:02:55',
+                    'created_at' => '2026-07-22 08:58:25',
+                    'updated_at' => '2026-07-22 09:02:55',
+                ],
+                [
+                    'id' => 9,
+                    'application_id' => 1,
+                    'evaluator_id' => 5,
+                    'resume_checked' => 0,
+                    'credentials_valid' => 0,
+                    'recommended' => 0,
+                    'remarks' => null,
+                    'evaluated_at' => '2026-07-30 08:27:36',
+                    'created_at' => '2026-07-27 06:17:17',
+                    'updated_at' => '2026-07-30 08:27:36',
+                ],
+                [
+                    'id' => 10,
+                    'application_id' => 16,
+                    'evaluator_id' => 5,
+                    'resume_checked' => 0,
+                    'credentials_valid' => 0,
+                    'recommended' => 0,
+                    'remarks' => null,
+                    'evaluated_at' => '2026-07-30 08:21:37',
+                    'created_at' => '2026-07-27 07:36:53',
+                    'updated_at' => '2026-07-30 08:21:37',
+                ],
+                [
+                    'id' => 11,
+                    'application_id' => 2,
+                    'evaluator_id' => 5,
+                    'resume_checked' => 0,
+                    'credentials_valid' => 0,
+                    'recommended' => 0,
+                    'remarks' => null,
+                    'evaluated_at' => null,
+                    'created_at' => '2026-07-30 08:49:59',
+                    'updated_at' => '2026-07-30 08:49:59',
+                ],
+                [
+                    'id' => 12,
+                    'application_id' => 18,
+                    'evaluator_id' => 5,
+                    'resume_checked' => 1,
+                    'credentials_valid' => 1,
+                    'recommended' => 1,
+                    'remarks' => 'Recommended
+                    ',
+                    'evaluated_at' => '2026-08-19 10:24:35',
+                    'created_at' => '2026-08-19 10:08:19',
+                    'updated_at' => '2026-08-19 10:24:35',
+                ],
+                [
+                    'id' => 13,
+                    'application_id' => 23,
+                    'evaluator_id' => 5,
+                    'resume_checked' => 0,
+                    'credentials_valid' => 0,
+                    'recommended' => 0,
+                    'remarks' => 'No CSC',
+                    'evaluated_at' => '2026-08-19 13:34:25',
+                    'created_at' => '2026-08-19 11:13:19',
+                    'updated_at' => '2026-08-19 13:34:25',
+                ],
+                [
+                    'id' => 14,
+                    'application_id' => 17,
+                    'evaluator_id' => 5,
+                    'resume_checked' => 0,
+                    'credentials_valid' => 0,
+                    'recommended' => 0,
+                    'remarks' => 'lack of files
+                    ',
+                    'evaluated_at' => '2026-08-19 13:33:09',
+                    'created_at' => '2026-08-19 13:33:00',
+                    'updated_at' => '2026-08-19 13:33:09',
+                ],
+            ]
+            );
 
-                DB::table('application_control_numbers')->insert([
-                    'application_id' => $applicationId,
-                    'control_number' => sprintf(
-                        'DEPED-%s-%05d',
-                        now()->format('Y'),
-                        $applicationId
-                    ),
-                    'generated_by' => $adminId,
-                    'created_at' => $createdAt,
-                    'updated_at' => $createdAt,
-                ]);
-
-                /*
-                |--------------------------------------------------------------------------
-                | Initial pending status log
-                |--------------------------------------------------------------------------
-                */
-
-                DB::table('application_status_logs')->insert([
-                    'application_id' => $applicationId,
+            DB::table('application_status_logs')->insert(
+                [
+                [
+                    'id' => 1,
+                    'application_id' => 1,
                     'status' => 'pending',
                     'remarks' => 'Application submitted successfully.',
                     'changed_by' => null,
-                    'created_at' => $createdAt,
-                    'updated_at' => $createdAt,
-                ]);
-
-                /*
-                |--------------------------------------------------------------------------
-                | Evaluation record
-                |--------------------------------------------------------------------------
-                */
-
-                if (in_array(
-                    $data['status'],
-                    ['evaluated', 'approved', 'rejected'],
-                    true
-                )) {
-                    $evaluatedAt = $createdAt->copy()->addDay();
-
-                    DB::table('application_evaluations')->insert([
-                        'application_id' => $applicationId,
-                        'evaluator_id' => $evaluatorId,
-                        'resume_checked' => $data['resume_checked'],
-                        'credentials_valid' => $data['credentials_valid'],
-                        'recommended' => $data['recommended'],
-                        'remarks' => $data['remarks'],
-                        'evaluated_at' => $evaluatedAt,
-                        'created_at' => $evaluatedAt,
-                        'updated_at' => $evaluatedAt,
-                    ]);
-
-                    DB::table('application_status_logs')->insert([
-                        'application_id' => $applicationId,
-                        'status' => 'evaluated',
-                        'remarks' => $data['remarks'],
-                        'changed_by' => $evaluatorId,
-                        'created_at' => $evaluatedAt,
-                        'updated_at' => $evaluatedAt,
-                    ]);
-                }
-
-                /*
-                |--------------------------------------------------------------------------
-                | Final approved or rejected status log
-                |--------------------------------------------------------------------------
-                */
-
-                if (in_array($data['status'], ['approved', 'rejected'], true)) {
-                    $decisionAt = $createdAt->copy()->addDays(2);
-
-                    DB::table('application_status_logs')->insert([
-                        'application_id' => $applicationId,
-                        'status' => $data['status'],
-                        'remarks' => $data['remarks'],
-                        'changed_by' => $adminId,
-                        'created_at' => $decisionAt,
-                        'updated_at' => $decisionAt,
-                    ]);
-                }
-            }
+                    'created_at' => '2026-07-21 07:53:42',
+                    'updated_at' => '2026-07-21 07:53:42',
+                ],
+                [
+                    'id' => 2,
+                    'application_id' => 2,
+                    'status' => 'pending',
+                    'remarks' => 'Application submitted successfully.',
+                    'changed_by' => null,
+                    'created_at' => '2026-07-20 07:53:42',
+                    'updated_at' => '2026-07-20 07:53:42',
+                ],
+                [
+                    'id' => 4,
+                    'application_id' => 4,
+                    'status' => 'pending',
+                    'remarks' => 'Application submitted successfully.',
+                    'changed_by' => null,
+                    'created_at' => '2026-07-18 07:53:42',
+                    'updated_at' => '2026-07-18 07:53:42',
+                ],
+                [
+                    'id' => 5,
+                    'application_id' => 4,
+                    'status' => 'evaluated',
+                    'remarks' => 'Documents complete. Recommended for admin approval.',
+                    'changed_by' => 3,
+                    'created_at' => '2026-07-19 07:53:42',
+                    'updated_at' => '2026-07-19 07:53:42',
+                ],
+                [
+                    'id' => 6,
+                    'application_id' => 5,
+                    'status' => 'pending',
+                    'remarks' => 'Application submitted successfully.',
+                    'changed_by' => null,
+                    'created_at' => '2026-07-17 07:53:42',
+                    'updated_at' => '2026-07-17 07:53:42',
+                ],
+                [
+                    'id' => 7,
+                    'application_id' => 5,
+                    'status' => 'evaluated',
+                    'remarks' => 'Qualified and recommended for further processing.',
+                    'changed_by' => 3,
+                    'created_at' => '2026-07-18 07:53:42',
+                    'updated_at' => '2026-07-18 07:53:42',
+                ],
+                [
+                    'id' => 10,
+                    'application_id' => 7,
+                    'status' => 'pending',
+                    'remarks' => 'Application submitted successfully.',
+                    'changed_by' => null,
+                    'created_at' => '2026-07-15 07:53:42',
+                    'updated_at' => '2026-07-15 07:53:42',
+                ],
+                [
+                    'id' => 11,
+                    'application_id' => 7,
+                    'status' => 'evaluated',
+                    'remarks' => 'Application approved by the administrator.',
+                    'changed_by' => 3,
+                    'created_at' => '2026-07-16 07:53:42',
+                    'updated_at' => '2026-07-16 07:53:42',
+                ],
+                [
+                    'id' => 12,
+                    'application_id' => 7,
+                    'status' => 'approved',
+                    'remarks' => 'Application approved by the administrator.',
+                    'changed_by' => 2,
+                    'created_at' => '2026-07-17 07:53:42',
+                    'updated_at' => '2026-07-17 07:53:42',
+                ],
+                [
+                    'id' => 13,
+                    'application_id' => 8,
+                    'status' => 'pending',
+                    'remarks' => 'Application submitted successfully.',
+                    'changed_by' => null,
+                    'created_at' => '2026-07-14 07:53:42',
+                    'updated_at' => '2026-07-14 07:53:42',
+                ],
+                [
+                    'id' => 14,
+                    'application_id' => 8,
+                    'status' => 'evaluated',
+                    'remarks' => 'Qualified applicant. Application approved.',
+                    'changed_by' => 3,
+                    'created_at' => '2026-07-15 07:53:42',
+                    'updated_at' => '2026-07-15 07:53:42',
+                ],
+                [
+                    'id' => 15,
+                    'application_id' => 8,
+                    'status' => 'approved',
+                    'remarks' => 'Qualified applicant. Application approved.',
+                    'changed_by' => 2,
+                    'created_at' => '2026-07-16 07:53:42',
+                    'updated_at' => '2026-07-16 07:53:42',
+                ],
+                [
+                    'id' => 16,
+                    'application_id' => 9,
+                    'status' => 'pending',
+                    'remarks' => 'Application submitted successfully.',
+                    'changed_by' => null,
+                    'created_at' => '2026-07-13 07:53:42',
+                    'updated_at' => '2026-07-13 07:53:42',
+                ],
+                [
+                    'id' => 17,
+                    'application_id' => 9,
+                    'status' => 'evaluated',
+                    'remarks' => 'Required teaching eligibility was not submitted.',
+                    'changed_by' => 3,
+                    'created_at' => '2026-07-14 07:53:42',
+                    'updated_at' => '2026-07-14 07:53:42',
+                ],
+                [
+                    'id' => 18,
+                    'application_id' => 9,
+                    'status' => 'rejected',
+                    'remarks' => 'Required teaching eligibility was not submitted.',
+                    'changed_by' => 2,
+                    'created_at' => '2026-07-15 07:53:42',
+                    'updated_at' => '2026-07-15 07:53:42',
+                ],
+                [
+                    'id' => 22,
+                    'application_id' => 12,
+                    'status' => 'evaluated',
+                    'remarks' => null,
+                    'changed_by' => 5,
+                    'created_at' => '2026-07-22 09:01:39',
+                    'updated_at' => '2026-07-22 09:01:39',
+                ],
+                [
+                    'id' => 23,
+                    'application_id' => 12,
+                    'status' => 'evaluated',
+                    'remarks' => 'Good Credentials
+                    ',
+                    'changed_by' => 5,
+                    'created_at' => '2026-07-22 09:02:55',
+                    'updated_at' => '2026-07-22 09:02:55',
+                ],
+                [
+                    'id' => 24,
+                    'application_id' => 12,
+                    'status' => 'approved',
+                    'remarks' => null,
+                    'changed_by' => 1,
+                    'created_at' => '2026-07-22 09:03:08',
+                    'updated_at' => '2026-07-22 09:03:08',
+                ],
+                [
+                    'id' => 25,
+                    'application_id' => 9,
+                    'status' => 'evaluated',
+                    'remarks' => 'passed the practical teaching exam',
+                    'changed_by' => 5,
+                    'created_at' => '2026-07-30 07:20:56',
+                    'updated_at' => '2026-07-30 07:20:56',
+                ],
+                [
+                    'id' => 26,
+                    'application_id' => 9,
+                    'status' => 'approved',
+                    'remarks' => null,
+                    'changed_by' => 1,
+                    'created_at' => '2026-07-30 07:21:16',
+                    'updated_at' => '2026-07-30 07:21:16',
+                ],
+                [
+                    'id' => 27,
+                    'application_id' => 9,
+                    'status' => 'evaluated',
+                    'remarks' => 'disqualify due to fraud',
+                    'changed_by' => 5,
+                    'created_at' => '2026-07-30 07:22:15',
+                    'updated_at' => '2026-07-30 07:22:15',
+                ],
+                [
+                    'id' => 28,
+                    'application_id' => 9,
+                    'status' => 'rejected',
+                    'remarks' => null,
+                    'changed_by' => 1,
+                    'created_at' => '2026-07-30 07:23:01',
+                    'updated_at' => '2026-07-30 07:23:01',
+                ],
+                [
+                    'id' => 29,
+                    'application_id' => 16,
+                    'status' => 'evaluated',
+                    'remarks' => null,
+                    'changed_by' => 5,
+                    'created_at' => '2026-07-30 08:21:37',
+                    'updated_at' => '2026-07-30 08:21:37',
+                ],
+                [
+                    'id' => 30,
+                    'application_id' => 1,
+                    'status' => 'evaluated',
+                    'remarks' => null,
+                    'changed_by' => 5,
+                    'created_at' => '2026-07-30 08:27:36',
+                    'updated_at' => '2026-07-30 08:27:36',
+                ],
+                [
+                    'id' => 31,
+                    'application_id' => 9,
+                    'status' => 'evaluated',
+                    'remarks' => 'disqualify due to fraud',
+                    'changed_by' => 5,
+                    'created_at' => '2026-07-30 08:28:23',
+                    'updated_at' => '2026-07-30 08:28:23',
+                ],
+                [
+                    'id' => 32,
+                    'application_id' => 9,
+                    'status' => 'rejected',
+                    'remarks' => null,
+                    'changed_by' => 1,
+                    'created_at' => '2026-07-30 08:28:46',
+                    'updated_at' => '2026-07-30 08:28:46',
+                ],
+                [
+                    'id' => 33,
+                    'application_id' => 18,
+                    'status' => 'evaluated',
+                    'remarks' => null,
+                    'changed_by' => 5,
+                    'created_at' => '2026-08-19 10:22:28',
+                    'updated_at' => '2026-08-19 10:22:28',
+                ],
+                [
+                    'id' => 34,
+                    'application_id' => 18,
+                    'status' => 'evaluated',
+                    'remarks' => 'Recommended
+                    ',
+                    'changed_by' => 5,
+                    'created_at' => '2026-08-19 10:24:14',
+                    'updated_at' => '2026-08-19 10:24:14',
+                ],
+                [
+                    'id' => 35,
+                    'application_id' => 18,
+                    'status' => 'evaluated',
+                    'remarks' => 'Recommended
+                    ',
+                    'changed_by' => 5,
+                    'created_at' => '2026-08-19 10:24:35',
+                    'updated_at' => '2026-08-19 10:24:35',
+                ],
+                [
+                    'id' => 36,
+                    'application_id' => 23,
+                    'status' => 'evaluated',
+                    'remarks' => null,
+                    'changed_by' => 5,
+                    'created_at' => '2026-08-19 13:32:39',
+                    'updated_at' => '2026-08-19 13:32:39',
+                ],
+                [
+                    'id' => 37,
+                    'application_id' => 17,
+                    'status' => 'evaluated',
+                    'remarks' => 'lack of files
+                    ',
+                    'changed_by' => 5,
+                    'created_at' => '2026-08-19 13:33:09',
+                    'updated_at' => '2026-08-19 13:33:09',
+                ],
+                [
+                    'id' => 38,
+                    'application_id' => 23,
+                    'status' => 'evaluated',
+                    'remarks' => 'No CSC',
+                    'changed_by' => 5,
+                    'created_at' => '2026-08-19 13:34:25',
+                    'updated_at' => '2026-08-19 13:34:25',
+                ],
+                [
+                    'id' => 39,
+                    'application_id' => 23,
+                    'status' => 'rejected',
+                    'remarks' => null,
+                    'changed_by' => 1,
+                    'created_at' => '2026-08-19 13:37:34',
+                    'updated_at' => '2026-08-19 13:37:34',
+                ],
+                [
+                    'id' => 40,
+                    'application_id' => 23,
+                    'status' => 'evaluated',
+                    'remarks' => null,
+                    'changed_by' => 1,
+                    'created_at' => '2026-08-19 14:10:15',
+                    'updated_at' => '2026-08-19 14:10:15',
+                ],
+                [
+                    'id' => 41,
+                    'application_id' => 23,
+                    'status' => 'rejected',
+                    'remarks' => null,
+                    'changed_by' => 1,
+                    'created_at' => '2026-08-19 14:10:33',
+                    'updated_at' => '2026-08-19 14:10:33',
+                ],
+                [
+                    'id' => 42,
+                    'application_id' => 9,
+                    'status' => 'evaluated',
+                    'remarks' => null,
+                    'changed_by' => 1,
+                    'created_at' => '2026-08-19 14:11:04',
+                    'updated_at' => '2026-08-19 14:11:04',
+                ],
+                [
+                    'id' => 43,
+                    'application_id' => 18,
+                    'status' => 'rejected',
+                    'remarks' => null,
+                    'changed_by' => 1,
+                    'created_at' => '2026-08-19 14:17:54',
+                    'updated_at' => '2026-08-19 14:17:54',
+                ],
+                [
+                    'id' => 44,
+                    'application_id' => 16,
+                    'status' => 'rejected',
+                    'remarks' => null,
+                    'changed_by' => 1,
+                    'created_at' => '2026-08-19 14:18:17',
+                    'updated_at' => '2026-08-19 14:18:17',
+                ],
+                [
+                    'id' => 45,
+                    'application_id' => 16,
+                    'status' => 'evaluated',
+                    'remarks' => null,
+                    'changed_by' => 1,
+                    'created_at' => '2026-08-19 14:18:35',
+                    'updated_at' => '2026-08-19 14:18:35',
+                ],
+                [
+                    'id' => 46,
+                    'application_id' => 9,
+                    'status' => 'approved',
+                    'remarks' => null,
+                    'changed_by' => 1,
+                    'created_at' => '2026-08-19 14:37:51',
+                    'updated_at' => '2026-08-19 14:37:51',
+                ],
+                [
+                    'id' => 47,
+                    'application_id' => 9,
+                    'status' => 'evaluated',
+                    'remarks' => null,
+                    'changed_by' => 5,
+                    'created_at' => '2026-08-19 14:38:08',
+                    'updated_at' => '2026-08-19 14:38:08',
+                ],
+                [
+                    'id' => 48,
+                    'application_id' => 9,
+                    'status' => 'approved',
+                    'remarks' => null,
+                    'changed_by' => 1,
+                    'created_at' => '2026-08-19 14:38:24',
+                    'updated_at' => '2026-08-19 14:38:24',
+                ],
+            ]
+            );
         });
     }
 }

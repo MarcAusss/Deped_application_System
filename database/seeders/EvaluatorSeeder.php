@@ -3,32 +3,27 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\Evaluator;
+use Illuminate\Support\Facades\DB;
 
 class EvaluatorSeeder extends Seeder
 {
+    /**
+     * Snapshot of the real evaluator profile records currently in the
+     * system.
+     */
     public function run(): void
     {
-        $evaluators = [
+        DB::table('evaluators')->insert(
             [
+            [
+                'id' => 1,
                 'name' => 'Juan Dela Cruz',
-                'email' => 'juan@example.com',
-                'status' => 'pending',
-            ],
-            [
-                'name' => 'Maria Santos',
-                'email' => 'maria@example.com',
+                'email' => 'evaluator@deped.gov.ph',
                 'status' => 'approved',
+                'created_at' => '2026-07-22 07:53:42',
+                'updated_at' => '2026-07-22 07:53:42',
             ],
-            [
-                'name' => 'Pedro Reyes',
-                'email' => 'pedro@example.com',
-                'status' => 'rejected',
-            ],
-        ];
-
-        foreach ($evaluators as $evaluator) {
-            Evaluator::create($evaluator);
-        }
+        ]
+        );
     }
 }

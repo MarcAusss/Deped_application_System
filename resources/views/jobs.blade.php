@@ -149,11 +149,22 @@
                             {{ $job->description ?: 'No description has been provided for this position.' }}
                         </p>
 
-                        <div class="mt-7 border-t border-slate-100 pt-5 text-sm text-slate-600">
-                            Posted:
-                            <span class="font-bold text-slate-800">
-                                {{ optional($job->created_at)->format('F d, Y') }}
-                            </span>
+                        <div class="mt-7 flex flex-wrap gap-x-6 gap-y-1 border-t border-slate-100 pt-5 text-sm text-slate-600">
+                            <div>
+                                Posted:
+                                <span class="font-bold text-slate-800">
+                                    {{ optional($job->posted_at ?? $job->created_at)->format('F d, Y') }}
+                                </span>
+                            </div>
+
+                            @if($job->until)
+                                <div>
+                                    Until:
+                                    <span class="font-bold text-slate-800">
+                                        {{ $job->until->format('F d, Y') }}
+                                    </span>
+                                </div>
+                            @endif
                         </div>
                     </div>
 

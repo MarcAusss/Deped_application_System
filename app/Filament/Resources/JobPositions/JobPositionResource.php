@@ -8,6 +8,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Forms;
 use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Grid;
 use App\Filament\Resources\JobPositions\Pages;
 
  
@@ -56,6 +57,19 @@ class JobPositionResource extends Resource
             Forms\Components\Toggle::make('is_open')
                 ->label('Available for Hiring')
                 ->default(true),
+
+            Grid::make(2)
+                ->schema([
+                    Forms\Components\DatePicker::make('posted_at')
+                        ->label('Posted')
+                        ->default(now())
+                        ->native(false),
+
+                    Forms\Components\DatePicker::make('until')
+                        ->label('Until')
+                        ->native(false)
+                        ->afterOrEqual('posted_at'),
+                ]),
         ]);
     }
 

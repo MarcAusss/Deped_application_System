@@ -40,6 +40,7 @@ class UserResource extends Resource
 
                     TextInput::make('password')
                         ->password()
+                        ->revealable()
                         ->required()
                         ->regex('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/')
                         ->validationMessages([
@@ -50,6 +51,7 @@ class UserResource extends Resource
 
                     TextInput::make('passwordConfirmation')
                         ->password()
+                        ->revealable()
                         ->dehydrated(false)
                         ->required()
                         ->same('password')
