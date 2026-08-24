@@ -2,10 +2,10 @@
 
 namespace App\Filament\Resources\JobPostings;
 
-use App\Filament\Resources\JobPositions\JobPositionResource;
 use App\Filament\Resources\JobPostings\Pages;
 use App\Models\JobPosition;
 use Filament\Actions\Action;
+use Filament\Forms;
 use Filament\Resources\Resource;
 use Filament\Support\Colors\Color;
 use Filament\Tables;
@@ -25,11 +25,11 @@ class JobPostingResource extends Resource
 
     protected static ?string $slug = 'job-postings';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 2;
 
     public static function getNavigationGroup(): ?string
     {
-        return 'Applications';
+        return 'Recruitment';
     }
 
     public static function canCreate(): bool
@@ -68,22 +68,39 @@ class JobPostingResource extends Resource
                     ->getStateUsing(fn ($record) => filled($record->attachment_path) ? 'Uploaded' : 'Not uploaded')
                     ->badge()
                     ->color(fn (string $state) => $state === 'Uploaded' ? 'success' : 'gray'),
+
+                Tables\Columns\TextColumn::make('view_dm_notice')
+                    ->label('View')
+                    ->getStateUsing(fn ($record) => filled($record->attachment_path) ? 'D.M notice' : '—')
+                    ->color(fn ($record) => filled($record->attachment_path) ? Color::Blue : Color::Gray)
+                    ->extraAttributes(fn ($record) => filled($record->attachment_path) ? ['class' => 'hover:underline'] : [])
+                    ->url(fn ($record) => filled($record->attachment_path)
+                        ? \Illuminate\Support\Facades\Storage::disk('public')->url($record->attachment_path)
+                        : null)
+                    ->openUrlInNewTab(),
             ])
             ->recordActionsColumnLabel('Actions')
             ->recordActionsAlignment(\Filament\Support\Enums\Alignment::Center->value)
             ->actions([
-                Action::make('view')
-                    ->label('View D.M Notice')
-                    ->icon('heroicon-o-document-arrow-down')
-                    ->color(Color::Blue)
-                    ->visible(fn ($record) => filled($record->attachment_path))
-                    ->url(fn ($record) => \Illuminate\Support\Facades\Storage::disk('public')->url($record->attachment_path))
-                    ->openUrlInNewTab(),
-
                 Action::make('manage')
                     ->label('Upload / Edit')
-                    ->icon('heroicon-o-pencil')
-                    ->url(fn ($record) => JobPositionResource::getUrl('edit', ['record' => $record])),
+                    ->modalHeading('D.M Notice of Vacancy')
+                    ->form([
+                        Forms\Components\FileUpload::make('attachment_path')
+                            ->label('D.M Notice of Vacancy')
+                            ->helperText('Upload the official D.M Notice of Vacancy (PDF). Applicants will be able to download this from the job listing.')
+                            ->disk('public')
+                            ->directory('job-positions')
+                            ->acceptedFileTypes(['application/pdf'])
+                            ->downloadable()
+                            ->openable(),
+                    ])
+                    ->fillForm(fn ($record) => [
+                        'attachment_path' => $record->attachment_path,
+                    ])
+                    ->action(fn ($record, array $data) => $record->update([
+                        'attachment_path' => $data['attachment_path'],
+                    ])),
             ])
             ->bulkActions([]);
     }

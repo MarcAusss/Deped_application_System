@@ -53,12 +53,12 @@
                 <img src="{{ url ('images/Department_of_Education_(DepEd).svg.webp') }}" alt="" class="w-20">
 
                 <div>
-                    <p class="text-xs font-bold uppercase tracking-widest text-government-gold">
-                        Department of Education
+                    <p class="text-lg font-black uppercase tracking-widest text-government-dark sm:text-xl">
+                        SCHOOL DIVISION OFFICE OF ALBAY - REGION V
                     </p>
 
-                    <h1 class="text-lg font-black text-government-dark sm:text-xl">
-                        Applicant Management System
+                    <h1 class="text-sm font-bold text-government-gold">
+                        Lignon Hill, Bogtong, Legazpi City, Albay
                     </h1>
                 </div>
             </a>
@@ -73,35 +73,47 @@
     </header>
 
     <section class="relative overflow-hidden bg-gradient-to-r from-government-dark to-government-blue text-white">
-        <div class="mx-auto max-w-5xl px-4 py-12 text-center sm:px-6 lg:px-8">
-            <p class="text-sm font-bold uppercase tracking-widest text-yellow-300">
-                Online Recruitment
-            </p>
+        <div class="mx-auto flex max-w-5xl flex-col items-center justify-center gap-2 px-4 py-12 sm:flex-row sm:px-6 lg:px-8">
+            <img
+                src="{{ url('images/depedalbay.png') }}"
+                alt="DepEd Division of Albay"
+                class="h-32 w-32 shrink-0 object-contain"
+            >
 
-            <h2 class="mt-3 text-3xl font-black sm:text-4xl">
-                Application Form
-            </h2>
+            <div class="text-justify">
+                <p class="text-base font-bold uppercase tracking-widest text-white">
+                    Welcome!
+                </p>
 
-            <p class="mt-3 text-lg text-blue-100">
-                Applying for:
-                <span class="font-black text-white">
-                    {{ $job->title }}
-                </span>
-            </p>
+                <h2 class="mt-3 text-lg font-black sm:text-xl">
+                    SDO ALBAY Career Application &
+                    <br>
+                    Recruitment for Education Services (CARES)
+                </h2>
 
-            @if($job->attachment_path || $job->csc_publication_path)
-                <div class="mt-4 flex flex-wrap items-center justify-center gap-3">
+                <p class="mt-3 text-lg text-blue-100">
+                    Applying for:
+                    <span class="font-black text-white">
+                        {{ $job->title }}
+                    </span>
+                </p>
+            </div>
+        </div>
+
+        @if($job->attachment_path || $job->csc_publication_path)
+            <div class="mx-4 mb-4 flex flex-col items-start gap-2 sm:mx-6 sm:mb-6 lg:absolute lg:bottom-6 lg:left-8 lg:mx-0 lg:mb-0">
+                <div class="flex flex-col items-start gap-3 sm:flex-row sm:flex-wrap sm:gap-6">
                     @if($job->attachment_path)
                         <a
                             href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($job->attachment_path) }}"
                             target="_blank"
                             rel="noopener"
-                            class="inline-flex items-center gap-2 rounded-lg border border-white/30 px-4 py-2 text-sm font-bold text-white transition hover:bg-white/10"
+                            class="inline-flex items-center gap-1.5 rounded-lg border border-white/30 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-white/10"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-5 w-5">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-4 w-4">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 9.75v6.75m0 0-3-3m3 3 3-3m-8.25 6a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.233-2.33 3 3 0 0 1 3.758 3.848A3.752 3.752 0 0 1 18 19.5H6.75Z" />
                             </svg>
-                            View D.M Notice
+                             D.M Notice
                         </a>
                     @endif
 
@@ -110,17 +122,21 @@
                             href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($job->csc_publication_path) }}"
                             target="_blank"
                             rel="noopener"
-                            class="inline-flex items-center gap-2 rounded-lg border border-white/30 px-4 py-2 text-sm font-bold text-white transition hover:bg-white/10"
+                            class="inline-flex items-center gap-1.5 rounded-lg border border-white/30 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-white/10"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-5 w-5">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-4 w-4">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 9.75v6.75m0 0-3-3m3 3 3-3m-8.25 6a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.233-2.33 3 3 0 0 1 3.758 3.848A3.752 3.752 0 0 1 18 19.5H6.75Z" />
                             </svg>
-                            View CSC Publication of Vacancy
+                             CSC Publication of Vacancy
                         </a>
                     @endif
                 </div>
-            @endif
-        </div>
+
+                <p class="whitespace-nowrap text-xs text-blue-100">
+                    Important: Review the D.M. Notice and CSC Publication of Vacancy for full qualifications, requirements, and deadlines.
+                </p>
+            </div>
+        @endif
 
         @if($job->posted_at || $job->until)
             <div class="mx-4 mb-4 flex flex-col items-end gap-3 sm:mx-6 sm:mb-6 sm:flex-row sm:justify-end sm:gap-6 lg:absolute lg:bottom-6 lg:right-8 lg:mx-0 lg:mb-0">

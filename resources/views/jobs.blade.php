@@ -44,22 +44,24 @@
     </div>
 
     <header class="border-b border-slate-200 bg-white shadow-sm">
-        <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+        <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-2 sm:px-6 lg:px-8">
             <a
                 href="{{ route('jobs.index') }}"
                 class="flex items-center gap-4"
             >
-                <div class="flex h-14 w-14 items-center justify-center rounded-full bg-government-navy text-sm font-black text-white">
-                    DepEd
-                </div>
+                <img
+                    src="{{ url('images/Department_of_Education_(DepEd).svg.webp') }}"
+                    alt="Department of Education"
+                    class="h-24 w-24 shrink-0 object-contain"
+                >
 
                 <div>
-                    <p class="text-xs font-bold uppercase tracking-widest text-government-gold">
-                        Department of Education
+                    <p class="text-2xl font-black uppercase tracking-widest text-government-dark">
+                        SCHOOL DIVISION OFFICE OF ALBAY - REGION V
                     </p>
 
-                    <h1 class="text-xl font-black text-government-dark">
-                        Applicant Management System
+                    <h1 class="text-sm font-bold text-government-gold">
+                        Lignon Hill, Bogtong, Legazpi City, Albay
                     </h1>
                 </div>
             </a>
@@ -67,19 +69,27 @@
     </header>
 
     <section class="bg-gradient-to-r from-government-dark to-government-blue text-white">
-        <div class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-            <p class="text-sm font-bold uppercase tracking-widest text-yellow-300">
-                Government Career Opportunities
-            </p>
+        <div class="mx-auto flex max-w-7xl items-center justify-between gap-8 px-4 py-16 sm:px-6 lg:px-8">
+            <div>
+                <p class="text-sm font-bold uppercase tracking-widest text-yellow-300">
+                    Government Career Opportunities
+                </p>
 
-            <h2 class="mt-4 max-w-3xl text-4xl font-black leading-tight sm:text-5xl">
-                Build your career in public service
-            </h2>
+                <h2 class="mt-4 max-w-3xl text-4xl font-black leading-tight sm:text-5xl">
+                    Build your career in public service
+                </h2>
 
-            <p class="mt-5 max-w-2xl text-lg leading-8 text-blue-100">
-                Explore available positions and submit your application through
-                the official recruitment portal.
-            </p>
+                <p class="mt-5 max-w-2xl text-lg leading-8 text-blue-100">
+                    Explore available positions and submit your application through
+                    the official recruitment portal.
+                </p>
+            </div>
+
+            <img
+                src="{{ url('images/depedalbay.png') }}"
+                alt="DepEd Division of Albay"
+                class="hidden h-[12.5rem] w-[12.5rem] shrink-0 -translate-x-12 object-contain lg:block"
+            >
         </div>
     </section>
 
@@ -149,29 +159,9 @@
                             {{ $job->description ?: 'No description has been provided for this position.' }}
                         </p>
 
-                        <div class="mt-7 flex flex-wrap gap-x-6 gap-y-1 border-t border-slate-100 pt-5 text-sm text-slate-600">
-                            <div>
-                                Posted:
-                                <span class="font-bold text-slate-800">
-                                    {{ optional($job->posted_at ?? $job->created_at)->format('F d, Y') }}
-                                </span>
-                            </div>
-
-                            @if($job->until)
-                                <div>
-                                    Until:
-                                    <span class="font-bold text-slate-800">
-                                        {{ $job->until->format('F d, Y') }}
-                                        @if($job->until_time)
-                                            {{ \Carbon\Carbon::parse($job->until_time)->format('g:i A') }}
-                                        @endif
-                                    </span>
-                                </div>
-                            @endif
-                        </div>
-
-                        @if($job->attachment_path || $job->csc_publication_path)
-                            <div class="mt-4 flex flex-col items-start gap-2">
+                        <div class="mt-7 flex flex-wrap items-start justify-between gap-x-6 gap-y-3 border-t border-slate-100 pt-5 text-sm text-slate-600">
+                            @if($job->attachment_path || $job->csc_publication_path)
+                                <div class="flex flex-wrap items-center gap-4">
                                 @if($job->attachment_path)
                                     <a
                                         href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($job->attachment_path) }}"
@@ -182,7 +172,7 @@
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-5 w-5">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 9.75v6.75m0 0-3-3m3 3 3-3m-8.25 6a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.233-2.33 3 3 0 0 1 3.758 3.848A3.752 3.752 0 0 1 18 19.5H6.75Z" />
                                         </svg>
-                                        View D.M Notice
+                                         D.M Notice
                                     </a>
                                 @endif
 
@@ -196,11 +186,39 @@
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-5 w-5">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 9.75v6.75m0 0-3-3m3 3 3-3m-8.25 6a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.233-2.33 3 3 0 0 1 3.758 3.848A3.752 3.752 0 0 1 18 19.5H6.75Z" />
                                         </svg>
-                                        View CSC Publication of Vacancy
+                                         CSC Publication of Vacancy
                                     </a>
                                 @endif
                             </div>
                         @endif
+
+                            <div class="flex flex-wrap gap-x-6 gap-y-1">
+                                <div>
+                                    Posted:
+                                    <span class="font-bold text-slate-800">
+                                        {{ optional($job->posted_at ?? $job->created_at)->format('F d, Y') }}
+                                    </span>
+                                </div>
+
+                                @if($job->until)
+                                    <div>
+                                        Until:
+                                        <span class="font-bold text-slate-800">
+                                            {{ $job->until->format('F d, Y') }}
+                                            @if($job->until_time)
+                                                {{ \Carbon\Carbon::parse($job->until_time)->format('g:i A') }}
+                                            @endif
+                                        </span>
+                                    </div>
+                                @endif
+                            </div>
+                    </div>
+
+                    @if($job->attachment_path || $job->csc_publication_path)
+                        <p class="mt-3 text-xs text-slate-500">
+                            Important: Review the D.M. Notice and CSC Publication of Vacancy for full qualifications, requirements, and deadlines.
+                        </p>
+                    @endif
                     </div>
 
                     <div class="flex items-center border-t border-slate-200 bg-slate-50 p-6 lg:border-l lg:border-t-0">

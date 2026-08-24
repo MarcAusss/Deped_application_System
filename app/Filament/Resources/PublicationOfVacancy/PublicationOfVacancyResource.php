@@ -2,10 +2,10 @@
 
 namespace App\Filament\Resources\PublicationOfVacancy;
 
-use App\Filament\Resources\JobPositions\JobPositionResource;
 use App\Filament\Resources\PublicationOfVacancy\Pages;
 use App\Models\JobPosition;
 use Filament\Actions\Action;
+use Filament\Forms;
 use Filament\Resources\Resource;
 use Filament\Support\Colors\Color;
 use Filament\Tables;
@@ -25,11 +25,11 @@ class PublicationOfVacancyResource extends Resource
 
     protected static ?string $slug = 'publication-of-vacancy';
 
-    protected static ?int $navigationSort = 4;
+    protected static ?int $navigationSort = 3;
 
     public static function getNavigationGroup(): ?string
     {
-        return 'Applications';
+        return 'Recruitment';
     }
 
     public static function canCreate(): bool
@@ -68,22 +68,39 @@ class PublicationOfVacancyResource extends Resource
                     ->getStateUsing(fn ($record) => filled($record->csc_publication_path) ? 'Uploaded' : 'Not uploaded')
                     ->badge()
                     ->color(fn (string $state) => $state === 'Uploaded' ? 'success' : 'gray'),
+
+                Tables\Columns\TextColumn::make('view_csc_publication')
+                    ->label('View')
+                    ->getStateUsing(fn ($record) => filled($record->csc_publication_path) ? 'Publication of CSC' : '—')
+                    ->color(fn ($record) => filled($record->csc_publication_path) ? Color::Blue : Color::Gray)
+                    ->extraAttributes(fn ($record) => filled($record->csc_publication_path) ? ['class' => 'hover:underline'] : [])
+                    ->url(fn ($record) => filled($record->csc_publication_path)
+                        ? \Illuminate\Support\Facades\Storage::disk('public')->url($record->csc_publication_path)
+                        : null)
+                    ->openUrlInNewTab(),
             ])
             ->recordActionsColumnLabel('Actions')
             ->recordActionsAlignment(\Filament\Support\Enums\Alignment::Center->value)
             ->actions([
-                Action::make('view')
-                    ->label('View CSC Publication')
-                    ->icon('heroicon-o-document-arrow-down')
-                    ->color(Color::Blue)
-                    ->visible(fn ($record) => filled($record->csc_publication_path))
-                    ->url(fn ($record) => \Illuminate\Support\Facades\Storage::disk('public')->url($record->csc_publication_path))
-                    ->openUrlInNewTab(),
-
                 Action::make('manage')
                     ->label('Upload / Edit')
-                    ->icon('heroicon-o-pencil')
-                    ->url(fn ($record) => JobPositionResource::getUrl('edit', ['record' => $record])),
+                    ->modalHeading('CSC Publication of Vacancy')
+                    ->form([
+                        Forms\Components\FileUpload::make('csc_publication_path')
+                            ->label('CSC Publication of Vacancy')
+                            ->helperText('Upload the official CSC Publication of Vacancy (PDF). Applicants will be able to download this from the job listing.')
+                            ->disk('public')
+                            ->directory('job-positions')
+                            ->acceptedFileTypes(['application/pdf'])
+                            ->downloadable()
+                            ->openable(),
+                    ])
+                    ->fillForm(fn ($record) => [
+                        'csc_publication_path' => $record->csc_publication_path,
+                    ])
+                    ->action(fn ($record, array $data) => $record->update([
+                        'csc_publication_path' => $data['csc_publication_path'],
+                    ])),
             ])
             ->bulkActions([]);
     }

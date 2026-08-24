@@ -94,7 +94,7 @@
             <div class="absolute inset-0 bg-white/70"></div>
 
              
-            <div class="relative z-10 flex flex-col items-center justify-center h-full px-10 text-center">
+            <div class="relative z-10 flex flex-col items-center justify-start h-full px-10 pt-60 text-center">
 
                  
                 <div
@@ -109,7 +109,7 @@
                 </div>
 
                 <h1 class="text-4xl font-black text-gray-800 mt-8">
-                    DepEd Application System
+                    Career Application & Recruitment for Education Services (CARES)
                 </h1>
 
                 <p class="text-gray-700 mt-4 text-lg max-w-md leading-relaxed">
