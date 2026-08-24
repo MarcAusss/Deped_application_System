@@ -58,7 +58,7 @@ class JobPositionResource extends Resource
                 ->label('Available for Hiring')
                 ->default(true),
 
-            Grid::make(2)
+            Grid::make(3)
                 ->schema([
                     Forms\Components\DatePicker::make('posted_at')
                         ->label('Posted')
@@ -69,13 +69,56 @@ class JobPositionResource extends Resource
                         ->label('Until')
                         ->native(false)
                         ->afterOrEqual('posted_at'),
+
+                    Forms\Components\TextInput::make('until_time')
+                        ->label('Closing Time')
+                        ->placeholder('e.g. 5:00 PM')
+                        ->helperText('Include AM or PM, e.g. 5:00 PM.')
+                        ->formatStateUsing(fn (?string $state) => filled($state)
+                            ? \Carbon\Carbon::parse($state)->format('g:i A')
+                            : null)
+                        ->rule(function () {
+                            return function (string $attribute, $value, \Closure $fail) {
+                                if (blank($value)) {
+                                    return;
+                                }
+
+                                try {
+                                    \Carbon\Carbon::parse($value);
+                                } catch (\Throwable $e) {
+                                    $fail('Enter a valid time, e.g. 5:00 PM.');
+                                }
+                            };
+                        })
+                        ->dehydrateStateUsing(fn (?string $state) => filled($state)
+                            ? \Carbon\Carbon::parse($state)->format('H:i:s')
+                            : null),
                 ]),
+
+            Forms\Components\FileUpload::make('attachment_path')
+                ->label('D.M Notice of Vacancy')
+                ->helperText('Upload the official D.M Notice of Vacancy (PDF). Applicants will be able to download this from the job listing.')
+                ->disk('public')
+                ->directory('job-positions')
+                ->acceptedFileTypes(['application/pdf'])
+                ->downloadable()
+                ->openable(),
+
+            Forms\Components\FileUpload::make('csc_publication_path')
+                ->label('CSC Publication of Vacancy')
+                ->helperText('Upload the official CSC Publication of Vacancy (PDF). Applicants will be able to download this from the job listing.')
+                ->disk('public')
+                ->directory('job-positions')
+                ->acceptedFileTypes(['application/pdf'])
+                ->downloadable()
+                ->openable(),
         ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('created_at', 'desc')
             ->columns([
                 Tables\Columns\TextColumn::make('title')->searchable(),
 

@@ -19,6 +19,9 @@ class JobPosition extends Model
         'is_open',
         'posted_at',
         'until',
+        'until_time',
+        'attachment_path',
+        'csc_publication_path',
     ];
 
     protected $casts = [

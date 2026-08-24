@@ -88,6 +88,38 @@
                     {{ $job->title }}
                 </span>
             </p>
+
+            @if($job->attachment_path || $job->csc_publication_path)
+                <div class="mt-4 flex flex-wrap items-center justify-center gap-3">
+                    @if($job->attachment_path)
+                        <a
+                            href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($job->attachment_path) }}"
+                            target="_blank"
+                            rel="noopener"
+                            class="inline-flex items-center gap-2 rounded-lg border border-white/30 px-4 py-2 text-sm font-bold text-white transition hover:bg-white/10"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-5 w-5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9.75v6.75m0 0-3-3m3 3 3-3m-8.25 6a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.233-2.33 3 3 0 0 1 3.758 3.848A3.752 3.752 0 0 1 18 19.5H6.75Z" />
+                            </svg>
+                            View D.M Notice
+                        </a>
+                    @endif
+
+                    @if($job->csc_publication_path)
+                        <a
+                            href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($job->csc_publication_path) }}"
+                            target="_blank"
+                            rel="noopener"
+                            class="inline-flex items-center gap-2 rounded-lg border border-white/30 px-4 py-2 text-sm font-bold text-white transition hover:bg-white/10"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-5 w-5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9.75v6.75m0 0-3-3m3 3 3-3m-8.25 6a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.233-2.33 3 3 0 0 1 3.758 3.848A3.752 3.752 0 0 1 18 19.5H6.75Z" />
+                            </svg>
+                            View CSC Publication of Vacancy
+                        </a>
+                    @endif
+                </div>
+            @endif
         </div>
 
         @if($job->posted_at || $job->until)
@@ -112,6 +144,9 @@
 
                         <span class="font-bold text-white">
                             {{ $job->until->format('F d, Y') }}
+                            @if($job->until_time)
+                                {{ \Carbon\Carbon::parse($job->until_time)->format('g:i A') }}
+                            @endif
                         </span>
                     </div>
                 @endif
