@@ -48,9 +48,22 @@ class JobPositionResource extends Resource
                 ->label('Training Requirement')
                 ->rows(2),
 
+            Forms\Components\TextInput::make('min_training_hours')
+                ->label('Minimum Training Hours (QS)')
+                ->numeric()
+                ->minValue(0)
+                ->suffix('hour(s)'),
+
             Forms\Components\Textarea::make('experience_requirement')
                 ->label('Experience Requirement')
                 ->rows(2),
+
+            Forms\Components\TextInput::make('min_experience_years')
+                ->label('Minimum Years of Experience (QS)')
+                ->numeric()
+                ->minValue(0)
+                ->step(0.01)
+                ->suffix('year(s)'),
 
             Forms\Components\Textarea::make('eligibility_requirement')
                 ->label('Eligibility Requirement')

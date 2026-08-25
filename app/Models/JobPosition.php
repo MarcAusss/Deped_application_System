@@ -14,7 +14,9 @@ class JobPosition extends Model
         'monthly_salary',
         'education_requirement',
         'training_requirement',
+        'min_training_hours',
         'experience_requirement',
+        'min_experience_years',
         'eligibility_requirement',
         'is_open',
         'posted_at',
@@ -29,6 +31,8 @@ class JobPosition extends Model
         'is_open' => 'boolean',
         'posted_at' => 'date',
         'until' => 'date',
+        'min_experience_years' => 'decimal:2',
+        'min_training_hours' => 'integer',
     ];
 
     public function applications(): HasMany

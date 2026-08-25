@@ -1,17 +1,15 @@
 <?php
 
-namespace App\Filament\Resources\Archive;
+namespace App\Filament\Evaluator\Resources\Archive;
 
-use App\Filament\Resources\Applications\ApplicationResource;
-use App\Filament\Resources\Archive\Pages;
+use App\Filament\Evaluator\Resources\Applications\ApplicationResource;
+use App\Filament\Evaluator\Resources\Archive\Pages;
 use App\Models\Application;
 use Filament\Actions\Action;
-use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Auth;
 
 class ArchiveResource extends Resource
 {
@@ -92,28 +90,6 @@ class ArchiveResource extends Resource
                     ->label('View')
                     ->icon('heroicon-o-eye')
                     ->url(fn ($record) => ApplicationResource::getUrl('view', ['record' => $record])),
-
-                Action::make('restore')
-                    ->label('Restore')
-                    ->icon('heroicon-o-arrow-uturn-left')
-                    ->color('gray')
-                    ->requiresConfirmation()
-                    ->modalHeading('Restore Application')
-                    ->modalDescription('This moves the application out of the archive and back to evaluated status for reconsideration.')
-                    ->modalSubmitActionLabel('Yes, restore')
-                    ->action(function ($record) {
-                        $record->update(['status' => 'evaluated']);
-
-                        $record->logs()->create([
-                            'status' => 'evaluated',
-                            'changed_by' => Auth::id(),
-                        ]);
-
-                        Notification::make()
-                            ->title('Application restored from archive')
-                            ->success()
-                            ->send();
-                    }),
             ])
 
             ->bulkActions([]);

@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Filament\Resources\Archive;
+namespace App\Filament\Resources\Approvals;
 
 use App\Filament\Resources\Applications\ApplicationResource;
-use App\Filament\Resources\Archive\Pages;
+use App\Filament\Resources\Approvals\Pages;
 use App\Models\Application;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
@@ -13,21 +13,21 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
-class ArchiveResource extends Resource
+class ApprovalResource extends Resource
 {
     protected static ?string $model = Application::class;
 
-    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-archive-box';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-check-badge';
 
-    protected static ?string $navigationLabel = 'Archive';
+    protected static ?string $navigationLabel = 'Approvals';
 
-    protected static ?string $modelLabel = 'Archived Application';
+    protected static ?string $modelLabel = 'Approved Application';
 
-    protected static ?string $pluralModelLabel = 'Archive';
+    protected static ?string $pluralModelLabel = 'Approvals';
 
-    protected static ?string $slug = 'archive';
+    protected static ?string $slug = 'approvals';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 2;
 
     public static function getNavigationGroup(): ?string
     {
@@ -36,7 +36,7 @@ class ArchiveResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->where('status', 'rejected');
+        return parent::getEloquentQuery()->where('status', 'approved');
     }
 
     public static function canCreate(): bool
@@ -71,7 +71,7 @@ class ArchiveResource extends Resource
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('updated_at')
-                    ->label('Rejected On')
+                    ->label('Approved On')
                     ->dateTime('M d, Y')
                     ->sortable(),
             ])
@@ -99,7 +99,7 @@ class ArchiveResource extends Resource
                     ->color('gray')
                     ->requiresConfirmation()
                     ->modalHeading('Restore Application')
-                    ->modalDescription('This moves the application out of the archive and back to evaluated status for reconsideration.')
+                    ->modalDescription('This undoes the approval and moves the application back to the main Applications list for reconsideration.')
                     ->modalSubmitActionLabel('Yes, restore')
                     ->action(function ($record) {
                         $record->update(['status' => 'evaluated']);
@@ -110,7 +110,7 @@ class ArchiveResource extends Resource
                         ]);
 
                         Notification::make()
-                            ->title('Application restored from archive')
+                            ->title('Application restored to Applications')
                             ->success()
                             ->send();
                     }),
@@ -122,7 +122,7 @@ class ArchiveResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListArchive::route('/'),
+            'index' => Pages\ListApprovals::route('/'),
         ];
     }
 }

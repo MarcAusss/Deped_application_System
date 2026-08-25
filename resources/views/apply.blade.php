@@ -77,7 +77,7 @@
             <img
                 src="{{ url('images/depedalbay.png') }}"
                 alt="DepEd Division of Albay"
-                class="h-32 w-32 shrink-0 object-contain"
+                class="h-[8.75rem] w-[8.75rem] shrink-0 object-contain"
             >
 
             <div class="text-justify">
@@ -85,13 +85,13 @@
                     Welcome!
                 </p>
 
-                <h2 class="mt-3 text-lg font-black sm:text-xl">
-                    SDO ALBAY Career Application &
+                <h2 class="mt-1 font-black">
+                    <span class="text-2xl sm:text-3xl">SDO ALBAY (CARES)</span>
                     <br>
-                    Recruitment for Education Services (CARES)
+                    <span class="text-l g sm:text-xl">Career Application & <br>Recruitment for Education Services</span>
                 </h2>
 
-                <p class="mt-3 text-lg text-blue-100">
+                <p class="mt-1 text-lg text-blue-100">
                     Applying for:
                     <span class="font-black text-white">
                         {{ $job->title }}

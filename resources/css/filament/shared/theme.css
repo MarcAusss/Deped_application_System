@@ -698,3 +698,88 @@
         padding: 1rem;
     }
 }
+
+/* Evaluation Checklist — documentary requirement boxes */
+
+.evaluation-checklist .fi-fo-checkbox-list-option {
+    border: 2px solid #94a3b8;
+    border-radius: 0.75rem;
+    padding: 0.75rem 1rem;
+    transition: border-color .15s ease, background-color .15s ease;
+}
+
+.evaluation-checklist .fi-fo-checkbox-list-option:has(input:checked) {
+    border-color: #4ade80;
+    background-color: #f0fdf4;
+}
+
+.evaluation-checklist .fi-fo-checkbox-list-option:has(input:checked) .fi-fo-checkbox-list-option-label {
+    color: #15803d;
+    font-weight: 600;
+}
+
+/* Evaluation Checklist — QS Meet/Did-not-Meet radio pills */
+
+.evaluation-checklist .fi-fo-radio:not(.fi-inline) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+}
+
+.evaluation-checklist .fi-fo-radio.fi-inline {
+    gap: 0.75rem;
+}
+
+.evaluation-checklist .fi-fo-radio-label {
+    border: 1px solid var(--gray-300, #d1d5db);
+    border-radius: 9999px;
+    padding: 0.5rem 1.25rem;
+    cursor: pointer;
+    transition: border-color .15s ease, background-color .15s ease, color .15s ease;
+}
+
+.evaluation-checklist .fi-fo-radio-label:has(input:checked) {
+    border-color: var(--primary-500, #6366f1);
+    background-color: var(--primary-50, #eef2ff);
+}
+
+.evaluation-checklist .fi-fo-radio-label:has(input:checked) p {
+    color: var(--primary-700, #4338ca);
+    font-weight: 600;
+}
+
+/* Dark blue section headers — scoped to the section's own header only,
+   so nested sub-sections (e.g. Mandatory/Other Requirements, QS category
+   cards) inside a dark-blue-header section are not also recolored. */
+
+.dark-blue-header > .fi-section > .fi-section-header {
+    background-color: #1e3a8a;
+    border-top-left-radius: 0.75rem;
+    border-top-right-radius: 0.75rem;
+    color: #ffffff;
+}
+
+.dark-blue-header > .fi-section > .fi-section-header .fi-section-header-heading,
+.dark-blue-header > .fi-section > .fi-section-header .fi-section-header-description {
+    color: #ffffff;
+}
+
+.dark-blue-header > .fi-section > .fi-section-header svg {
+    color: #ffffff;
+}
+
+/* QS category cards — let the Applicant box stretch to match the height
+   of a longer Qualification Standard box in the same grid row. CSS grid
+   already stretches the .fi-grid-col itself; this chains height:100%
+   through Filament's nested placeholder wrapper divs so the boxed
+   content div (which also has height:100% inline) actually fills it. */
+
+.qs-box-row .fi-grid-col,
+.qs-box-row .fi-sc-component,
+.qs-box-row .fi-in-entry,
+.qs-box-row .fi-in-entry-content-col,
+.qs-box-row .fi-in-entry-content-ctn,
+.qs-box-row .fi-in-entry-content,
+.qs-box-row .fi-in-text-item {
+    height: 100%;
+}

@@ -12,6 +12,17 @@ class ApplicationControlNumber extends Model
         'generated_by',
     ];
 
+    protected static function booted(): void
+    {
+        static::created(function (self $controlNumber) {
+            $application = $controlNumber->application;
+
+            if ($application && ! in_array($application->status, ['approved', 'rejected'], true)) {
+                $application->update(['status' => 'evaluated']);
+            }
+        });
+    }
+
     public function application()
     {
         return $this->belongsTo(Application::class);

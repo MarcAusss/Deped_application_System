@@ -69,26 +69,28 @@
     </header>
 
     <section class="bg-gradient-to-r from-government-dark to-government-blue text-white">
-        <div class="mx-auto flex max-w-7xl items-center justify-between gap-8 px-4 py-16 sm:px-6 lg:px-8">
+        <div class="mx-auto flex max-w-7xl items-center justify-between gap-8 px-4 py-10 sm:px-6 lg:px-8">
             <div>
-                <p class="text-sm font-bold uppercase tracking-widest text-yellow-300">
-                    Government Career Opportunities
+                <p class="text-lg font-black uppercase tracking-widest text-white">
+                    Welcome!
                 </p>
 
-                <h2 class="mt-4 max-w-3xl text-4xl font-black leading-tight sm:text-5xl">
-                    Build your career in public service
+                <h2 class="mt-4 max-w-3xl font-black leading-tight">
+                    <span class="text-5xl sm:text-5xl">SDO ALBAY (CARES)</span>
+                    <br>
+                    <span class="text-2xl sm:text-3xl">Career Application &<BR>Recruitment for Education Services</span>
                 </h2>
 
                 <p class="mt-5 max-w-2xl text-lg leading-8 text-blue-100">
-                    Explore available positions and submit your application through
-                    the official recruitment portal.
+                    Welcome! Every great career starts with a single step —
+                    explore our open positions and apply today.
                 </p>
             </div>
 
             <img
                 src="{{ url('images/depedalbay.png') }}"
                 alt="DepEd Division of Albay"
-                class="hidden h-[12.5rem] w-[12.5rem] shrink-0 -translate-x-12 object-contain lg:block"
+                class="hidden h-64 w-64 shrink-0 -translate-x-12 object-contain lg:block"
             >
         </div>
     </section>

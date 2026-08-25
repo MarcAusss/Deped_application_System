@@ -44,7 +44,9 @@ class EducationRelationManager extends RelationManager
                     ->sortable(),
             ])
             ->headerActions([
-                CreateAction::make(),
+                CreateAction::make()
+                    ->outlined()
+                    ->extraAttributes(['style' => 'box-shadow:inset 0 0 0 1px #1e3a8a;color:#1e3a8a;background-color:transparent;']),
             ])
             ->actions([
                 EditAction::make(),
