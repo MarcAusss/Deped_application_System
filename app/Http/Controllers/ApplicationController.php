@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\ApplicationSubmitted;
 use App\Models\Application;
 use App\Models\JobPosition;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
 use Throwable;
 
@@ -230,8 +232,8 @@ class ApplicationController extends Controller
 
             'training.*.hours' => [
                 'nullable',
-                'string',
-                'max:50',
+                'integer',
+                'min:0',
             ],
 
             'training.*.training_date' => [
@@ -368,7 +370,7 @@ class ApplicationController extends Controller
         ]);
 
         try {
-            DB::transaction(function () use ($validated, $request, $job): void {
+            $application = DB::transaction(function () use ($validated, $request, $job): Application {
                 $application = Application::create([
                     'job_position_id' => $job->id,
                     'status' => 'pending',
@@ -521,6 +523,8 @@ class ApplicationController extends Controller
                         'file_path' => $path,
                     ]);
                 }
+
+                return $application;
             });
         } catch (Throwable $exception) {
             report($exception);
@@ -531,6 +535,15 @@ class ApplicationController extends Controller
                     'error',
                     'The application could not be submitted. Please try again.'
                 );
+        }
+
+        try {
+            $application->load(['jobPosition', 'profile']);
+
+            Mail::to($application->profile->email)
+                ->send(new ApplicationSubmitted($application));
+        } catch (Throwable $exception) {
+            report($exception);
         }
 
         return redirect()

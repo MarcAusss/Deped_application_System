@@ -10,6 +10,7 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Navigation\NavigationGroup;
 use Filament\Panel;
 use Filament\PanelProvider;
+use Filament\View\PanelsRenderHook;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\Width;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -75,6 +76,10 @@ class AdminPanelProvider extends PanelProvider
                 ApplicationsPerJobChart::class,
                 RecentApplicants::class,
             ])
+            ->renderHook(
+                PanelsRenderHook::BODY_END,
+                fn () => view('filament.components.chart-slice-labels')
+            )
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

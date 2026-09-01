@@ -3,13 +3,14 @@
 namespace App\Filament\Evaluator\Resources\Approvals;
 
 use App\Exports\ApplicationsExport;
-use App\Filament\Evaluator\Resources\Applications\ApplicationResource;
+use App\Filament\Resources\Applications\ApplicationResource as ApplicationDetailsResource;
 use App\Filament\Evaluator\Resources\Approvals\Pages;
 use App\Models\Application;
 use App\Support\IerApplicationFormatter;
 use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
 use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
 use Filament\Support\Enums\Width;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -95,7 +96,13 @@ class ApprovalResource extends Resource
                 Action::make('view')
                     ->label('View')
                     ->icon('heroicon-o-eye')
-                    ->url(fn ($record) => ApplicationResource::getUrl('view', ['record' => $record])),
+                    ->modalHeading(fn ($record) => $record?->profile?->full_name ?? 'Application Details')
+                    ->modalWidth(Width::FiveExtraLarge)
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Close')
+                    ->modalAutofocus(false)
+                    ->fillForm(fn ($record) => $record->attributesToArray())
+                    ->schema(fn (Schema $schema) => ApplicationDetailsResource::form($schema)),
             ])
 
             ->bulkActions([

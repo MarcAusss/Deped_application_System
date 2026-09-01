@@ -37,6 +37,7 @@ class RecentEvaluations extends BaseWidget
 
                 Tables\Columns\IconColumn::make('recommended')
                     ->label('Recommended')
+                    ->getStateUsing(fn ($record) => $record->application?->status === 'pending' ? null : (bool) $record->recommended)
                     ->boolean()
                     ->alignCenter(),
 

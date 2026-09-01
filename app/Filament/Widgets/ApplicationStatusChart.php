@@ -7,13 +7,15 @@ use Filament\Widgets\ChartWidget;
 
 class ApplicationStatusChart extends ChartWidget
 {
+    protected string $view = 'filament.widgets.application-status-chart';
+
     protected ?string $heading = 'Recruitment pipeline';
 
     protected ?string $description = 'Current volume at every decision stage.';
 
     protected static ?int $sort = 2;
 
-    protected ?string $maxHeight = '315px';
+    protected ?string $maxHeight = null;
 
     protected int|string|array $columnSpan = [
         'default' => 'full',
@@ -39,14 +41,21 @@ class ApplicationStatusChart extends ChartWidget
                     ],
                     'backgroundColor' => [
                         '#94a3b8',
-                        '#f59e0b',
-                        '#10b981',
-                        '#f43f5e',
+                        '#4f46e5',
+                        '#15803d',
+                        '#dc2626',
                     ],
-                    'borderWidth' => 0,
-                    'borderRadius' => 8,
+                    'borderColor' => [
+                        '#64748b',
+                        '#3730a3',
+                        '#14532d',
+                        '#991b1b',
+                    ],
+                    'borderWidth' => 1,
+                    'borderRadius' => 7,
                     'borderSkipped' => false,
-                    'barThickness' => 24,
+                    'barPercentage' => 0.9,
+                    'categoryPercentage' => 0.95,
                 ],
             ],
 
@@ -72,21 +81,31 @@ class ApplicationStatusChart extends ChartWidget
                     'display' => false,
                 ],
             ],
-            'indexAxis' => 'y',
             'maintainAspectRatio' => false,
+            'layout' => [
+                'padding' => 0,
+            ],
             'scales' => [
                 'x' => [
+                    'title' => [
+                        'display' => true,
+                        'text' => 'Status',
+                    ],
+                    'grid' => [
+                        'display' => false,
+                    ],
+                ],
+                'y' => [
                     'beginAtZero' => true,
+                    'title' => [
+                        'display' => true,
+                        'text' => 'Applications',
+                    ],
                     'ticks' => [
                         'precision' => 0,
                     ],
                     'grid' => [
                         'color' => 'rgba(148, 163, 184, 0.18)',
-                    ],
-                ],
-                'y' => [
-                    'grid' => [
-                        'display' => false,
                     ],
                 ],
             ],

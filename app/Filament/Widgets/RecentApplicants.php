@@ -51,6 +51,7 @@ class RecentApplicants extends TableWidget
                     ->color(fn (?string $state): string => match ($state) {
                         'pending' => 'gray',
                         'evaluated' => 'warning',
+                        'excluded' => 'danger',
                         'approved' => 'success',
                         'rejected' => 'danger',
                         default => 'gray',

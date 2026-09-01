@@ -27,6 +27,8 @@ class ApplicationsPerJobChart extends ChartWidget
             ->orderByDesc('applications_count')
             ->get();
 
+        $total = $jobPositions->sum('applications_count');
+
         return [
             'datasets' => [
                 [
@@ -51,7 +53,9 @@ class ApplicationsPerJobChart extends ChartWidget
             ],
 
             'labels' => $jobPositions
-                ->pluck('title')
+                ->map(fn ($jobPosition) => $total > 0
+                    ? "{$jobPosition->title} (" . round(($jobPosition->applications_count / $total) * 100) . '%)'
+                    : "{$jobPosition->title} (0%)")
                 ->values()
                 ->all(),
         ];
@@ -59,7 +63,7 @@ class ApplicationsPerJobChart extends ChartWidget
 
     protected function getType(): string
     {
-        return 'doughnut';
+        return 'pie';
     }
 
     protected function getOptions(): array
@@ -79,7 +83,6 @@ class ApplicationsPerJobChart extends ChartWidget
                     ],
                 ],
             ],
-            'cutout' => '68%',
         ];
     }
 }

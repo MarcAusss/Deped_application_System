@@ -99,22 +99,32 @@ class EditApplication extends EditRecord
             'recommended' => $result === ApplicationEvaluation::RESULT_QUALIFIED,
         ]);
 
-        // Without a control number assigned, the application isn't officially
-        // under evaluation yet — keep it pending instead of marking it evaluated.
-        if (blank($this->record->controlNumber)) {
-            return;
+        // Status tracks the QS outcome directly: Meet the QS on every category
+        // marks the application Evaluated, an active Exclude Applicant marks
+        // it Excluded, and anything else (still pending review, or a completed
+        // review that didn't qualify) stays Pending. Never touch a terminal
+        // status (approved/rejected).
+        $newStatus = match ($result) {
+            ApplicationEvaluation::RESULT_QUALIFIED => 'evaluated',
+            ApplicationEvaluation::RESULT_EXCLUDED => 'excluded',
+            default => 'pending',
+        };
+
+        if (
+            $this->record->status !== $newStatus
+            && in_array($this->record->status, ['pending', 'evaluated', 'excluded'], true)
+        ) {
+            $this->record->update([
+                'status' => $newStatus,
+            ]);
+
+            ApplicationStatusLog::create([
+                'application_id' => $this->record->id,
+                'status' => $newStatus,
+                'remarks' => $evaluation->remarks,
+                'changed_by' => auth()->id(),
+            ]);
         }
-
-        $this->record->update([
-            'status' => 'evaluated',
-        ]);
-
-        ApplicationStatusLog::create([
-            'application_id' => $this->record->id,
-            'status' => 'evaluated',
-            'remarks' => $evaluation->remarks,
-            'changed_by' => auth()->id(),
-        ]);
     }
 
     protected function getHeaderActions(): array

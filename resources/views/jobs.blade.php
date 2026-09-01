@@ -76,9 +76,9 @@
                 </p>
 
                 <h2 class="mt-4 max-w-3xl font-black leading-tight">
-                    <span class="text-5xl sm:text-5xl">SDO ALBAY (CARES)</span>
+                    <span class="text-5xl sm:text-5xl">SDO ALBAY CARES</span>
                     <br>
-                    <span class="text-2xl sm:text-3xl">Career Application &<BR>Recruitment for Education Services</span>
+                    <span class="text-2xl sm:text-3xl">(Career Application &<BR>Recruitment for Education Services)</span>
                 </h2>
 
                 <p class="mt-5 max-w-2xl text-lg leading-8 text-blue-100">
@@ -216,11 +216,20 @@
                             </div>
                     </div>
 
-                    @if($job->attachment_path || $job->csc_publication_path)
-                        <p class="mt-3 text-xs text-slate-500">
-                            Important: Review the D.M. Notice and CSC Publication of Vacancy for full qualifications, requirements, and deadlines.
+                    <div class="mt-3 flex flex-wrap items-start justify-between gap-x-6 gap-y-1">
+                        @if($job->attachment_path || $job->csc_publication_path)
+                            <p class="text-xs text-slate-500">
+                                Important: Review the D.M. Notice and CSC Publication of Vacancy for full qualifications, requirements, and deadlines.
+                            </p>
+                        @endif
+
+                        <p class="text-sm whitespace-nowrap text-slate-600">
+                            No. of Vacancies:
+                            <span class="font-bold text-slate-800">
+                                {{ $job->slots }}
+                            </span>
                         </p>
-                    @endif
+                    </div>
                     </div>
 
                     <div class="flex items-center border-t border-slate-200 bg-slate-50 p-6 lg:border-l lg:border-t-0">

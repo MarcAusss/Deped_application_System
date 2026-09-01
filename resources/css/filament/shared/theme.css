@@ -579,23 +579,61 @@
     box-shadow: 0 8px 24px rgba(16, 24, 40, 0.05);
 }
 
+.recruitment-dashboard-page .fi-wi-chart {
+    height: 100%;
+    align-self: stretch;
+}
+
+.recruitment-dashboard-page .fi-wi-chart .fi-section {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.recruitment-dashboard-page .fi-wi-chart .fi-section-content-ctn {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+}
+
+.recruitment-dashboard-page .fi-wi-chart .fi-section-content {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+}
+
+.recruitment-dashboard-page .fi-wi-table {
+    height: 100% !important;
+    align-self: stretch !important;
+}
+
+.recruitment-dashboard-page .fi-wi-table .fi-ta,
+.recruitment-dashboard-page .fi-wi-table .fi-ta-ctn {
+    height: 100% !important;
+}
+
 .recruitment-dashboard-page .fi-section-header,
 .recruitment-dashboard-page .fi-ta-header {
-    border-bottom: 1px solid #eaecf0;
-    background: #fcfcfd;
+    border-bottom: 1px solid #1e3a8a;
+    background: #1e3a8a;
 }
 
 .recruitment-dashboard-page .fi-section-header-heading,
 .recruitment-dashboard-page .fi-ta-header-heading {
-    color: #1d2939;
+    color: #ffffff;
     font-weight: 760;
     letter-spacing: -0.012em;
 }
 
 .recruitment-dashboard-page .fi-section-header-description,
 .recruitment-dashboard-page .fi-ta-header-description {
-    color: #7b8496;
+    color: #c7d2fe;
     font-size: 0.76rem;
+}
+
+.recruitment-dashboard-page .fi-section-header svg,
+.recruitment-dashboard-page .fi-ta-header svg {
+    color: #ffffff;
 }
 
 .recruitment-dashboard-page .fi-ta-header-cell {
@@ -714,7 +752,7 @@
 }
 
 .evaluation-checklist .fi-fo-checkbox-list-option:has(input:checked) .fi-fo-checkbox-list-option-label {
-    color: #15803d;
+    color: #1e3a8a;
     font-weight: 600;
 }
 

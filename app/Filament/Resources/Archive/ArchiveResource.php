@@ -8,6 +8,8 @@ use App\Models\Application;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
+use Filament\Support\Enums\Width;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -91,7 +93,13 @@ class ArchiveResource extends Resource
                 Action::make('view')
                     ->label('View')
                     ->icon('heroicon-o-eye')
-                    ->url(fn ($record) => ApplicationResource::getUrl('view', ['record' => $record])),
+                    ->modalHeading(fn ($record) => $record?->profile?->full_name ?? 'Application Details')
+                    ->modalWidth(Width::FiveExtraLarge)
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Close')
+                    ->modalAutofocus(false)
+                    ->fillForm(fn ($record) => $record->attributesToArray())
+                    ->schema(fn (Schema $schema) => ApplicationResource::form($schema)),
 
                 Action::make('restore')
                     ->label('Restore')

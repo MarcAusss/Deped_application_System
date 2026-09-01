@@ -2,6 +2,7 @@
 
 namespace App\Filament\Evaluator\Resources\Applications;
 
+use App\Filament\Resources\Applications\ApplicationResource as ApplicationDetailsResource;
 use App\Models\Application;
 use App\Models\ApplicationControlNumber;
 use App\Models\ApplicationEvaluation;
@@ -158,7 +159,7 @@ class ApplicationResource extends Resource
                                     '<span style="color:#15803d;font-weight:600;">'
                                     . e("All {$mandatoryDone} Mandatory Requirements complete ({$totalDone} of {$totalAll} total requirements submitted).")
                                     . '</span> '
-                                    . e('The QS Evaluation is unlocked below.')
+                                    . e('The QS Evaluation is unlocked beside.')
                                 );
                             }
 
@@ -423,6 +424,20 @@ class ApplicationResource extends Resource
                                 currentlyExcluded: $record->result === ApplicationEvaluation::RESULT_EXCLUDED,
                             );
 
+                            // Preview only: once all 4 QS categories are marked Did not
+                            // Meet, show Excluded here as an early warning — the actual
+                            // result/status still only becomes Excluded once the
+                            // evaluator clicks the Exclude Applicant button below.
+                            if ($result === ApplicationEvaluation::RESULT_PENDING_DOCUMENT_REVIEW
+                                && EvaluationChecklist::isFullyDisqualified(
+                                    $get('qs_education_met'),
+                                    $get('qs_experience_met'),
+                                    $get('qs_training_met'),
+                                    $get('qs_eligibility_met'),
+                                )) {
+                                $result = ApplicationEvaluation::RESULT_EXCLUDED;
+                            }
+
                             $colors = [
                                 'success' => ['background:#dcfce7', 'color:#15803d', 'border-color:#15803d'],
                                 'danger' => ['background:#fee2e2', 'color:#b91c1c', 'border-color:#b91c1c'],
@@ -438,7 +453,7 @@ class ApplicationResource extends Resource
                             $badgeStyle = $badgeColors[EvaluationChecklist::resultColor($result)];
 
                             return new \Illuminate\Support\HtmlString(
-                                '<div style="display:block;width:max-content;max-width:100%;white-space:nowrap;border:2px solid;' . $style . ';border-radius:.5rem;padding:.5rem 1rem;">'
+                                '<div style="display:block;width:100%;box-sizing:border-box;border:2px solid;' . $style . ';border-radius:.5rem;padding:.5rem 1rem;">'
                                 . '<span style="' . $badgeStyle . ';display:inline-block;padding:.25rem .625rem;border-radius:.375rem;font-weight:700;font-size:.875rem;">'
                                 . e(strtoupper(EvaluationChecklist::resultLabel($result)))
                                 . '</span>'
@@ -470,6 +485,17 @@ class ApplicationResource extends Resource
                                 $application = $livewire->getRecord();
 
                                 $application->evaluation()->update(['result' => ApplicationEvaluation::RESULT_EXCLUDED]);
+
+                                if (in_array($application->status, ['pending', 'evaluated'], true)) {
+                                    $application->update(['status' => 'excluded']);
+
+                                    ApplicationStatusLog::create([
+                                        'application_id' => $application->id,
+                                        'status' => 'excluded',
+                                        'remarks' => $application->evaluation->remarks,
+                                        'changed_by' => auth()->id(),
+                                    ]);
+                                }
 
                                 Notification::make()
                                     ->title('Applicant excluded')
@@ -529,7 +555,7 @@ class ApplicationResource extends Resource
 
                 Tables\Columns\IconColumn::make('evaluation.recommended')
                     ->label('Recommended')
-                    ->getStateUsing(fn ($record) => blank($record->controlNumber) ? null : (bool) $record->evaluation?->recommended)
+                    ->getStateUsing(fn ($record) => $record->status === 'pending' ? null : (bool) $record->evaluation?->recommended)
                     ->boolean()
                     ->alignCenter(),
 
@@ -539,6 +565,7 @@ class ApplicationResource extends Resource
                     ->color(fn (string $state): string => match ($state) {
                         'pending'   => 'gray',
                         'evaluated' => 'warning',
+                        'excluded'  => 'danger',
                         'approved'  => 'success',
                         'rejected'  => 'danger',
                         default     => 'gray',
@@ -562,6 +589,7 @@ class ApplicationResource extends Resource
                     ->options([
                         'pending'   => 'Pending',
                         'evaluated' => 'Evaluated',
+                        'excluded'  => 'Excluded',
                     ]),
 
                 Tables\Filters\SelectFilter::make('job_position_id')
@@ -620,7 +648,13 @@ class ApplicationResource extends Resource
                 Action::make('view')
                     ->label('View')
                     ->icon('heroicon-o-eye')
-                    ->url(fn ($record) => static::getUrl('view', ['record' => $record])),
+                    ->modalHeading(fn ($record) => $record?->profile?->full_name ?? 'Application Details')
+                    ->modalWidth(Width::FiveExtraLarge)
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Close')
+                    ->modalAutofocus(false)
+                    ->fillForm(fn ($record) => $record->attributesToArray())
+                    ->schema(fn (Schema $schema) => ApplicationDetailsResource::form($schema)),
 
                 Action::make('edit')
                     ->label('Edit Checklist')

@@ -48,6 +48,7 @@ class RecentApplications extends TableWidget
                     ->color(fn (string $state) => match ($state) {
                         'pending' => 'gray',
                         'evaluated' => 'warning',
+                        'excluded' => 'danger',
                         'approved' => 'success',
                         'rejected' => 'danger',
                         default => 'gray',

@@ -86,9 +86,9 @@
                 </p>
 
                 <h2 class="mt-1 font-black">
-                    <span class="text-2xl sm:text-3xl">SDO ALBAY (CARES)</span>
+                    <span class="text-2xl sm:text-3xl">SDO ALBAY CARES</span>
                     <br>
-                    <span class="text-l g sm:text-xl">Career Application & <br>Recruitment for Education Services</span>
+                    <span class="text-l g sm:text-xl">(Career Application & <br>Recruitment for Education Services)</span>
                 </h2>
 
                 <p class="mt-1 text-lg text-blue-100">
@@ -139,33 +139,45 @@
         @endif
 
         @if($job->posted_at || $job->until)
-            <div class="mx-4 mb-4 flex flex-col items-end gap-3 sm:mx-6 sm:mb-6 sm:flex-row sm:justify-end sm:gap-6 lg:absolute lg:bottom-6 lg:right-8 lg:mx-0 lg:mb-0">
-                @if($job->posted_at)
-                    <div class="text-right">
-                        <span class="text-xs font-bold uppercase tracking-wider text-yellow-300">
-                            Posted:
-                        </span>
+            <div class="mx-4 mb-4 flex flex-col items-end gap-1 sm:mx-6 sm:mb-6 lg:absolute lg:bottom-6 lg:right-8 lg:mx-0 lg:mb-0">
+                <div class="flex flex-col items-end gap-3 sm:flex-row sm:gap-6">
+                    @if($job->posted_at)
+                        <div class="text-right">
+                            <span class="text-xs font-bold uppercase tracking-wider text-yellow-300">
+                                Posted:
+                            </span>
 
-                        <span class="font-bold text-white">
-                            {{ $job->posted_at->format('F d, Y') }}
-                        </span>
-                    </div>
-                @endif
+                            <span class="font-bold text-white">
+                                {{ $job->posted_at->format('F d, Y') }}
+                            </span>
+                        </div>
+                    @endif
 
-                @if($job->until)
-                    <div class="text-right">
-                        <span class="text-xs font-bold uppercase tracking-wider text-yellow-300">
-                            Until:
-                        </span>
+                    @if($job->until)
+                        <div class="text-right">
+                            <span class="text-xs font-bold uppercase tracking-wider text-yellow-300">
+                                Until:
+                            </span>
 
-                        <span class="font-bold text-white">
-                            {{ $job->until->format('F d, Y') }}
-                            @if($job->until_time)
-                                {{ \Carbon\Carbon::parse($job->until_time)->format('g:i A') }}
-                            @endif
-                        </span>
-                    </div>
-                @endif
+                            <span class="font-bold text-white">
+                                {{ $job->until->format('F d, Y') }}
+                                @if($job->until_time)
+                                    {{ \Carbon\Carbon::parse($job->until_time)->format('g:i A') }}
+                                @endif
+                            </span>
+                        </div>
+                    @endif
+                </div>
+
+                <div class="text-right">
+                    <span class="text-xs font-bold uppercase tracking-wider text-yellow-300">
+                        No. of Vacancies:
+                    </span>
+
+                    <span class="font-bold text-white">
+                        {{ $job->slots }}
+                    </span>
+                </div>
             </div>
         @endif
     </section>
@@ -735,7 +747,9 @@
                         >
 
                         <input
-                            type="text"
+                            type="number"
+                            min="0"
+                            step="1"
                             name="training[${trainingIndex}][hours]"
                             placeholder="Number of hours"
                             class="${inputClass}"

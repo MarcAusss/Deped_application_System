@@ -87,6 +87,17 @@ class EvaluationChecklist
         return $education === true && $experience === true && $training === true && $eligibility === true;
     }
 
+    /**
+     * Whether all 4 qualification standard categories were marked "Did not
+     * Meet the QS". Used only to preview the Evaluation Result as Excluded
+     * before the evaluator clicks the Exclude Applicant button — it does not
+     * affect the persisted result/status, which still requires that button.
+     */
+    public static function isFullyDisqualified(mixed $education, mixed $experience, mixed $training, mixed $eligibility): bool
+    {
+        return $education === false && $experience === false && $training === false && $eligibility === false;
+    }
+
     public static function computeResult(
         mixed $mandatorySelected,
         mixed $education,
@@ -134,7 +145,7 @@ class EvaluationChecklist
     {
         return match ($result) {
             ApplicationEvaluation::RESULT_QUALIFIED => 'Documents are complete and all qualification standards are marked Meet the QS.',
-            ApplicationEvaluation::RESULT_EXCLUDED => 'Excluded: This applicant was manually excluded from further consideration.',
+            ApplicationEvaluation::RESULT_EXCLUDED => 'This applicant does Not Meet Qualification Standards.',
             default => 'The status defaults to Pending Document Review until mandatory requirements are complete. Applicants are marked Qualified when all qualification standards are marked Meet the QS. Applicants can be marked Excluded only when specifically using the Exclude button below.',
         };
     }

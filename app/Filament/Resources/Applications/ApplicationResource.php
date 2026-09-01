@@ -17,6 +17,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Placeholder;
+use Filament\Support\Enums\Width;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Actions\Action;
@@ -56,6 +57,34 @@ class ApplicationResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
+        $renderTable = function (array $headers, array $rows): \Illuminate\Support\HtmlString {
+            if (empty($rows)) {
+                return new \Illuminate\Support\HtmlString(
+                    '<p style="color:#64748b;font-size:0.875rem;">No records submitted.</p>'
+                );
+            }
+
+            $html = '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:0.875rem;">';
+
+            $html .= '<thead><tr>';
+            foreach ($headers as $header) {
+                $html .= '<th style="text-align:left;padding:0.5rem 0.75rem;border-bottom:2px solid #cbd5e1;font-weight:700;">' . e($header) . '</th>';
+            }
+            $html .= '</tr></thead><tbody>';
+
+            foreach ($rows as $row) {
+                $html .= '<tr>';
+                foreach ($row as $cell) {
+                    $html .= '<td style="padding:0.5rem 0.75rem;border-bottom:1px solid #e2e8f0;">' . $cell . '</td>';
+                }
+                $html .= '</tr>';
+            }
+
+            $html .= '</tbody></table></div>';
+
+            return new \Illuminate\Support\HtmlString($html);
+        };
+
         return $schema->components([
 
             Section::make('Application Info')
@@ -325,6 +354,20 @@ class ApplicationResource extends Resource
                             $evaluation = $record?->evaluation;
                             $result = $evaluation?->result ?? ApplicationEvaluation::RESULT_PENDING_DOCUMENT_REVIEW;
 
+                            // Preview only: once all 4 QS categories are marked Did not
+                            // Meet, show Excluded here as an early warning — the actual
+                            // result/status still only becomes Excluded once the
+                            // evaluator clicks the Exclude Applicant button.
+                            if ($result === ApplicationEvaluation::RESULT_PENDING_DOCUMENT_REVIEW
+                                && EvaluationChecklist::isFullyDisqualified(
+                                    $evaluation?->qs_education_met,
+                                    $evaluation?->qs_experience_met,
+                                    $evaluation?->qs_training_met,
+                                    $evaluation?->qs_eligibility_met,
+                                )) {
+                                $result = ApplicationEvaluation::RESULT_EXCLUDED;
+                            }
+
                             $colors = [
                                 'success' => ['background:#dcfce7', 'color:#15803d', 'border-color:#15803d'],
                                 'danger' => ['background:#fee2e2', 'color:#b91c1c', 'border-color:#b91c1c'],
@@ -340,7 +383,7 @@ class ApplicationResource extends Resource
                             $badgeStyle = $badgeColors[EvaluationChecklist::resultColor($result)];
 
                             return new \Illuminate\Support\HtmlString(
-                                '<div style="display:block;width:max-content;max-width:100%;white-space:nowrap;border:2px solid;' . $style . ';border-radius:.5rem;padding:.5rem 1rem;">'
+                                '<div style="display:block;width:100%;box-sizing:border-box;border:2px solid;' . $style . ';border-radius:.5rem;padding:.5rem 1rem;">'
                                 . '<span style="' . $badgeStyle . ';display:inline-block;padding:.25rem .625rem;border-radius:.375rem;font-weight:700;font-size:.875rem;">'
                                 . e(strtoupper(EvaluationChecklist::resultLabel($result)))
                                 . '</span>'
@@ -378,6 +421,96 @@ class ApplicationResource extends Resource
                         ->content('This application has not been evaluated yet. Approve/Reject will become available once the evaluator submits their checklist.'),
                 ])
                 ->visible(fn ($record) => $record?->evaluation === null),
+
+            Section::make('Educational Background')
+                ->icon('heroicon-o-academic-cap')
+                ->extraAttributes(['class' => 'dark-blue-header'])
+                ->schema([
+                    Placeholder::make('educations_table')
+                        ->hiddenLabel()
+                        ->content(fn ($record) => $renderTable(
+                            ['Level', 'School / Institution', 'Degree / Course', 'Year Graduated'],
+                            $record->educations->map(fn ($education) => [
+                                e($education->level === "Other's" && filled($education->level_specify)
+                                    ? "{$education->level} - {$education->level_specify}"
+                                    : $education->level),
+                                e($education->school ?? '—'),
+                                e($education->degree ?? '—'),
+                                e($education->year_graduated ?? '—'),
+                            ])->all()
+                        )),
+                ]),
+
+            Section::make('Work Experience')
+                ->icon('heroicon-o-briefcase')
+                ->extraAttributes(['class' => 'dark-blue-header'])
+                ->schema([
+                    Placeholder::make('experiences_table')
+                        ->hiddenLabel()
+                        ->content(fn ($record) => $renderTable(
+                            ['Job Title', 'Company', 'First Day of Service', 'Last Day of Service', 'Responsibilities or Details'],
+                            $record->experiences->map(fn ($experience) => [
+                                e($experience->title ?? '—'),
+                                e($experience->company ?? '—'),
+                                e($experience->first_day ?? 'Not provided'),
+                                e($experience->last_day ?? 'Not provided'),
+                                e(\Illuminate\Support\Str::limit($experience->details ?? 'Not provided', 150)),
+                            ])->all()
+                        )),
+                ]),
+
+            Section::make('Trainings & Seminars')
+                ->icon('heroicon-o-presentation-chart-line')
+                ->extraAttributes(['class' => 'dark-blue-header'])
+                ->schema([
+                    Placeholder::make('trainings_table')
+                        ->hiddenLabel()
+                        ->content(fn ($record) => $renderTable(
+                            ['Training Title', 'Hours', 'Start', 'End'],
+                            $record->trainings->map(fn ($training) => [
+                                e($training->title ?? '—'),
+                                e(($training->hours ?? '0') . ' hrs'),
+                                e($training->training_date?->format('F Y') ?? 'Not provided'),
+                                e($training->training_end_date?->format('F Y') ?? 'Not provided'),
+                            ])->all()
+                        )),
+                ]),
+
+            Section::make('Eligibilities / Licenses')
+                ->icon('heroicon-o-identification')
+                ->extraAttributes(['class' => 'dark-blue-header'])
+                ->schema([
+                    Placeholder::make('eligibilities_table')
+                        ->hiddenLabel()
+                        ->content(fn ($record) => $renderTable(
+                            ['License / Eligibility', 'Rating', 'Date Issued', 'Valid Until'],
+                            $record->eligibilities->map(fn ($eligibility) => [
+                                e(in_array($eligibility->license_name, ['RA1080', "Other's"]) && filled($eligibility->license_specify)
+                                    ? "{$eligibility->license_name} - {$eligibility->license_specify}"
+                                    : $eligibility->license_name),
+                                e($eligibility->rating ?? '—'),
+                                e($eligibility->date_issued ? \Carbon\Carbon::parse($eligibility->date_issued)->format('M d, Y') : '—'),
+                                e($eligibility->never_expires
+                                    ? 'Never Expires'
+                                    : ($eligibility->valid_until ? \Carbon\Carbon::parse($eligibility->valid_until)->format('M d, Y') : '—')),
+                            ])->all()
+                        )),
+                ]),
+
+            Section::make('Submitted Documents')
+                ->icon('heroicon-o-paper-clip')
+                ->extraAttributes(['class' => 'dark-blue-header'])
+                ->schema([
+                    Placeholder::make('documents_table')
+                        ->hiddenLabel()
+                        ->content(fn ($record) => $renderTable(
+                            ['Document Type', 'File'],
+                            $record->documents->map(fn ($document) => [
+                                '<span style="background:#eef2ff;color:#1e3a8a;padding:.125rem .625rem;border-radius:9999px;font-weight:600;font-size:.75rem;">' . e($document->type) . '</span>',
+                                '<a href="' . e(\Illuminate\Support\Facades\Storage::url($document->file_path)) . '" target="_blank" rel="noopener" style="color:#1e3a8a;text-decoration:underline;">' . e(basename($document->file_path)) . '</a>',
+                            ])->all()
+                        )),
+                ]),
         ]);
     }
 
@@ -418,6 +551,7 @@ class ApplicationResource extends Resource
                     ->color(fn (string $state): string => match ($state) {
                         'pending'   => 'gray',
                         'evaluated' => 'warning',
+                        'excluded'  => 'danger',
                         'approved'  => 'success',
                         'rejected'  => 'danger',
                         default     => 'gray',
@@ -442,6 +576,7 @@ class ApplicationResource extends Resource
                     ->options([
                         'pending'   => 'Pending',
                         'evaluated' => 'Evaluated',
+                        'excluded'  => 'Excluded',
                     ]),
 
                 Tables\Filters\SelectFilter::make('job_position_id')
@@ -453,14 +588,20 @@ class ApplicationResource extends Resource
     Action::make('view')
         ->label('View')
         ->icon('heroicon-o-eye')
-        ->url(fn ($record) => static::getUrl('view', ['record' => $record])),
+        ->modalHeading(fn ($record) => $record?->profile?->full_name ?? 'Application Details')
+        ->modalWidth(Width::FiveExtraLarge)
+        ->modalSubmitAction(false)
+        ->modalCancelActionLabel('Close')
+        ->modalAutofocus(false)
+        ->fillForm(fn ($record) => $record->attributesToArray())
+        ->schema(fn (Schema $schema) => static::form($schema)),
 
     Action::make('approve')
         ->label('Approve')
         ->icon('heroicon-o-check-circle')
-        ->color(fn ($record) => $record->status === 'evaluated' ? 'success' : 'gray')
-        ->disabled(fn ($record) => $record->status !== 'evaluated')
-        ->tooltip(fn ($record) => $record->status !== 'evaluated' ? 'Only evaluated applications can be approved.' : null)
+        ->color(fn ($record) => in_array($record->status, ['evaluated', 'excluded'], true) ? 'success' : 'gray')
+        ->disabled(fn ($record) => ! in_array($record->status, ['evaluated', 'excluded'], true))
+        ->tooltip(fn ($record) => ! in_array($record->status, ['evaluated', 'excluded'], true) ? 'Only evaluated or excluded applications can be approved.' : null)
         ->requiresConfirmation()
         ->modalHeading('Approve Application')
         ->modalDescription('Are you sure you want to approve this application? This finalizes the hiring decision.')
@@ -482,9 +623,9 @@ class ApplicationResource extends Resource
             Action::make('reject')
                 ->label('Reject')
                 ->icon('heroicon-o-x-circle')
-                ->color(fn ($record) => $record->status === 'evaluated' ? 'danger' : 'gray')
-                ->disabled(fn ($record) => $record->status !== 'evaluated')
-                ->tooltip(fn ($record) => $record->status !== 'evaluated' ? 'Only evaluated applications can be rejected.' : null)
+                ->color(fn ($record) => in_array($record->status, ['evaluated', 'excluded'], true) ? 'danger' : 'gray')
+                ->disabled(fn ($record) => ! in_array($record->status, ['evaluated', 'excluded'], true))
+                ->tooltip(fn ($record) => ! in_array($record->status, ['evaluated', 'excluded'], true) ? 'Only evaluated or excluded applications can be rejected.' : null)
                 ->requiresConfirmation()
                 ->modalHeading('Reject Application')
                 ->modalDescription('Are you sure you want to reject this application? This application will be move to archive.')

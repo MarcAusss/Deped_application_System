@@ -5,9 +5,13 @@ namespace App\Filament\Resources\Approvals;
 use App\Filament\Resources\Applications\ApplicationResource;
 use App\Filament\Resources\Approvals\Pages;
 use App\Models\Application;
+use App\Models\ApplicationEvaluation;
+use App\Support\EvaluationChecklist;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
+use Filament\Support\Enums\Width;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -91,7 +95,13 @@ class ApprovalResource extends Resource
                 Action::make('view')
                     ->label('View')
                     ->icon('heroicon-o-eye')
-                    ->url(fn ($record) => ApplicationResource::getUrl('view', ['record' => $record])),
+                    ->modalHeading(fn ($record) => $record?->profile?->full_name ?? 'Application Details')
+                    ->modalWidth(Width::FiveExtraLarge)
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Close')
+                    ->modalAutofocus(false)
+                    ->fillForm(fn ($record) => $record->attributesToArray())
+                    ->schema(fn (Schema $schema) => ApplicationResource::form($schema)),
 
                 Action::make('restore')
                     ->label('Restore')
@@ -102,10 +112,30 @@ class ApprovalResource extends Resource
                     ->modalDescription('This undoes the approval and moves the application back to the main Applications list for reconsideration.')
                     ->modalSubmitActionLabel('Yes, restore')
                     ->action(function ($record) {
-                        $record->update(['status' => 'evaluated']);
+                        $evaluation = $record->evaluation;
+                        $newStatus = 'pending';
+
+                        if ($evaluation) {
+                            $result = EvaluationChecklist::computeResult(
+                                $evaluation->documentary_mandatory,
+                                $evaluation->qs_education_met,
+                                $evaluation->qs_experience_met,
+                                $evaluation->qs_training_met,
+                                $evaluation->qs_eligibility_met,
+                                currentlyExcluded: $evaluation->result === ApplicationEvaluation::RESULT_EXCLUDED,
+                            );
+
+                            $newStatus = match ($result) {
+                                ApplicationEvaluation::RESULT_QUALIFIED => 'evaluated',
+                                ApplicationEvaluation::RESULT_EXCLUDED => 'excluded',
+                                default => 'pending',
+                            };
+                        }
+
+                        $record->update(['status' => $newStatus]);
 
                         $record->logs()->create([
-                            'status' => 'evaluated',
+                            'status' => $newStatus,
                             'changed_by' => Auth::id(),
                         ]);
 

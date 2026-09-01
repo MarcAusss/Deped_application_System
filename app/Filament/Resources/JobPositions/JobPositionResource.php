@@ -25,8 +25,18 @@ class JobPositionResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
-            Forms\Components\TextInput::make('title')
-                ->required(),
+            Grid::make(2)->schema([
+                Forms\Components\TextInput::make('title')
+                    ->required(),
+
+                Forms\Components\TextInput::make('slots')
+                    ->label('No. of Vacancies')
+                    ->numeric()
+                    ->required()
+                    ->default(1)
+                    ->minValue(1)
+                    ->suffix('slot(s)'),
+            ]),
 
             Forms\Components\Textarea::make('description')
                 ->required(),
@@ -133,13 +143,20 @@ class JobPositionResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->defaultSort('created_at', 'desc')
+            ->defaultSort('posted_at', 'desc')
             ->columns([
                 Tables\Columns\TextColumn::make('title')->searchable(),
 
-                Tables\Columns\TextColumn::make('salary_grade')
-                    ->label('Salary Grade')
-                    ->placeholder('—'),
+                Tables\Columns\TextColumn::make('posted_at')
+                    ->label('Posted')
+                    ->date('M d, Y')
+                    ->placeholder('—')
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('slots')
+                    ->label('No. of Vacancies')
+                    ->sortable()
+                    ->alignCenter(),
 
                 Tables\Columns\IconColumn::make('is_open')
                     ->boolean()

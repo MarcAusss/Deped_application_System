@@ -9,6 +9,7 @@ class JobPosition extends Model
 {
     protected $fillable = [
         'title',
+        'slots',
         'description',
         'salary_grade',
         'monthly_salary',
@@ -27,6 +28,7 @@ class JobPosition extends Model
     ];
 
     protected $casts = [
+        'slots' => 'integer',
         'monthly_salary' => 'decimal:2',
         'is_open' => 'boolean',
         'posted_at' => 'date',

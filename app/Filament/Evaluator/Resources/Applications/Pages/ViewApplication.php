@@ -3,12 +3,19 @@
 namespace App\Filament\Evaluator\Resources\Applications\Pages;
 
 use App\Filament\Evaluator\Resources\Applications\ApplicationResource;
+use App\Filament\Resources\Applications\ApplicationResource as ApplicationDetailsResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
+use Filament\Schemas\Schema;
 
 class ViewApplication extends ViewRecord
 {
     protected static string $resource = ApplicationResource::class;
+
+    public function form(Schema $schema): Schema
+    {
+        return ApplicationDetailsResource::form($schema);
+    }
 
     protected function getHeaderActions(): array
     {
