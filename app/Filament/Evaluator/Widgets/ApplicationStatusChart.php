@@ -20,8 +20,8 @@ class ApplicationStatusChart extends ChartWidget
         $statuses = [
             'pending',
             'evaluated',
-            'approved',
-            'rejected',
+            'qualified',
+            'disqualified',
         ];
 
         $counts = collect($statuses)->map(function ($status) {
@@ -49,8 +49,8 @@ class ApplicationStatusChart extends ChartWidget
             'labels' => [
                 'Pending',
                 'Evaluated',
-                'Approved',
-                'Rejected',
+                'Qualified',
+                'Disqualified',
             ],
         ];
     }

@@ -26,8 +26,8 @@ class ApplicationStatusChart extends ChartWidget
     {
         $pending = Application::where('status', 'pending')->count();
         $evaluated = Application::where('status', 'evaluated')->count();
-        $approved = Application::where('status', 'approved')->count();
-        $rejected = Application::where('status', 'rejected')->count();
+        $qualified = Application::where('status', 'qualified')->count();
+        $disqualified = Application::where('status', 'disqualified')->count();
 
         return [
             'datasets' => [
@@ -36,8 +36,8 @@ class ApplicationStatusChart extends ChartWidget
                     'data' => [
                         $pending,
                         $evaluated,
-                        $approved,
-                        $rejected,
+                        $qualified,
+                        $disqualified,
                     ],
                     'backgroundColor' => [
                         '#94a3b8',
@@ -61,9 +61,9 @@ class ApplicationStatusChart extends ChartWidget
 
             'labels' => [
                 'Pending',
-                'For Approval',
-                'Approved',
-                'Rejected',
+                'For Qualification',
+                'Qualified',
+                'Disqualified',
             ],
         ];
     }

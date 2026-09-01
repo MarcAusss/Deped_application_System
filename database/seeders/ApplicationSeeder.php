@@ -67,7 +67,7 @@ class ApplicationSeeder extends Seeder
                 [
                     'id' => 7,
                     'job_position_id' => 1,
-                    'status' => 'approved',
+                    'status' => 'qualified',
                     'created_at' => '2026-07-15 07:53:42',
                     'updated_at' => '2026-07-15 07:53:42',
                     'resume_checked' => 1,
@@ -77,7 +77,7 @@ class ApplicationSeeder extends Seeder
                 [
                     'id' => 8,
                     'job_position_id' => 6,
-                    'status' => 'approved',
+                    'status' => 'qualified',
                     'created_at' => '2026-07-14 07:53:42',
                     'updated_at' => '2026-07-14 07:53:42',
                     'resume_checked' => 1,
@@ -87,7 +87,7 @@ class ApplicationSeeder extends Seeder
                 [
                     'id' => 9,
                     'job_position_id' => 1,
-                    'status' => 'approved',
+                    'status' => 'qualified',
                     'created_at' => '2026-07-13 07:53:42',
                     'updated_at' => '2026-08-19 14:38:24',
                     'resume_checked' => 1,
@@ -97,7 +97,7 @@ class ApplicationSeeder extends Seeder
                 [
                     'id' => 12,
                     'job_position_id' => 3,
-                    'status' => 'approved',
+                    'status' => 'qualified',
                     'created_at' => '2026-07-22 08:56:35',
                     'updated_at' => '2026-07-22 09:03:08',
                     'resume_checked' => 0,
@@ -127,7 +127,7 @@ class ApplicationSeeder extends Seeder
                 [
                     'id' => 18,
                     'job_position_id' => 9,
-                    'status' => 'rejected',
+                    'status' => 'disqualified',
                     'created_at' => '2026-08-19 10:07:26',
                     'updated_at' => '2026-08-19 14:17:54',
                     'resume_checked' => 0,
@@ -137,7 +137,7 @@ class ApplicationSeeder extends Seeder
                 [
                     'id' => 23,
                     'job_position_id' => 8,
-                    'status' => 'rejected',
+                    'status' => 'disqualified',
                     'created_at' => '2026-08-19 11:12:50',
                     'updated_at' => '2026-08-19 14:10:33',
                     'resume_checked' => 0,
@@ -1402,7 +1402,7 @@ class ApplicationSeeder extends Seeder
                 [
                     'id' => 12,
                     'application_id' => 7,
-                    'status' => 'approved',
+                    'status' => 'qualified',
                     'remarks' => 'Application approved by the administrator.',
                     'changed_by' => 2,
                     'created_at' => '2026-07-17 07:53:42',
@@ -1429,7 +1429,7 @@ class ApplicationSeeder extends Seeder
                 [
                     'id' => 15,
                     'application_id' => 8,
-                    'status' => 'approved',
+                    'status' => 'qualified',
                     'remarks' => 'Qualified applicant. Application approved.',
                     'changed_by' => 2,
                     'created_at' => '2026-07-16 07:53:42',
@@ -1456,7 +1456,7 @@ class ApplicationSeeder extends Seeder
                 [
                     'id' => 18,
                     'application_id' => 9,
-                    'status' => 'rejected',
+                    'status' => 'disqualified',
                     'remarks' => 'Required teaching eligibility was not submitted.',
                     'changed_by' => 2,
                     'created_at' => '2026-07-15 07:53:42',
@@ -1484,7 +1484,7 @@ class ApplicationSeeder extends Seeder
                 [
                     'id' => 24,
                     'application_id' => 12,
-                    'status' => 'approved',
+                    'status' => 'qualified',
                     'remarks' => null,
                     'changed_by' => 1,
                     'created_at' => '2026-07-22 09:03:08',
@@ -1502,7 +1502,7 @@ class ApplicationSeeder extends Seeder
                 [
                     'id' => 26,
                     'application_id' => 9,
-                    'status' => 'approved',
+                    'status' => 'qualified',
                     'remarks' => null,
                     'changed_by' => 1,
                     'created_at' => '2026-07-30 07:21:16',
@@ -1520,7 +1520,7 @@ class ApplicationSeeder extends Seeder
                 [
                     'id' => 28,
                     'application_id' => 9,
-                    'status' => 'rejected',
+                    'status' => 'disqualified',
                     'remarks' => null,
                     'changed_by' => 1,
                     'created_at' => '2026-07-30 07:23:01',
@@ -1556,7 +1556,7 @@ class ApplicationSeeder extends Seeder
                 [
                     'id' => 32,
                     'application_id' => 9,
-                    'status' => 'rejected',
+                    'status' => 'disqualified',
                     'remarks' => null,
                     'changed_by' => 1,
                     'created_at' => '2026-07-30 08:28:46',
@@ -1622,7 +1622,7 @@ class ApplicationSeeder extends Seeder
                 [
                     'id' => 39,
                     'application_id' => 23,
-                    'status' => 'rejected',
+                    'status' => 'disqualified',
                     'remarks' => null,
                     'changed_by' => 1,
                     'created_at' => '2026-08-19 13:37:34',
@@ -1640,7 +1640,7 @@ class ApplicationSeeder extends Seeder
                 [
                     'id' => 41,
                     'application_id' => 23,
-                    'status' => 'rejected',
+                    'status' => 'disqualified',
                     'remarks' => null,
                     'changed_by' => 1,
                     'created_at' => '2026-08-19 14:10:33',
@@ -1658,7 +1658,7 @@ class ApplicationSeeder extends Seeder
                 [
                     'id' => 43,
                     'application_id' => 18,
-                    'status' => 'rejected',
+                    'status' => 'disqualified',
                     'remarks' => null,
                     'changed_by' => 1,
                     'created_at' => '2026-08-19 14:17:54',
@@ -1667,7 +1667,7 @@ class ApplicationSeeder extends Seeder
                 [
                     'id' => 44,
                     'application_id' => 16,
-                    'status' => 'rejected',
+                    'status' => 'disqualified',
                     'remarks' => null,
                     'changed_by' => 1,
                     'created_at' => '2026-08-19 14:18:17',
@@ -1685,7 +1685,7 @@ class ApplicationSeeder extends Seeder
                 [
                     'id' => 46,
                     'application_id' => 9,
-                    'status' => 'approved',
+                    'status' => 'qualified',
                     'remarks' => null,
                     'changed_by' => 1,
                     'created_at' => '2026-08-19 14:37:51',
@@ -1703,7 +1703,7 @@ class ApplicationSeeder extends Seeder
                 [
                     'id' => 48,
                     'application_id' => 9,
-                    'status' => 'approved',
+                    'status' => 'qualified',
                     'remarks' => null,
                     'changed_by' => 1,
                     'created_at' => '2026-08-19 14:38:24',

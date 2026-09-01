@@ -31,42 +31,9 @@
     </script>
 </head>
 
-<body class="min-h-screen bg-slate-50 text-slate-800">
+<body class="flex min-h-screen flex-col bg-slate-50 text-slate-800">
 
-    <div class="bg-government-dark text-white">
-        <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-2 text-xs sm:px-6 lg:px-8">
-            <p>Republic of the Philippines</p>
-
-            <p class="hidden text-slate-300 sm:block">
-                Department of Education Recruitment Portal
-            </p>
-        </div>
-    </div>
-
-    <header class="border-b border-slate-200 bg-white shadow-sm">
-        <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-2 sm:px-6 lg:px-8">
-            <a
-                href="{{ route('jobs.index') }}"
-                class="flex items-center gap-4"
-            >
-                <img
-                    src="{{ url('images/Department_of_Education_(DepEd).svg.webp') }}"
-                    alt="Department of Education"
-                    class="h-24 w-24 shrink-0 object-contain"
-                >
-
-                <div>
-                    <p class="text-2xl font-black uppercase tracking-widest text-government-dark">
-                        SCHOOL DIVISION OFFICE OF ALBAY - REGION V
-                    </p>
-
-                    <h1 class="text-sm font-bold text-government-gold">
-                        Lignon Hill, Bogtong, Legazpi City, Albay
-                    </h1>
-                </div>
-            </a>
-        </div>
-    </header>
+    @include('applicant.partials.topbar')
 
     <section class="bg-gradient-to-r from-government-dark to-government-blue text-white">
         <div class="mx-auto flex max-w-7xl items-center justify-between gap-8 px-4 py-10 sm:px-6 lg:px-8">
@@ -94,6 +61,12 @@
             >
         </div>
     </section>
+
+    <div class="lg:flex lg:flex-1">
+        @include('applicant.partials.sidebar')
+
+        <div class="min-w-0 flex-1">
+            @include('applicant.partials.mobile-nav')
 
     <main class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
 
@@ -261,9 +234,11 @@
             </div>
         @endforelse
     </main>
+        </div>
+    </div>
 
-    <footer class="mt-12 border-t-4 border-government-gold bg-government-dark text-white">
-        <div class="mx-auto max-w-7xl px-4 py-8 text-center text-sm text-slate-300 sm:px-6 lg:px-8">
+    <footer class="border-t-4 border-government-gold bg-government-dark text-white">
+        <div class="px-4 py-8 text-center text-sm text-slate-300 sm:px-6 lg:px-8">
             © {{ date('Y') }} Department of Education. All rights reserved.
         </div>
     </footer>

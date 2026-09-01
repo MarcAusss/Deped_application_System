@@ -9,10 +9,16 @@ class Application extends Model
 {
     protected $fillable = [
         'job_position_id',
+        'applicant_id',
         'status',
     ];
 
-    
+    public function applicant(): BelongsTo
+    {
+        return $this->belongsTo(Applicant::class);
+    }
+
+
 
 
 

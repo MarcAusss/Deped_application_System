@@ -4,12 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Mail\ApplicationSubmitted;
 use App\Models\Application;
+use App\Models\ApplicationControlNumber;
 use App\Models\JobPosition;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Throwable;
 
@@ -43,7 +46,7 @@ class ApplicationController extends Controller
             abort(403, 'This job position is currently closed.');
         }
 
-        return view('apply', compact('job'));
+        return view('apply', ['job' => $job, 'application' => null]);
     }
 
     /*
@@ -58,7 +61,152 @@ class ApplicationController extends Controller
             abort(403, 'This job position is currently closed.');
         }
 
-        $validated = $request->validate([
+        $validated = $request->validate($this->applicationValidationRules());
+
+        try {
+            $application = DB::transaction(function () use ($validated, $request, $job): Application {
+                $application = Application::create([
+                    'job_position_id' => $job->id,
+                    'applicant_id' => Auth::guard('applicant')->id(),
+                    'status' => 'pending',
+                ]);
+
+                $application->controlNumber()->create([
+                    'control_number' => ApplicationControlNumber::generateFor($job),
+                ]);
+
+                $application->profile()->create($this->profileData($validated));
+
+                $this->syncEducations($application, $validated);
+                $this->syncExperiences($application, $validated);
+                $this->syncTrainings($application, $validated);
+                $this->syncEligibilities($application, $validated);
+                $this->storeUploadedDocuments($application, $request);
+
+                return $application;
+            });
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return back()
+                ->withInput()
+                ->with(
+                    'error',
+                    'The application could not be submitted. Please try again.'
+                );
+        }
+
+        try {
+            $application->load(['jobPosition', 'profile']);
+
+            Mail::to($application->profile->email)
+                ->send(new ApplicationSubmitted($application));
+        } catch (Throwable $exception) {
+            report($exception);
+        }
+
+        return redirect()
+            ->route('jobs.index')
+            ->with(
+                'success',
+                'Your application was submitted successfully.'
+            );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | EDIT APPLICATION (applicant, while still Pending)
+    |--------------------------------------------------------------------------
+    */
+
+    public function edit(Application $application): View|RedirectResponse
+    {
+        if ($application->applicant_id !== Auth::guard('applicant')->id()) {
+            abort(404);
+        }
+
+        if ($application->status !== 'pending') {
+            return redirect()
+                ->route('applicant.dashboard')
+                ->with('error', 'This application can no longer be edited since it has already been evaluated.');
+        }
+
+        $application->load([
+            'jobPosition',
+            'profile',
+            'educations',
+            'experiences',
+            'trainings',
+            'eligibilities',
+            'documents',
+        ]);
+
+        return view('apply', [
+            'job' => $application->jobPosition,
+            'application' => $application,
+        ]);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | UPDATE APPLICATION (applicant, while still Pending)
+    |--------------------------------------------------------------------------
+    */
+
+    public function update(Request $request, Application $application): RedirectResponse
+    {
+        if ($application->applicant_id !== Auth::guard('applicant')->id()) {
+            abort(404);
+        }
+
+        if ($application->status !== 'pending') {
+            return redirect()
+                ->route('applicant.dashboard')
+                ->with('error', 'This application can no longer be edited since it has already been evaluated.');
+        }
+
+        $validated = $request->validate($this->applicationValidationRules());
+
+        try {
+            DB::transaction(function () use ($validated, $request, $application): void {
+                $application->profile()->update($this->profileData($validated));
+
+                $application->educations()->delete();
+                $application->experiences()->delete();
+                $application->trainings()->delete();
+                $application->eligibilities()->delete();
+
+                $this->syncEducations($application, $validated);
+                $this->syncExperiences($application, $validated);
+                $this->syncTrainings($application, $validated);
+                $this->syncEligibilities($application, $validated);
+                $this->replaceUploadedDocuments($application, $request);
+            });
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return back()
+                ->withInput()
+                ->with(
+                    'error',
+                    'The application could not be updated. Please try again.'
+                );
+        }
+
+        return redirect()
+            ->route('applicant.dashboard')
+            ->with(
+                'success',
+                'Your application was updated successfully.'
+            );
+    }
+
+    /**
+     * @return array<string, array<int, string>>
+     */
+    private function applicationValidationRules(): array
+    {
+        return [
             /*
             |--------------------------------------------------------------------------
             | Personal Information
@@ -367,191 +515,183 @@ class ApplicationController extends Controller
                 'mimes:pdf',
                 'max:10240',
             ],
-        ]);
+        ];
+    }
 
-        try {
-            $application = DB::transaction(function () use ($validated, $request, $job): Application {
-                $application = Application::create([
-                    'job_position_id' => $job->id,
-                    'status' => 'pending',
-                ]);
+    /**
+     * @return array<int, string>
+     */
+    private function documentFields(): array
+    {
+        return [
+            'letter_of_intent',
+            'tor_diploma',
+            'prc_license',
+            'eligibility_file',
+            'training_certificates',
+            'employment_records',
+            'latest_appointment',
+            'performance_rating',
+            'cav',
+            'movs',
+        ];
+    }
 
-                /*
-                |--------------------------------------------------------------------------
-                | Applicant Profile
-                |--------------------------------------------------------------------------
-                */
+    /**
+     * @param  array<string, mixed>  $validated
+     * @return array<string, mixed>
+     */
+    private function profileData(array $validated): array
+    {
+        return [
+            'full_name' => $validated['full_name'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone_number'] ?? null,
+            'address' => $validated['address'] ?? null,
+            'birth_date' => $validated['birth_date'] ?? null,
+            'sex' => $validated['sex'] ?? null,
+            'civil_status' => $validated['civil_status'] ?? null,
+            'religion' => $validated['religion'] ?? null,
+            'disability' => $validated['disability'] ?? null,
+            'ethnic_group' => $validated['ethnic_group'] ?? null,
+        ];
+    }
 
-                $application->profile()->create([
-                    'full_name' => $validated['full_name'],
-                    'email' => $validated['email'],
-                    'phone' => $validated['phone_number'] ?? null,
-                    'address' => $validated['address'] ?? null,
-                    'birth_date' => $validated['birth_date'] ?? null,
-                    'sex' => $validated['sex'] ?? null,
-                    'civil_status' => $validated['civil_status'] ?? null,
-                    'religion' => $validated['religion'] ?? null,
-                    'disability' => $validated['disability'] ?? null,
-                    'ethnic_group' => $validated['ethnic_group'] ?? null,
-                ]);
+    /**
+     * @param  array<string, mixed>  $validated
+     */
+    private function syncEducations(Application $application, array $validated): void
+    {
+        foreach ($validated['education'] ?? [] as $education) {
+            if (! $this->hasEnteredData($education)) {
+                continue;
+            }
 
-                /*
-                |--------------------------------------------------------------------------
-                | Education
-                |--------------------------------------------------------------------------
-                */
-
-                foreach ($validated['education'] ?? [] as $education) {
-                    if (! $this->hasEnteredData($education)) {
-                        continue;
-                    }
-
-                    $application->educations()->create([
-                        'level' => $education['level'] ?? null,
-                        'level_specify' => ($education['level'] ?? null) === "Other's"
-                            ? ($education['level_specify'] ?? null)
-                            : null,
-                        'school' => $education['school'] ?? null,
-                        'degree' => $education['degree'] ?? null,
-                        'year_graduated' => $education['year_graduated'] ?? null,
-                    ]);
-                }
-
-                /*
-                |--------------------------------------------------------------------------
-                | Experience
-                |--------------------------------------------------------------------------
-                */
-
-                foreach ($validated['experience'] ?? [] as $experience) {
-                    if (! $this->hasEnteredData($experience)) {
-                        continue;
-                    }
-
-                    $application->experiences()->create([
-                        'title' => $experience['title'] ?? null,
-                        'company' => $experience['company'] ?? null,
-                        'first_day' => $experience['first_day'] ?? null,
-                        'last_day' => $experience['last_day'] ?? null,
-                        'years_months' => $experience['years_months'] ?? null,
-                        'details' => $experience['details'] ?? null,
-                    ]);
-                }
-
-                /*
-                |--------------------------------------------------------------------------
-                | Trainings
-                |--------------------------------------------------------------------------
-                */
-
-                foreach ($validated['training'] ?? [] as $training) {
-                    if (! $this->hasEnteredData($training)) {
-                        continue;
-                    }
-
-                    $application->trainings()->create([
-                        'title' => $training['title'] ?? null,
-                        'hours' => $training['hours'] ?? null,
-                        'training_date' => filled($training['training_date'] ?? null)
-                            ? Carbon::createFromFormat('!Y-m', $training['training_date'])->toDateString()
-                            : null,
-                        'training_end_date' => filled($training['training_end_date'] ?? null)
-                            ? Carbon::createFromFormat('!Y-m', $training['training_end_date'])->toDateString()
-                            : null,
-                    ]);
-                }
-
-                /*
-                |--------------------------------------------------------------------------
-                | Eligibilities
-                |--------------------------------------------------------------------------
-                */
-
-                foreach ($validated['eligibility'] ?? [] as $eligibility) {
-                    if (! $this->hasEnteredData($eligibility)) {
-                        continue;
-                    }
-
-                    $neverExpires = filter_var(
-                        $eligibility['never_expires'] ?? false,
-                        FILTER_VALIDATE_BOOLEAN
-                    );
-
-                    $application->eligibilities()->create([
-                        'license_name' => $eligibility['license_name'] ?? null,
-                        'license_specify' => in_array($eligibility['license_name'] ?? null, ['RA1080', "Other's"], true)
-                            ? ($eligibility['license_specify'] ?? null)
-                            : null,
-                        'rating' => $eligibility['rating'] ?? null,
-                        'date_issued' => $eligibility['date_issued'] ?? null,
-                        'valid_until' => $neverExpires
-                            ? null
-                            : ($eligibility['valid_until'] ?? null),
-                        'never_expires' => $neverExpires,
-                    ]);
-                }
-
-                /*
-                |--------------------------------------------------------------------------
-                | Uploaded Documents
-                |--------------------------------------------------------------------------
-                */
-
-                $documentFields = [
-                    'letter_of_intent',
-                    'tor_diploma',
-                    'prc_license',
-                    'eligibility_file',
-                    'training_certificates',
-                    'employment_records',
-                    'latest_appointment',
-                    'performance_rating',
-                    'cav',
-                    'movs',
-                ];
-
-                foreach ($documentFields as $field) {
-                    if (! $request->hasFile($field)) {
-                        continue;
-                    }
-
-                    $file = $request->file($field);
-                    $path = $file->store('documents', 'public');
-
-                    $application->documents()->create([
-                        'type' => $field,
-                        'file_path' => $path,
-                    ]);
-                }
-
-                return $application;
-            });
-        } catch (Throwable $exception) {
-            report($exception);
-
-            return back()
-                ->withInput()
-                ->with(
-                    'error',
-                    'The application could not be submitted. Please try again.'
-                );
+            $application->educations()->create([
+                'level' => $education['level'] ?? null,
+                'level_specify' => ($education['level'] ?? null) === "Other's"
+                    ? ($education['level_specify'] ?? null)
+                    : null,
+                'school' => $education['school'] ?? null,
+                'degree' => $education['degree'] ?? null,
+                'year_graduated' => $education['year_graduated'] ?? null,
+            ]);
         }
+    }
 
-        try {
-            $application->load(['jobPosition', 'profile']);
+    /**
+     * @param  array<string, mixed>  $validated
+     */
+    private function syncExperiences(Application $application, array $validated): void
+    {
+        foreach ($validated['experience'] ?? [] as $experience) {
+            if (! $this->hasEnteredData($experience)) {
+                continue;
+            }
 
-            Mail::to($application->profile->email)
-                ->send(new ApplicationSubmitted($application));
-        } catch (Throwable $exception) {
-            report($exception);
+            $application->experiences()->create([
+                'title' => $experience['title'] ?? null,
+                'company' => $experience['company'] ?? null,
+                'first_day' => $experience['first_day'] ?? null,
+                'last_day' => $experience['last_day'] ?? null,
+                'years_months' => $experience['years_months'] ?? null,
+                'details' => $experience['details'] ?? null,
+            ]);
         }
+    }
 
-        return redirect()
-            ->route('jobs.index')
-            ->with(
-                'success',
-                'Your application was submitted successfully.'
+    /**
+     * @param  array<string, mixed>  $validated
+     */
+    private function syncTrainings(Application $application, array $validated): void
+    {
+        foreach ($validated['training'] ?? [] as $training) {
+            if (! $this->hasEnteredData($training)) {
+                continue;
+            }
+
+            $application->trainings()->create([
+                'title' => $training['title'] ?? null,
+                'hours' => $training['hours'] ?? null,
+                'training_date' => filled($training['training_date'] ?? null)
+                    ? Carbon::createFromFormat('!Y-m', $training['training_date'])->toDateString()
+                    : null,
+                'training_end_date' => filled($training['training_end_date'] ?? null)
+                    ? Carbon::createFromFormat('!Y-m', $training['training_end_date'])->toDateString()
+                    : null,
+            ]);
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $validated
+     */
+    private function syncEligibilities(Application $application, array $validated): void
+    {
+        foreach ($validated['eligibility'] ?? [] as $eligibility) {
+            if (! $this->hasEnteredData($eligibility)) {
+                continue;
+            }
+
+            $neverExpires = filter_var(
+                $eligibility['never_expires'] ?? false,
+                FILTER_VALIDATE_BOOLEAN
             );
+
+            $application->eligibilities()->create([
+                'license_name' => $eligibility['license_name'] ?? null,
+                'license_specify' => in_array($eligibility['license_name'] ?? null, ['RA1080', "Other's"], true)
+                    ? ($eligibility['license_specify'] ?? null)
+                    : null,
+                'rating' => $eligibility['rating'] ?? null,
+                'date_issued' => $eligibility['date_issued'] ?? null,
+                'valid_until' => $neverExpires
+                    ? null
+                    : ($eligibility['valid_until'] ?? null),
+                'never_expires' => $neverExpires,
+            ]);
+        }
+    }
+
+    private function storeUploadedDocuments(Application $application, Request $request): void
+    {
+        foreach ($this->documentFields() as $field) {
+            if (! $request->hasFile($field)) {
+                continue;
+            }
+
+            $file = $request->file($field);
+            $path = $file->store('documents', 'public');
+
+            $application->documents()->create([
+                'type' => $field,
+                'file_path' => $path,
+            ]);
+        }
+    }
+
+    private function replaceUploadedDocuments(Application $application, Request $request): void
+    {
+        foreach ($this->documentFields() as $field) {
+            if (! $request->hasFile($field)) {
+                continue;
+            }
+
+            $existing = $application->documents()->where('type', $field)->first();
+
+            if ($existing) {
+                Storage::disk('public')->delete($existing->file_path);
+                $existing->delete();
+            }
+
+            $file = $request->file($field);
+            $path = $file->store('documents', 'public');
+
+            $application->documents()->create([
+                'type' => $field,
+                'file_path' => $path,
+            ]);
+        }
     }
 
     private function hasEnteredData(array $data): bool

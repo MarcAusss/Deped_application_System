@@ -7,10 +7,6 @@ use Filament\Forms;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Actions\CreateAction;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
 use Illuminate\Support\Facades\Storage;
 
 class DocumentsRelationManager extends RelationManager
@@ -35,17 +31,9 @@ class DocumentsRelationManager extends RelationManager
                     ->openUrlInNewTab()
                     ->tooltip('Click to open file'),
             ])
-            ->headerActions([
-                CreateAction::make(),
-            ])
-            ->actions([
-                DeleteAction::make(),
-            ])
-            ->bulkActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
-            ]);
+            ->headerActions([])
+            ->actions([])
+            ->bulkActions([]);
     }
 
     public function form(Schema $schema): Schema

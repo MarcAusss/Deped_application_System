@@ -33,8 +33,8 @@ class ApplicationForm
                     ->options([
             'pending' => 'Pending',
             'evaluated' => 'Evaluated',
-            'rejected' => 'Rejected',
-            'approved' => 'Approved',
+            'disqualified' => 'Disqualified',
+            'qualified' => 'Qualified',
         ])
                     ->default('pending')
                     ->required(),

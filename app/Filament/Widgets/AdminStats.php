@@ -29,8 +29,8 @@ class AdminStats extends StatsOverviewWidget
         $totalApplications = Application::count();
         $pendingApplications = Application::where('status', 'pending')->count();
         $forApprovalApplications = Application::where('status', 'evaluated')->count();
-        $approvedApplications = Application::where('status', 'approved')->count();
-        $rejectedApplications = Application::where('status', 'rejected')->count();
+        $qualifiedApplications = Application::where('status', 'qualified')->count();
+        $disqualifiedApplications = Application::where('status', 'disqualified')->count();
 
         return [
             Stat::make(
@@ -70,17 +70,17 @@ class AdminStats extends StatsOverviewWidget
                 ->extraAttributes(['class' => 'metric-amber']),
 
             Stat::make(
-                'Approved',
-                $approvedApplications
+                'Qualified',
+                $qualifiedApplications
             )
                 ->icon('heroicon-o-check-circle')
-                ->description('Final approvals')
+                ->description('Final decisions')
                 ->color('success')
                 ->extraAttributes(['class' => 'metric-emerald']),
 
             Stat::make(
-                'Rejected',
-                $rejectedApplications
+                'Disqualified',
+                $disqualifiedApplications
             )
                 ->icon('heroicon-o-x-circle')
                 ->description('In Archive')

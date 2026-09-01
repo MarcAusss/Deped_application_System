@@ -52,12 +52,12 @@ class RecentApplicants extends TableWidget
                         'pending' => 'gray',
                         'evaluated' => 'warning',
                         'excluded' => 'danger',
-                        'approved' => 'success',
-                        'rejected' => 'danger',
+                        'qualified' => 'success',
+                        'disqualified' => 'danger',
                         default => 'gray',
                     })
                     ->formatStateUsing(fn (?string $state): string => match ($state) {
-                        'evaluated' => 'For Approval',
+                        'evaluated' => 'For Qualification',
                         null => 'Unknown',
                         default => str($state)
                             ->replace('_', ' ')

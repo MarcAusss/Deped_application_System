@@ -39,12 +39,12 @@ class ApplicationResource extends Resource
 
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
-        return parent::getEloquentQuery()->whereNotIn('status', ['rejected', 'approved']);
+        return parent::getEloquentQuery()->whereNotIn('status', ['disqualified', 'qualified']);
     }
 
     public static function getRecordRouteBindingEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
-        // Rejected/approved applications are excluded from the list query above
+        // Disqualified/qualified applications are excluded from the list query above
         // (they live in the Archive/Approvals pages instead), but the View page
         // still needs to resolve them — e.g. from those pages' "View" link.
         return parent::getEloquentQuery();
@@ -354,19 +354,12 @@ class ApplicationResource extends Resource
                             $evaluation = $record?->evaluation;
                             $result = $evaluation?->result ?? ApplicationEvaluation::RESULT_PENDING_DOCUMENT_REVIEW;
 
-                            // Preview only: once all 4 QS categories are marked Did not
-                            // Meet, show Excluded here as an early warning — the actual
-                            // result/status still only becomes Excluded once the
-                            // evaluator clicks the Exclude Applicant button.
-                            if ($result === ApplicationEvaluation::RESULT_PENDING_DOCUMENT_REVIEW
-                                && EvaluationChecklist::isFullyDisqualified(
-                                    $evaluation?->qs_education_met,
-                                    $evaluation?->qs_experience_met,
-                                    $evaluation?->qs_training_met,
-                                    $evaluation?->qs_eligibility_met,
-                                )) {
-                                $result = ApplicationEvaluation::RESULT_EXCLUDED;
-                            }
+                            $disqualifiedCategories = EvaluationChecklist::disqualifiedCategories(
+                                $evaluation?->qs_education_met,
+                                $evaluation?->qs_experience_met,
+                                $evaluation?->qs_training_met,
+                                $evaluation?->qs_eligibility_met,
+                            );
 
                             $colors = [
                                 'success' => ['background:#dcfce7', 'color:#15803d', 'border-color:#15803d'],
@@ -388,7 +381,7 @@ class ApplicationResource extends Resource
                                 . e(strtoupper(EvaluationChecklist::resultLabel($result)))
                                 . '</span>'
                                 . '<span style="margin-left:.5rem;font-size:.8rem;font-weight:700;color:#1e3a8a;">'
-                                . e(EvaluationChecklist::resultDescription($result))
+                                . e(EvaluationChecklist::resultDescription($result, $disqualifiedCategories))
                                 . '</span>'
                                 . '</div>'
                             );
@@ -418,7 +411,7 @@ class ApplicationResource extends Resource
                 ->schema([
                     Placeholder::make('no_evaluation')
                         ->label('')
-                        ->content('This application has not been evaluated yet. Approve/Reject will become available once the evaluator submits their checklist.'),
+                        ->content('This application has not been evaluated yet. Qualify/Disqualify will become available once the evaluator submits their checklist.'),
                 ])
                 ->visible(fn ($record) => $record?->evaluation === null),
 
@@ -454,7 +447,7 @@ class ApplicationResource extends Resource
                                 e($experience->company ?? '—'),
                                 e($experience->first_day ?? 'Not provided'),
                                 e($experience->last_day ?? 'Not provided'),
-                                e(\Illuminate\Support\Str::limit($experience->details ?? 'Not provided', 150)),
+                                e($experience->details ?? 'Not provided'),
                             ])->all()
                         )),
                 ]),
@@ -549,12 +542,12 @@ class ApplicationResource extends Resource
                     ->label('Status')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'pending'   => 'gray',
-                        'evaluated' => 'warning',
-                        'excluded'  => 'danger',
-                        'approved'  => 'success',
-                        'rejected'  => 'danger',
-                        default     => 'gray',
+                        'pending'      => 'gray',
+                        'evaluated'    => 'warning',
+                        'excluded'     => 'danger',
+                        'qualified'    => 'success',
+                        'disqualified' => 'danger',
+                        default        => 'gray',
                     })
                     ->formatStateUsing(fn (string $state): string => ucfirst($state)),
 
@@ -596,50 +589,50 @@ class ApplicationResource extends Resource
         ->fillForm(fn ($record) => $record->attributesToArray())
         ->schema(fn (Schema $schema) => static::form($schema)),
 
-    Action::make('approve')
-        ->label('Approve')
+    Action::make('qualify')
+        ->label('Qualified')
         ->icon('heroicon-o-check-circle')
         ->color(fn ($record) => in_array($record->status, ['evaluated', 'excluded'], true) ? 'success' : 'gray')
         ->disabled(fn ($record) => ! in_array($record->status, ['evaluated', 'excluded'], true))
-        ->tooltip(fn ($record) => ! in_array($record->status, ['evaluated', 'excluded'], true) ? 'Only evaluated or excluded applications can be approved.' : null)
+        ->tooltip(fn ($record) => ! in_array($record->status, ['evaluated', 'excluded'], true) ? 'Only evaluated or excluded applications can be marked Qualified.' : null)
         ->requiresConfirmation()
-        ->modalHeading('Approve Application')
-        ->modalDescription('Are you sure you want to approve this application? This finalizes the hiring decision.')
-        ->modalSubmitActionLabel('Yes, approve')
+        ->modalHeading('Mark Application Qualified')
+        ->modalDescription('Are you sure you want to mark this application Qualified? This finalizes the hiring decision.')
+        ->modalSubmitActionLabel('Yes, mark Qualified')
         ->action(function ($record) {
-            $record->update(['status' => 'approved']);
+            $record->update(['status' => 'qualified']);
 
             $record->logs()->create([
-                'status' => 'approved',
+                'status' => 'qualified',
                 'changed_by' => auth()->id(),
             ]);
 
             \Filament\Notifications\Notification::make()
-                ->title('Application approved')
+                ->title('Application marked Qualified')
                 ->success()
                 ->send();
         }),
 
-            Action::make('reject')
-                ->label('Reject')
+            Action::make('disqualify')
+                ->label('Disqualified')
                 ->icon('heroicon-o-x-circle')
                 ->color(fn ($record) => in_array($record->status, ['evaluated', 'excluded'], true) ? 'danger' : 'gray')
                 ->disabled(fn ($record) => ! in_array($record->status, ['evaluated', 'excluded'], true))
-                ->tooltip(fn ($record) => ! in_array($record->status, ['evaluated', 'excluded'], true) ? 'Only evaluated or excluded applications can be rejected.' : null)
+                ->tooltip(fn ($record) => ! in_array($record->status, ['evaluated', 'excluded'], true) ? 'Only evaluated or excluded applications can be marked Disqualified.' : null)
                 ->requiresConfirmation()
-                ->modalHeading('Reject Application')
-                ->modalDescription('Are you sure you want to reject this application? This application will be move to archive.')
-                ->modalSubmitActionLabel('Yes, reject')
+                ->modalHeading('Mark Application Disqualified')
+                ->modalDescription('Are you sure you want to mark this application Disqualified? This application will be moved to archive.')
+                ->modalSubmitActionLabel('Yes, mark Disqualified')
                 ->action(function ($record) {
-                    $record->update(['status' => 'rejected']);
+                    $record->update(['status' => 'disqualified']);
 
                     $record->logs()->create([
-                        'status' => 'rejected',
+                        'status' => 'disqualified',
                         'changed_by' => auth()->id(),
                     ]);
 
                     \Filament\Notifications\Notification::make()
-                        ->title('Application rejected')
+                        ->title('Application marked Disqualified')
                         ->danger()
                         ->send();
                 }),

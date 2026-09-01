@@ -7,11 +7,6 @@ use Filament\Forms;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Actions\CreateAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
 
 class ExperienceRelationManager extends RelationManager
 {
@@ -42,21 +37,11 @@ class ExperienceRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('details')
                     ->label('Responsibilities or Details')
                     ->placeholder('Not provided')
-                    ->wrap()
-                    ->limit(150),
+                    ->wrap(),
             ])
-            ->headerActions([
-                CreateAction::make(),
-            ])
-            ->actions([
-                EditAction::make(),
-                DeleteAction::make(),
-            ])
-            ->bulkActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
-            ]);
+            ->headerActions([])
+            ->actions([])
+            ->bulkActions([]);
     }
 
     public function form(Schema $schema): Schema

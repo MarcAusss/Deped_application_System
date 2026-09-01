@@ -4,13 +4,10 @@ namespace App\Filament\Evaluator\Resources\Applications\Pages;
 
 use App\Filament\Evaluator\Resources\Applications\ApplicationResource;
 use Filament\Resources\Pages\EditRecord;
-use Filament\Actions;
-use Filament\Notifications\Notification;
 use Filament\Schemas\Components\EmbeddedSchema;
 use Filament\Schemas\Components\Form;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Auth;
-use App\Models\ApplicationControlNumber;
 use App\Models\ApplicationEvaluation;
 use App\Models\ApplicationStatusLog;
 use App\Support\EvaluationChecklist;
@@ -37,50 +34,8 @@ class EditApplication extends EditRecord
 
 
 
-    protected function saveControlNumber(): void
-    {
-        $controlNumber = trim((string) ($this->data['control_number_input'] ?? ''));
-
-        if ($controlNumber === '') {
-            return;
-        }
-
-        $existing = $this->record->controlNumber;
-
-        if ($existing && $existing->control_number === $controlNumber) {
-            return;
-        }
-
-        $inUse = ApplicationControlNumber::where('control_number', $controlNumber)
-            ->when($existing, fn ($query) => $query->whereKeyNot($existing->id))
-            ->exists();
-
-        if ($inUse) {
-            Notification::make()
-                ->title('Control number already in use.')
-                ->danger()
-                ->send();
-
-            return;
-        }
-
-        if ($existing) {
-            $existing->update(['control_number' => $controlNumber]);
-        } else {
-            ApplicationControlNumber::create([
-                'application_id' => $this->record->id,
-                'control_number' => $controlNumber,
-                'generated_by' => Auth::id(),
-            ]);
-        }
-
-        $this->record->unsetRelation('controlNumber');
-    }
-
     protected function afterSave(): void
     {
-        $this->saveControlNumber();
-
         $evaluation = $this->record->evaluation;
 
         $result = EvaluationChecklist::computeResult(
@@ -94,18 +49,21 @@ class EditApplication extends EditRecord
 
         $evaluation->update([
             'evaluator_id' => auth()->id(),
-            'evaluated_at' => now(),
+            'evaluated_at' => $result === ApplicationEvaluation::RESULT_PENDING_DOCUMENT_REVIEW
+                ? null
+                : now(),
             'result' => $result,
             'recommended' => $result === ApplicationEvaluation::RESULT_QUALIFIED,
         ]);
 
-        // Status tracks the QS outcome directly: Meet the QS on every category
-        // marks the application Evaluated, an active Exclude Applicant marks
-        // it Excluded, and anything else (still pending review, or a completed
-        // review that didn't qualify) stays Pending. Never touch a terminal
-        // status (approved/rejected).
+        // Status tracks the QS outcome directly: Meet the QS on every category,
+        // or at least one category marked Did not Meet the QS, both finish the
+        // review and mark the application Evaluated (the Recommended flag
+        // captures which outcome it was). An active Exclude Applicant marks it
+        // Excluded, and anything still pending review stays Pending. Never
+        // touch a terminal status (qualified/disqualified).
         $newStatus = match ($result) {
-            ApplicationEvaluation::RESULT_QUALIFIED => 'evaluated',
+            ApplicationEvaluation::RESULT_QUALIFIED, ApplicationEvaluation::RESULT_NOT_QUALIFIED => 'evaluated',
             ApplicationEvaluation::RESULT_EXCLUDED => 'excluded',
             default => 'pending',
         };
@@ -129,11 +87,7 @@ class EditApplication extends EditRecord
 
     protected function getHeaderActions(): array
     {
-        return [
-            Actions\ViewAction::make()
-                ->outlined()
-                ->extraAttributes(['style' => 'box-shadow:inset 0 0 0 1px #1e3a8a;color:#1e3a8a;background-color:transparent;']),
-        ];
+        return [];
     }
 
     protected function getRedirectUrl(): string

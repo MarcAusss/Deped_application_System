@@ -24,11 +24,11 @@ class ApprovalResource extends Resource
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-check-badge';
 
-    protected static ?string $navigationLabel = 'Approvals';
+    protected static ?string $navigationLabel = 'Qualified';
 
-    protected static ?string $modelLabel = 'Approved Application';
+    protected static ?string $modelLabel = 'Qualified Application';
 
-    protected static ?string $pluralModelLabel = 'Approvals';
+    protected static ?string $pluralModelLabel = 'Qualified';
 
     protected static ?string $slug = 'approvals';
 
@@ -41,7 +41,7 @@ class ApprovalResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->where('status', 'approved');
+        return parent::getEloquentQuery()->where('status', 'qualified');
     }
 
     public static function canCreate(): bool
@@ -76,7 +76,7 @@ class ApprovalResource extends Resource
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('updated_at')
-                    ->label('Approved On')
+                    ->label('Qualified On')
                     ->dateTime('M d, Y')
                     ->sortable(),
             ])

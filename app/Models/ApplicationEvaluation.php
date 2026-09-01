@@ -8,6 +8,7 @@ class ApplicationEvaluation extends Model
 {
     public const RESULT_PENDING_DOCUMENT_REVIEW = 'pending_document_review';
     public const RESULT_QUALIFIED = 'qualified';
+    public const RESULT_NOT_QUALIFIED = 'not_qualified';
     public const RESULT_EXCLUDED = 'excluded';
 
     protected $fillable = [

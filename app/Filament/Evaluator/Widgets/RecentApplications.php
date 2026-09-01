@@ -49,8 +49,8 @@ class RecentApplications extends TableWidget
                         'pending' => 'gray',
                         'evaluated' => 'warning',
                         'excluded' => 'danger',
-                        'approved' => 'success',
-                        'rejected' => 'danger',
+                        'qualified' => 'success',
+                        'disqualified' => 'danger',
                         default => 'gray',
                     }),
 

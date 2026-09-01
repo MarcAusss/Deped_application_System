@@ -12,15 +12,17 @@ class ApplicationControlNumber extends Model
         'generated_by',
     ];
 
-    protected static function booted(): void
+    /**
+     * Generate a unique control number in the format
+     * Alb-{Job Position Title}-{4 random unique digits}-{current year}.
+     */
+    public static function generateFor(JobPosition $jobPosition): string
     {
-        static::created(function (self $controlNumber) {
-            $application = $controlNumber->application;
+        do {
+            $candidate = 'Alb-' . $jobPosition->title . '-' . random_int(1000, 9999) . '-' . now()->year;
+        } while (self::where('control_number', $candidate)->exists());
 
-            if ($application && ! in_array($application->status, ['approved', 'rejected'], true)) {
-                $application->update(['status' => 'evaluated']);
-            }
-        });
+        return $candidate;
     }
 
     public function application()

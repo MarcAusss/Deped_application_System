@@ -21,50 +21,50 @@ class ViewApplication extends ViewRecord
                 ->disabled()
                 ->visible(fn () => $this->record->status === 'pending'),
 
-            Action::make('approve')
-                ->label('Approve')
+            Action::make('qualify')
+                ->label('Qualified')
                 ->icon('heroicon-o-check-circle')
                 ->color('success')
                 ->visible(fn () => $this->record->status === 'evaluated')
                 ->requiresConfirmation()
-                ->modalHeading('Approve Application')
-                ->modalDescription('Are you sure you want to approve this application? This finalizes the hiring decision.')
-                ->modalSubmitActionLabel('Yes, approve')
+                ->modalHeading('Mark Application Qualified')
+                ->modalDescription('Are you sure you want to mark this application Qualified? This finalizes the hiring decision.')
+                ->modalSubmitActionLabel('Yes, mark Qualified')
                 ->action(function () {
-                    $this->record->update(['status' => 'approved']);
+                    $this->record->update(['status' => 'qualified']);
 
                     $this->record->logs()->create([
-                        'status' => 'approved',
+                        'status' => 'qualified',
                         'changed_by' => auth()->id(),
                     ]);
 
                     Notification::make()
-                        ->title('Application approved')
+                        ->title('Application marked Qualified')
                         ->success()
                         ->send();
 
                     $this->redirect(static::getResource()::getUrl('view', ['record' => $this->record]));
                 }),
 
-            Action::make('reject')
-                ->label('Reject')
+            Action::make('disqualify')
+                ->label('Disqualified')
                 ->icon('heroicon-o-x-circle')
                 ->color('danger')
                 ->visible(fn () => $this->record->status === 'evaluated')
                 ->requiresConfirmation()
-                ->modalHeading('Reject Application')
-                ->modalDescription('Are you sure you want to reject this application? This action cannot be undone.')
-                ->modalSubmitActionLabel('Yes, reject')
+                ->modalHeading('Mark Application Disqualified')
+                ->modalDescription('Are you sure you want to mark this application Disqualified? This action cannot be undone.')
+                ->modalSubmitActionLabel('Yes, mark Disqualified')
                 ->action(function () {
-                    $this->record->update(['status' => 'rejected']);
+                    $this->record->update(['status' => 'disqualified']);
 
                     $this->record->logs()->create([
-                        'status' => 'rejected',
+                        'status' => 'disqualified',
                         'changed_by' => auth()->id(),
                     ]);
 
                     Notification::make()
-                        ->title('Application rejected')
+                        ->title('Application marked Disqualified')
                         ->danger()
                         ->send();
 

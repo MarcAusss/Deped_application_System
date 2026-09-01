@@ -88,14 +88,30 @@ class EvaluationChecklist
     }
 
     /**
-     * Whether all 4 qualification standard categories were marked "Did not
-     * Meet the QS". Used only to preview the Evaluation Result as Excluded
-     * before the evaluator clicks the Exclude Applicant button — it does not
-     * affect the persisted result/status, which still requires that button.
+     * Whether at least one of the 4 qualification standard categories was
+     * marked "Did not Meet the QS".
      */
-    public static function isFullyDisqualified(mixed $education, mixed $experience, mixed $training, mixed $eligibility): bool
+    public static function hasAnyDisqualification(mixed $education, mixed $experience, mixed $training, mixed $eligibility): bool
     {
-        return $education === false && $experience === false && $training === false && $eligibility === false;
+        return $education === false || $experience === false || $training === false || $eligibility === false;
+    }
+
+    /**
+     * Labels of the qualification standard categories marked "Did not Meet
+     * the QS", matching the section titles shown on the evaluation form.
+     *
+     * @return array<int, string>
+     */
+    public static function disqualifiedCategories(mixed $education, mixed $experience, mixed $training, mixed $eligibility): array
+    {
+        $categories = [
+            "Bachelor's Degree" => $education,
+            'Years of Experience' => $experience,
+            'Hours of Training' => $training,
+            'Eligibility' => $eligibility,
+        ];
+
+        return array_keys(array_filter($categories, fn ($met) => $met === false));
     }
 
     public static function computeResult(
@@ -120,6 +136,13 @@ class EvaluationChecklist
             return ApplicationEvaluation::RESULT_EXCLUDED;
         }
 
+        // Any single category marked "Did not Meet the QS" automatically
+        // makes the applicant Not Qualified — no need for every category to
+        // fail. Excluding the applicant is still a separate, manual step.
+        if (self::hasAnyDisqualification($education, $experience, $training, $eligibility)) {
+            return ApplicationEvaluation::RESULT_NOT_QUALIFIED;
+        }
+
         return ApplicationEvaluation::RESULT_PENDING_DOCUMENT_REVIEW;
     }
 
@@ -127,6 +150,7 @@ class EvaluationChecklist
     {
         return match ($result) {
             ApplicationEvaluation::RESULT_QUALIFIED => 'Qualified',
+            ApplicationEvaluation::RESULT_NOT_QUALIFIED => 'Not Qualified',
             ApplicationEvaluation::RESULT_EXCLUDED => 'Excluded',
             default => 'Pending Document Review',
         };
@@ -136,15 +160,18 @@ class EvaluationChecklist
     {
         return match ($result) {
             ApplicationEvaluation::RESULT_QUALIFIED => 'success',
-            ApplicationEvaluation::RESULT_EXCLUDED => 'danger',
+            ApplicationEvaluation::RESULT_NOT_QUALIFIED, ApplicationEvaluation::RESULT_EXCLUDED => 'danger',
             default => 'gray',
         };
     }
 
-    public static function resultDescription(string $result): string
+    public static function resultDescription(string $result, array $disqualifiedCategories = []): string
     {
         return match ($result) {
             ApplicationEvaluation::RESULT_QUALIFIED => 'Documents are complete and all qualification standards are marked Meet the QS.',
+            ApplicationEvaluation::RESULT_NOT_QUALIFIED => $disqualifiedCategories === []
+                ? 'At least one qualification standard is marked Did not Meet the QS.'
+                : 'Did not Meet the QS: ' . implode(', ', $disqualifiedCategories) . '.',
             ApplicationEvaluation::RESULT_EXCLUDED => 'This applicant does Not Meet Qualification Standards.',
             default => 'The status defaults to Pending Document Review until mandatory requirements are complete. Applicants are marked Qualified when all qualification standards are marked Meet the QS. Applicants can be marked Excluded only when specifically using the Exclude button below.',
         };

@@ -42,8 +42,7 @@ class ExperienceRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('details')
                     ->label('Responsibilities or Details')
                     ->placeholder('Not provided')
-                    ->wrap()
-                    ->limit(150),
+                    ->wrap(),
             ])
             ->headerActions([
                 CreateAction::make(),

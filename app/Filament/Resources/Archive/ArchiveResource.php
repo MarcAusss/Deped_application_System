@@ -21,11 +21,11 @@ class ArchiveResource extends Resource
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-archive-box';
 
-    protected static ?string $navigationLabel = 'Archive';
+    protected static ?string $navigationLabel = 'Disqualified';
 
-    protected static ?string $modelLabel = 'Archived Application';
+    protected static ?string $modelLabel = 'Disqualified Application';
 
-    protected static ?string $pluralModelLabel = 'Archive';
+    protected static ?string $pluralModelLabel = 'Disqualified';
 
     protected static ?string $slug = 'archive';
 
@@ -38,7 +38,7 @@ class ArchiveResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->where('status', 'rejected');
+        return parent::getEloquentQuery()->where('status', 'disqualified');
     }
 
     public static function canCreate(): bool
@@ -73,7 +73,7 @@ class ArchiveResource extends Resource
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('updated_at')
-                    ->label('Rejected On')
+                    ->label('Disqualified On')
                     ->dateTime('M d, Y')
                     ->sortable(),
             ])
