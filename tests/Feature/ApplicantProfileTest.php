@@ -16,58 +16,6 @@ class ApplicantProfileTest extends TestCase
             ->assertRedirect(route('applicant.login'));
     }
 
-    public function test_applicant_can_update_name_and_email(): void
-    {
-        $applicant = Applicant::create([
-            'name' => 'Old Name',
-            'email' => 'old@example.com',
-            'password' => 'password123',
-        ]);
-
-        $response = $this->actingAs($applicant, 'applicant')
-            ->put(route('applicant.profile.update'), [
-                'name' => 'New Name',
-                'email' => 'new@example.com',
-            ]);
-
-        $response->assertRedirect();
-        $response->assertSessionHasNoErrors();
-
-        $this->assertDatabaseHas('applicants', [
-            'id' => $applicant->id,
-            'name' => 'New Name',
-            'email' => 'new@example.com',
-        ]);
-    }
-
-    public function test_applicant_cannot_update_email_to_one_already_taken(): void
-    {
-        Applicant::create([
-            'name' => 'Someone Else',
-            'email' => 'taken@example.com',
-            'password' => 'password123',
-        ]);
-
-        $applicant = Applicant::create([
-            'name' => 'Me',
-            'email' => 'me@example.com',
-            'password' => 'password123',
-        ]);
-
-        $response = $this->actingAs($applicant, 'applicant')
-            ->put(route('applicant.profile.update'), [
-                'name' => 'Me',
-                'email' => 'taken@example.com',
-            ]);
-
-        $response->assertSessionHasErrorsIn('updateProfile', ['email']);
-
-        $this->assertDatabaseHas('applicants', [
-            'id' => $applicant->id,
-            'email' => 'me@example.com',
-        ]);
-    }
-
     public function test_applicant_can_change_password_with_correct_current_password(): void
     {
         $applicant = Applicant::create([

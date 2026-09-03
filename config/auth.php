@@ -110,6 +110,13 @@ return [
             'expire' => 60,
             'throttle' => 60,
         ],
+
+        'applicants' => [
+            'provider' => 'applicants',
+            'table' => 'applicant_password_reset_tokens',
+            'expire' => 60,
+            'throttle' => 60,
+        ],
     ],
 
     

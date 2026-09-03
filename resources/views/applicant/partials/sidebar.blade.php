@@ -1,4 +1,4 @@
-<aside id="applicant-sidebar" class="hidden w-64 shrink-0 flex-col bg-government-dark text-white transition-all duration-200 lg:flex">
+<aside id="applicant-sidebar" class="hidden w-64 shrink-0 flex-col bg-government-dark text-white transition-all duration-200 lg:sticky lg:top-16 lg:z-20 lg:flex lg:h-[calc(100vh-4rem)] lg:overflow-y-auto">
     <nav class="flex-1 space-y-1 px-3 py-5">
         @if(auth('applicant')->check())
             <a
@@ -54,7 +54,7 @@
         @endif
     </nav>
 
-    @if(auth('applicant')->check())
+    @if(auth('applicant')->check() && !($hideLogout ?? false))
         <div class="border-t border-white/10 p-3">
             <form method="POST" action="{{ route('applicant.logout') }}">
                 @csrf

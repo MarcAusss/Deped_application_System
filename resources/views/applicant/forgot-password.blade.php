@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Applicant Login | DepEd Recruitment Portal</title>
+    <title>Forgot Password | DepEd Recruitment Portal</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
 
@@ -55,15 +55,6 @@
             top: 50%;
             transform: translateY(-50%);
             color: #94a3b8;
-        }
-
-        .auth-toggle {
-            position: absolute;
-            right: .9rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #94a3b8;
-            cursor: pointer;
         }
 
         .auth-btn {
@@ -143,12 +134,21 @@
                         </div>
                     </div>
 
+                    <a
+                        href="{{ route('applicant.login') }}"
+                        class="mb-4 inline-flex items-center gap-1.5 text-sm font-bold text-slate-500 hover:text-government-navy">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-4 w-4">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+                        </svg>
+                        Back to Login
+                    </a>
+
                     <h2 class="text-3xl font-black text-government-dark">
-                        Applicant Login
+                        Forgot Password?
                     </h2>
 
                     <p class="mt-2 text-slate-500">
-                        Access your account to apply and track your application.
+                        Enter the email address linked to your account and we'll send you a link to reset your password.
                     </p>
 
                     @if (session('status'))
@@ -157,7 +157,7 @@
                         </div>
                     @endif
 
-                    <form method="POST" action="{{ route('applicant.login.submit') }}" class="mt-8 space-y-5">
+                    <form method="POST" action="{{ route('applicant.password.email') }}" class="mt-8 space-y-5">
                         @csrf
 
                         <div class="relative">
@@ -171,37 +171,8 @@
                                 value="{{ old('email') }}"
                                 placeholder="Email Address"
                                 required
+                                autofocus
                                 class="auth-input">
-                        </div>
-
-                        <div class="relative">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="auth-icon h-5 w-5">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
-                            </svg>
-
-                            <input
-                                id="password"
-                                type="password"
-                                name="password"
-                                placeholder="Password"
-                                required
-                                class="auth-input">
-
-                            <button type="button" class="auth-toggle" onclick="toggleAuthPassword('password', this)" aria-label="Show password">
-                                <svg class="icon-eye h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-                                </svg>
-                                <svg class="icon-eye-slash hidden h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
-                                </svg>
-                            </button>
-                        </div>
-
-                        <div class="text-right">
-                            <a href="{{ route('applicant.password.request') }}" class="text-sm font-bold text-government-navy hover:underline">
-                                Forgot password?
-                            </a>
                         </div>
 
                         @if ($errors->any())
@@ -213,28 +184,13 @@
                         <button
                             type="submit"
                             class="auth-btn w-full rounded-xl py-3.5 text-lg font-bold text-white">
-                            Login
+                            Send Reset Link
                         </button>
 
-                        <div class="flex items-center gap-3 text-xs font-bold uppercase tracking-wide text-slate-400">
-                            <span class="h-px flex-1 bg-slate-200"></span>
-                            or
-                            <span class="h-px flex-1 bg-slate-200"></span>
-                        </div>
-
-                        <a
-                            href="{{ route('applicant.register') }}"
-                            class="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-government-navy py-3.5 font-bold text-government-navy transition hover:bg-government-light">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-5 w-5">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z" />
-                            </svg>
-                            Create an account
-                        </a>
-
                         <p class="text-center text-sm text-slate-500">
-                            Don't have an account?
-                            <a href="{{ route('applicant.register') }}" class="font-bold text-government-navy hover:underline">
-                                Register here
+                            Remembered your password?
+                            <a href="{{ route('applicant.login') }}" class="font-bold text-government-navy hover:underline">
+                                Login here
                             </a>
                         </p>
                     </form>
@@ -249,18 +205,6 @@
             Your information is secure with us.
         </div>
     </div>
-
-    <script>
-        function toggleAuthPassword(inputId, button) {
-            const input = document.getElementById(inputId);
-            const willShow = input.type === 'password';
-            input.type = willShow ? 'text' : 'password';
-
-            button.querySelector('.icon-eye').classList.toggle('hidden', willShow);
-            button.querySelector('.icon-eye-slash').classList.toggle('hidden', !willShow);
-            button.setAttribute('aria-label', willShow ? 'Hide password' : 'Show password');
-        }
-    </script>
 
 </body>
 

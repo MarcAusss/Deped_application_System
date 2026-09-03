@@ -27,7 +27,7 @@ class ApplicationController extends Controller
     public function jobs(): View
     {
         $jobs = JobPosition::query()
-            ->where('is_open', true)
+            ->currentlyOpen()
             ->latest()
             ->get();
 
@@ -42,7 +42,7 @@ class ApplicationController extends Controller
 
     public function create(JobPosition $job): View
     {
-        if (! $job->is_open) {
+        if (! $job->is_open || $job->hasDeadlinePassed()) {
             abort(403, 'This job position is currently closed.');
         }
 
@@ -57,7 +57,7 @@ class ApplicationController extends Controller
 
     public function store(Request $request, JobPosition $job): RedirectResponse
     {
-        if (! $job->is_open) {
+        if (! $job->is_open || $job->hasDeadlinePassed()) {
             abort(403, 'This job position is currently closed.');
         }
 

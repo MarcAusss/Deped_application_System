@@ -1,5 +1,5 @@
-<div class="border-b border-slate-200 bg-white">
-    <div class="flex items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+<div class="sticky top-0 z-30 border-b border-slate-200 bg-white">
+    <div class="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
         <div class="flex items-center gap-3 lg:hidden">
             <img
                 src="{{ url('images/Department_of_Education_(DepEd).svg.webp') }}"

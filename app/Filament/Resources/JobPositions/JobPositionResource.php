@@ -18,16 +18,28 @@ class JobPositionResource extends Resource
 {
     protected static ?string $model = JobPosition::class;
 
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-briefcase';
+
     protected static string|null|\UnitEnum $navigationGroup = 'Recruitment';
 
     protected static ?int $navigationSort = 1;
 
     public static function form(Schema $schema): Schema
     {
-        return $schema->components([
-            Grid::make(2)->schema([
+        return $schema->components(static::formFields());
+    }
+
+    public static function formFields(): array
+    {
+        return [
+            Grid::make(3)->schema([
                 Forms\Components\TextInput::make('title')
-                    ->required(),
+                    ->required()
+                    ->columnSpan(2),
+
+                Forms\Components\TextInput::make('abbreviation')
+                    ->label('Acronym')
+                    ->placeholder('e.g. T-I'),
 
                 Forms\Components\TextInput::make('slots')
                     ->label('No. of Vacancies')
@@ -35,11 +47,49 @@ class JobPositionResource extends Resource
                     ->required()
                     ->default(1)
                     ->minValue(1)
-                    ->suffix('slot(s)'),
+                    ->suffix('slot(s)')
+                    ->columnSpan(3),
             ]),
 
             Forms\Components\Textarea::make('description')
                 ->required(),
+
+            Grid::make(3)
+                ->columnSpanFull()
+                ->schema([
+                    Forms\Components\DatePicker::make('posted_at')
+                        ->label('Posted')
+                        ->default(now())
+                        ->native(false),
+
+                    Forms\Components\DatePicker::make('until')
+                        ->label('Until')
+                        ->native(false)
+                        ->afterOrEqual('posted_at'),
+
+                    Forms\Components\TextInput::make('until_time')
+                        ->label('Closing Time')
+                        ->placeholder('e.g. 5:00 PM, 12 midnight, or 12 noon')
+                        ->formatStateUsing(fn (?string $state) => filled($state)
+                            ? \Carbon\Carbon::parse($state)->format('g:i A')
+                            : null)
+                        ->rule(function () {
+                            return function (string $attribute, $value, \Closure $fail) {
+                                if (blank($value)) {
+                                    return;
+                                }
+
+                                try {
+                                    \Carbon\Carbon::parse(static::normalizeClosingTime($value));
+                                } catch (\Throwable $e) {
+                                    $fail('Enter a valid time, e.g. 5:00 PM, 12 midnight, or 12 noon.');
+                                }
+                            };
+                        })
+                        ->dehydrateStateUsing(fn (?string $state) => filled($state)
+                            ? \Carbon\Carbon::parse(static::normalizeClosingTime($state))->format('H:i:s')
+                            : null),
+                ]),
 
             Forms\Components\TextInput::make('salary_grade')
                 ->label('Salary Grade')
@@ -79,55 +129,18 @@ class JobPositionResource extends Resource
                 ->label('Eligibility Requirement')
                 ->rows(2),
 
-            Forms\Components\Toggle::make('is_open')
-                ->label('Available for Hiring')
-                ->default(true),
-
-            Grid::make(3)
-                ->schema([
-                    Forms\Components\DatePicker::make('posted_at')
-                        ->label('Posted')
-                        ->default(now())
-                        ->native(false),
-
-                    Forms\Components\DatePicker::make('until')
-                        ->label('Until')
-                        ->native(false)
-                        ->afterOrEqual('posted_at'),
-
-                    Forms\Components\TextInput::make('until_time')
-                        ->label('Closing Time')
-                        ->placeholder('e.g. 5:00 PM')
-                        ->helperText('Include AM or PM, e.g. 5:00 PM.')
-                        ->formatStateUsing(fn (?string $state) => filled($state)
-                            ? \Carbon\Carbon::parse($state)->format('g:i A')
-                            : null)
-                        ->rule(function () {
-                            return function (string $attribute, $value, \Closure $fail) {
-                                if (blank($value)) {
-                                    return;
-                                }
-
-                                try {
-                                    \Carbon\Carbon::parse($value);
-                                } catch (\Throwable $e) {
-                                    $fail('Enter a valid time, e.g. 5:00 PM.');
-                                }
-                            };
-                        })
-                        ->dehydrateStateUsing(fn (?string $state) => filled($state)
-                            ? \Carbon\Carbon::parse($state)->format('H:i:s')
-                            : null),
-                ]),
-
-            Forms\Components\FileUpload::make('attachment_path')
+            Forms\Components\FileUpload::make('attachment_paths')
                 ->label('D.M Notice of Vacancy')
-                ->helperText('Upload the official D.M Notice of Vacancy (PDF). Applicants will be able to download this from the job listing.')
+                ->helperText('Upload the official D.M Notice of Vacancy. You can select or drag in multiple PDF files (or an entire folder of PDFs) at once. Applicants will be able to download each of these from the job listing.')
+                ->multiple()
                 ->disk('public')
                 ->directory('job-positions')
+                ->preserveFilenames()
                 ->acceptedFileTypes(['application/pdf'])
                 ->downloadable()
-                ->openable(),
+                ->openable()
+                ->reorderable()
+                ->panelLayout('grid'),
 
             Forms\Components\FileUpload::make('csc_publication_path')
                 ->label('CSC Publication of Vacancy')
@@ -137,15 +150,31 @@ class JobPositionResource extends Resource
                 ->acceptedFileTypes(['application/pdf'])
                 ->downloadable()
                 ->openable(),
-        ]);
+        ];
+    }
+
+    /**
+     * Lets "12 midnight" / "12 noon" (or plain "midnight" / "noon") be entered
+     * as unambiguous alternatives to 12:00 AM / 12:00 PM.
+     */
+    public static function normalizeClosingTime(string $value): string
+    {
+        $normalized = preg_replace('/^12\s+(midnight|noon)$/i', '$1', trim($value));
+
+        return $normalized ?? $value;
     }
 
     public static function table(Table $table): Table
     {
         return $table
-            ->defaultSort('posted_at', 'desc')
+            ->defaultSort('title', 'asc')
             ->columns([
-                Tables\Columns\TextColumn::make('title')->searchable(),
+                Tables\Columns\TextColumn::make('title')->searchable()->sortable(),
+
+                Tables\Columns\TextColumn::make('abbreviation')
+                    ->label('Acronym')
+                    ->searchable()
+                    ->placeholder('—'),
 
                 Tables\Columns\TextColumn::make('posted_at')
                     ->label('Posted')
@@ -161,22 +190,8 @@ class JobPositionResource extends Resource
                 Tables\Columns\IconColumn::make('is_open')
                     ->boolean()
                     ->label('Open'),
-
-                Tables\Columns\ViewColumn::make('application_link')
-                    ->label('Application Link')
-                    ->view('filament.tables.columns.copy-application-link')
-                    ->alignCenter(),
             ])
             ->actions([
-                Action::make('toggle')
-                    ->label('Toggle Status')
-                    ->icon('heroicon-o-arrows-right-left')
-                    ->color('warning')
-                    ->requiresConfirmation()
-                    ->action(fn ($record) => $record->update([
-                        'is_open' => !$record->is_open,
-                    ])),
-
                 Action::make('edit')
                     ->label('Edit')
                     ->icon('heroicon-o-pencil')

@@ -14,12 +14,14 @@ class ApplicationControlNumber extends Model
 
     /**
      * Generate a unique control number in the format
-     * Alb-{Job Position Title}-{4 random unique digits}-{current year}.
+     * Alb-{Job Position Acronym}-{4 random unique digits}-{current year}.
      */
     public static function generateFor(JobPosition $jobPosition): string
     {
+        $tag = filled($jobPosition->abbreviation) ? $jobPosition->abbreviation : $jobPosition->title;
+
         do {
-            $candidate = 'Alb-' . $jobPosition->title . '-' . random_int(1000, 9999) . '-' . now()->year;
+            $candidate = 'Alb-' . $tag . '-' . random_int(1000, 9999) . '-' . now()->year;
         } while (self::where('control_number', $candidate)->exists());
 
         return $candidate;

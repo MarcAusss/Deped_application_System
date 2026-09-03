@@ -23,14 +23,16 @@
             My Profile
         </a>
 
-        <form method="POST" action="{{ route('applicant.logout') }}" class="ml-auto">
-            @csrf
-            <button
-                type="submit"
-                class="whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-bold text-slate-500 transition hover:text-red-600"
-            >
-                Logout
-            </button>
-        </form>
+        @unless($hideLogout ?? false)
+            <form method="POST" action="{{ route('applicant.logout') }}" class="ml-auto">
+                @csrf
+                <button
+                    type="submit"
+                    class="whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-bold text-slate-500 transition hover:text-red-600"
+                >
+                    Logout
+                </button>
+            </form>
+        @endunless
     @endif
 </nav>
