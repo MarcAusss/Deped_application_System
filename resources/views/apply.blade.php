@@ -68,7 +68,7 @@
                 <div class="flex flex-col items-start gap-3 sm:flex-row sm:flex-wrap sm:gap-6">
                     @foreach(($job->attachment_paths ?? []) as $index => $path)
                         <a
-                            href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($path) }}"
+                            href="{{ route('public-file', $path) }}"
                             target="_blank"
                             rel="noopener"
                             class="inline-flex items-center gap-1.5 rounded-lg border border-white/30 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-white/10"
@@ -82,7 +82,7 @@
 
                     @if($job->csc_publication_path)
                         <a
-                            href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($job->csc_publication_path) }}"
+                            href="{{ route('public-file', $job->csc_publication_path) }}"
                             target="_blank"
                             rel="noopener"
                             class="inline-flex items-center gap-1.5 rounded-lg border border-white/30 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-white/10"
@@ -787,7 +787,7 @@
                                 <p class="mb-3 text-sm text-slate-600">
                                     Current file:
                                     <a
-                                        href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($existingDocument->file_path) }}"
+                                        href="{{ route('public-file', $existingDocument->file_path) }}"
                                         target="_blank"
                                         rel="noopener"
                                         class="font-bold text-government-blue hover:underline"

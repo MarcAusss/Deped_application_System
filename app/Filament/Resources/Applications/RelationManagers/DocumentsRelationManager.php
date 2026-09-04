@@ -11,7 +11,6 @@ use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
-use Illuminate\Support\Facades\Storage;
 
 class DocumentsRelationManager extends RelationManager
 {
@@ -31,7 +30,7 @@ class DocumentsRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('file_path')
                     ->label('File')
                     ->formatStateUsing(fn ($state) => basename($state))
-                    ->url(fn ($record) => Storage::url($record->file_path))
+                    ->url(fn ($record) => route('public-file', $record->file_path))
                     ->openUrlInNewTab()
                     ->tooltip('Click to open file'),
             ])

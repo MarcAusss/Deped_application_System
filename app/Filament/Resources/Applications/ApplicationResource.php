@@ -500,7 +500,7 @@ class ApplicationResource extends Resource
                             ['Document Type', 'File'],
                             $record->documents->map(fn ($document) => [
                                 '<span style="background:#eef2ff;color:#1e3a8a;padding:.125rem .625rem;border-radius:9999px;font-weight:600;font-size:.75rem;">' . e($document->type) . '</span>',
-                                '<a href="' . e(\Illuminate\Support\Facades\Storage::url($document->file_path)) . '" target="_blank" rel="noopener" style="color:#1e3a8a;text-decoration:underline;">' . e(basename($document->file_path)) . '</a>',
+                                '<a href="' . e(route('public-file', $document->file_path)) . '" target="_blank" rel="noopener" style="color:#1e3a8a;text-decoration:underline;">' . e(basename($document->file_path)) . '</a>',
                             ])->all()
                         )),
                 ]),

@@ -75,7 +75,7 @@ class PublicationOfVacancyResource extends Resource
                     ->color(fn ($record) => filled($record->csc_publication_path) ? Color::Blue : Color::Gray)
                     ->extraAttributes(fn ($record) => filled($record->csc_publication_path) ? ['class' => 'hover:underline'] : [])
                     ->url(fn ($record) => filled($record->csc_publication_path)
-                        ? \Illuminate\Support\Facades\Storage::disk('public')->url($record->csc_publication_path)
+                        ? route('public-file', $record->csc_publication_path)
                         : null)
                     ->openUrlInNewTab(),
             ])

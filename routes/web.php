@@ -21,6 +21,16 @@ Route::get('/logout', [AuthController::class, 'logout'])
 Route::get('/jobs', [ApplicationController::class, 'jobs'])
     ->name('jobs.index');
 
+// Streams files from the "public" storage disk directly through PHP instead of
+// relying on the public/storage symlink, which php artisan serve refuses to
+// follow (it points outside the docroot) and which doesn't survive plain file
+// copies when the project is moved to another machine.
+Route::get('/files/{path}', function (string $path) {
+    abort_unless(\Illuminate\Support\Facades\Storage::disk('public')->exists($path), 404);
+
+    return \Illuminate\Support\Facades\Storage::disk('public')->response($path);
+})->where('path', '.*')->name('public-file');
+
 Route::get('/applicant/register', [ApplicantAuthController::class, 'showRegister'])
     ->name('applicant.register');
 
