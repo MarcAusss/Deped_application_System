@@ -8,13 +8,11 @@ use Illuminate\Support\Facades\DB;
 class EvaluatorSeeder extends Seeder
 {
     /**
-     * Snapshot of the real evaluator profile records currently in the
-     * system.
+     * Snapshot of the real evaluator accounts currently in the system.
      */
     public function run(): void
     {
-        DB::table('evaluators')->insert(
-            [
+        DB::table('evaluators')->insert([
             [
                 'id' => 1,
                 'name' => 'Juan Dela Cruz',
@@ -23,7 +21,7 @@ class EvaluatorSeeder extends Seeder
                 'created_at' => '2026-07-22 07:53:42',
                 'updated_at' => '2026-07-22 07:53:42',
             ],
-        ]
-        );
+        ]);
+
     }
 }
