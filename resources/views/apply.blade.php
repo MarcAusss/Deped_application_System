@@ -63,7 +63,7 @@
             </div>
         </div>
 
-        @if(filled($job->attachment_paths) || $job->csc_publication_path)
+        @if(filled($job->attachment_paths) || filled($job->csc_publication_paths))
             <div class="mx-4 mb-4 flex flex-col items-start gap-2 sm:mx-6 sm:mb-6 lg:absolute lg:bottom-6 lg:left-8 lg:mx-0 lg:mb-0">
                 <div class="flex flex-col items-start gap-3 sm:flex-row sm:flex-wrap sm:gap-6">
                     @foreach(($job->attachment_paths ?? []) as $index => $path)
@@ -80,9 +80,9 @@
                         </a>
                     @endforeach
 
-                    @if($job->csc_publication_path)
+                    @foreach(($job->csc_publication_paths ?? []) as $index => $path)
                         <a
-                            href="{{ route('public-file', $job->csc_publication_path) }}"
+                            href="{{ route('public-file', $path) }}"
                             target="_blank"
                             rel="noopener"
                             class="inline-flex items-center gap-1.5 rounded-lg border border-white/30 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-white/10"
@@ -90,9 +90,9 @@
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-4 w-4">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 9.75v6.75m0 0-3-3m3 3 3-3m-8.25 6a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.233-2.33 3 3 0 0 1 3.758 3.848A3.752 3.752 0 0 1 18 19.5H6.75Z" />
                             </svg>
-                             CSC Publication of Vacancy
+                             CSC Publication of Vacancy{{ count($job->csc_publication_paths) > 1 ? ' ' . ($index + 1) : '' }}
                         </a>
-                    @endif
+                    @endforeach
                 </div>
 
                 <p class="whitespace-nowrap text-xs text-blue-100">
@@ -211,6 +211,7 @@
                             type="text"
                             name="full_name"
                             value="{{ old('full_name', $application?->profile?->full_name) }}"
+                            placeholder="Last Name|First Name|Middle Name|Name Extension"
                             required
                             class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100"
                         >
@@ -272,7 +273,7 @@
 
                     <div>
                         <label class="mb-2 block text-sm font-bold text-slate-700">
-                            Sex
+                            Sex (at Birth)
                         </label>
 
                         <select
@@ -283,7 +284,6 @@
                             <option value="">Select sex</option>
                             <option value="Male" @selected($selectedSex === 'Male')>Male</option>
                             <option value="Female" @selected($selectedSex === 'Female')>Female</option>
-                            <option value="Prefer not to say" @selected($selectedSex === 'Prefer not to say')>Prefer not to say</option>
                         </select>
                     </div>
 
@@ -298,7 +298,7 @@
                         >
                             @php $selectedCivilStatus = old('civil_status', $application?->profile?->civil_status); @endphp
                             <option value="">Select civil status</option>
-                            @foreach(['Single', 'Married', 'Widowed', 'Separated', 'Other'] as $civilStatus)
+                            @foreach(['Single', 'Married', 'Widowed', 'Legally Separated', 'Divorced', 'Annulled', 'Other'] as $civilStatus)
                                 <option value="{{ $civilStatus }}" @selected($selectedCivilStatus === $civilStatus)>
                                     {{ $civilStatus }}
                                 </option>
@@ -308,14 +308,14 @@
 
                     <div>
                         <label class="mb-2 block text-sm font-bold text-slate-700">
-                            Religion
+                            Religion <span class="text-red-600">*</span>
                         </label>
 
                         <input
                             type="text"
                             name="religion"
                             value="{{ old('religion', $application?->profile?->religion) }}"
-                            placeholder="Optional"
+                            required
                             class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100"
                         >
                     </div>
@@ -769,7 +769,7 @@
                         'latest_appointment' => 'Latest Appointment',
                         'performance_rating' => 'Performance Rating',
                         'cav' => 'CAV',
-                        'movs' => 'MOVs',
+                        'movs' => 'Other MOVs/Documents',
                     ] as $field => $label)
                         @php
                             $existingDocument = $existingDocuments->get($field);

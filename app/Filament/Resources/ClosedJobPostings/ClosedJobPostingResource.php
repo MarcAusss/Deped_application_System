@@ -83,7 +83,17 @@ class ClosedJobPostingResource extends Resource
                     })
                     ->badge()
                     ->wrap()
-                    ->color(fn ($record) => filled($record->attachment_paths) ? Color::Blue : Color::Gray),
+                    ->color(fn ($record) => filled($record->attachment_paths) ? Color::Blue : Color::Gray)
+                    ->action(
+                        Action::make('viewReferences')
+                            ->modalHeading('D.M Notice of Vacancy')
+                            ->modalWidth(\Filament\Support\Enums\Width::FourExtraLarge)
+                            ->modalSubmitAction(false)
+                            ->modalCancelActionLabel('Close')
+                            ->modalContent(fn ($record) => view('filament.tables.columns.references-preview', [
+                                'paths' => $record->attachment_paths ?? [],
+                            ]))
+                    ),
             ])
             ->actions([
                 Action::make('repost')

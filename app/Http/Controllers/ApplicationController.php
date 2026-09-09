@@ -131,6 +131,14 @@ class ApplicationController extends Controller
                 ->with('error', 'This application can no longer be edited since it has already been evaluated.');
         }
 
+        $application->loadMissing('jobPosition');
+
+        if ($this->applicationEditingWindowClosed($application)) {
+            return redirect()
+                ->route('applicant.dashboard')
+                ->with('error', 'This application can no longer be edited since the position has closed.');
+        }
+
         $application->load([
             'jobPosition',
             'profile',
@@ -163,6 +171,14 @@ class ApplicationController extends Controller
             return redirect()
                 ->route('applicant.dashboard')
                 ->with('error', 'This application can no longer be edited since it has already been evaluated.');
+        }
+
+        $application->loadMissing('jobPosition');
+
+        if ($this->applicationEditingWindowClosed($application)) {
+            return redirect()
+                ->route('applicant.dashboard')
+                ->with('error', 'This application can no longer be edited since the position has closed.');
         }
 
         $validated = $request->validate($this->applicationValidationRules());
@@ -199,6 +215,17 @@ class ApplicationController extends Controller
                 'success',
                 'Your application was updated successfully.'
             );
+    }
+
+    /**
+     * An applicant can only edit their application while the position is
+     * still open and its closing time hasn't passed yet.
+     */
+    private function applicationEditingWindowClosed(Application $application): bool
+    {
+        $job = $application->jobPosition;
+
+        return ! $job || ! $job->is_open || $job->hasDeadlinePassed();
     }
 
     /**
@@ -256,7 +283,7 @@ class ApplicationController extends Controller
             ],
 
             'religion' => [
-                'nullable',
+                'required',
                 'string',
                 'max:255',
             ],

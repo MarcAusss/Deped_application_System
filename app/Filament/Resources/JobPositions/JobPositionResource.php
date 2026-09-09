@@ -139,17 +139,19 @@ class JobPositionResource extends Resource
                 ->acceptedFileTypes(['application/pdf'])
                 ->downloadable()
                 ->openable()
-                ->reorderable()
-                ->panelLayout('grid'),
+                ->reorderable(),
 
-            Forms\Components\FileUpload::make('csc_publication_path')
+            Forms\Components\FileUpload::make('csc_publication_paths')
                 ->label('CSC Publication of Vacancy')
-                ->helperText('Upload the official CSC Publication of Vacancy (PDF). Applicants will be able to download this from the job listing.')
+                ->helperText('Upload the official CSC Publication of Vacancy. You can select or drag in multiple PDF files (or an entire folder of PDFs) at once. Applicants will be able to download each of these from the job listing.')
+                ->multiple()
                 ->disk('public')
                 ->directory('job-positions')
+                ->preserveFilenames()
                 ->acceptedFileTypes(['application/pdf'])
                 ->downloadable()
-                ->openable(),
+                ->openable()
+                ->reorderable(),
         ];
     }
 
@@ -176,20 +178,15 @@ class JobPositionResource extends Resource
                     ->searchable()
                     ->placeholder('—'),
 
-                Tables\Columns\TextColumn::make('posted_at')
-                    ->label('Posted')
-                    ->date('M d, Y')
-                    ->placeholder('—')
-                    ->sortable(),
-
                 Tables\Columns\TextColumn::make('slots')
                     ->label('No. of Vacancies')
                     ->sortable()
-                    ->alignCenter(),
+                    ->alignLeft(),
 
                 Tables\Columns\IconColumn::make('is_open')
+                    ->label('Open')
                     ->boolean()
-                    ->label('Open'),
+                    ->getStateUsing(fn ($record) => $record->is_open && ! $record->hasDeadlinePassed()),
             ])
             ->actions([
                 Action::make('edit')
@@ -197,13 +194,7 @@ class JobPositionResource extends Resource
                     ->icon('heroicon-o-pencil')
                     ->url(fn ($record) => static::getUrl('edit', ['record' => $record])),
             ])
-            ->bulkActions([
-                Action::make('delete')
-                    ->label('Delete Selected')
-                    ->color('danger')
-                    ->requiresConfirmation()
-                    ->action(fn ($records) => $records->each->delete()),
-            ]);
+            ->bulkActions([]);
     }
 
     public static function getPages(): array

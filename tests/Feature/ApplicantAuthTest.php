@@ -71,6 +71,7 @@ class ApplicantAuthTest extends TestCase
             ->post(route('apply.submit', $job), [
                 'full_name' => 'Test Applicant',
                 'email' => 'applicant@example.com',
+                'religion' => 'Roman Catholic',
             ]);
 
         $response->assertRedirect(route('jobs.index'));

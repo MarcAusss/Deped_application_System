@@ -26,7 +26,7 @@ class JobPosition extends Model
         'until',
         'until_time',
         'attachment_paths',
-        'csc_publication_path',
+        'csc_publication_paths',
     ];
 
     protected $casts = [
@@ -38,6 +38,7 @@ class JobPosition extends Model
         'min_experience_years' => 'decimal:2',
         'min_training_hours' => 'integer',
         'attachment_paths' => 'array',
+        'csc_publication_paths' => 'array',
     ];
 
     public function applications(): HasMany

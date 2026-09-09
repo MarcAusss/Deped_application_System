@@ -46,7 +46,7 @@ class ApplicantProfileController extends Controller
             'birth_date' => ['nullable', 'date', 'before_or_equal:today'],
             'sex' => ['nullable', 'string', 'max:30'],
             'civil_status' => ['nullable', 'string', 'max:50'],
-            'religion' => ['nullable', 'string', 'max:255'],
+            'religion' => ['required', 'string', 'max:255'],
             'disability' => ['nullable', 'string', 'max:255'],
             'ethnic_group' => ['nullable', 'string', 'max:255'],
         ]);

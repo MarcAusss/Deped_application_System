@@ -80,7 +80,7 @@
 <body class="min-h-screen bg-slate-50">
 
     <div class="mx-auto flex min-h-screen max-w-5xl flex-col items-center justify-center p-5">
-        <div class="auth-card grid w-full grid-cols-1 overflow-hidden rounded-3xl bg-white lg:grid-cols-[2fr_3fr]">
+        <div class="auth-card grid w-full grid-cols-1 overflow-hidden rounded-3xl bg-white lg:grid-cols-[2.3fr_2.7fr]">
 
             <div class="relative hidden min-h-[640px] flex-col overflow-hidden lg:flex">
                 <img
@@ -90,31 +90,23 @@
 
                 <div class="absolute inset-0 bg-gradient-to-b from-government-dark via-government-dark/85 to-government-dark"></div>
 
-                <div class="relative z-10 flex h-full flex-col items-center px-8 pb-8 pt-10 text-center text-white">
-                    <div class="flex h-28 w-28 items-center justify-center overflow-hidden rounded-full border-3 border-white/10 bg-white shadow-lg">
+                <div class="relative z-10 flex h-full flex-col items-center px-8 pb-8 pt-14 text-center text-white">
+                    <div class="flex h-32 w-32 items-center justify-center overflow-hidden rounded-full border-3 border-white/10 bg-white shadow-lg">
                         <img
                             src="{{ asset('images/depedalbay.png') }}"
                             alt="DepEd Logo"
-                            class="h-36 w-36 shrink-0 translate-y-1 object-contain">
+                            class="h-40 w-40 shrink-0 translate-y-1 object-contain">
                     </div>
 
-                    <p class="mt-5 text-xs font-bold uppercase tracking-widest text-blue-200">
-                        Department of Education
+                    <p class="mt-5 text-base font-bold uppercase tracking-widest text-blue-200">
+                        Welcome!
                     </p>
 
-                    <h1 class="mt-1 text-2xl font-black leading-tight">
-                        SCHOOL DIVISION OFFICE<br>OF ALBAY
+                    <h1 class="mt-1 text-4xl font-black leading-tight">
+                        SDO Albay CARES
                     </h1>
 
-                    <div class="mt-4 h-1 w-14 rounded-full bg-government-gold"></div>
-
-                    <div class="mt-4 flex items-center justify-center gap-2 text-sm text-blue-100">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-4 w-4 shrink-0">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
-                        </svg>
-                        <span>Lignon Hill, Bogtong, Legazpi City</span>
-                    </div>
+                    <div class="mt-2 h-1 w-14 rounded-full bg-government-gold"></div>
 
                     <div class="flex-1"></div>
 
@@ -205,13 +197,23 @@
                         </div>
 
                         @if ($errors->any())
-                            <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-                                {{ $errors->first() }}
+                            <div id="login-alert-box" class="flex items-start gap-2 rounded-xl border px-4 py-3 text-sm {{ session('loginWarning') ? 'border-amber-300 bg-amber-50 text-amber-700' : 'border-red-200 bg-red-50 text-red-600' }}">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mt-0.5 h-5 w-5 shrink-0">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-8.25 3.75h.008v.008h-.008v-.008Z" />
+                                </svg>
+                                <span id="login-error-text">
+                                    @if(session('lockoutSeconds'))
+                                        Too many failed login attempts. Please try again in <span id="lockout-countdown">{{ session('lockoutSeconds') }}</span> second(s).
+                                    @else
+                                        {{ $errors->first() }}
+                                    @endif
+                                </span>
                             </div>
                         @endif
 
                         <button
                             type="submit"
+                            id="login-submit-btn"
                             class="auth-btn w-full rounded-xl py-3.5 text-lg font-bold text-white">
                             Login
                         </button>
@@ -261,6 +263,53 @@
             button.setAttribute('aria-label', willShow ? 'Hide password' : 'Show password');
         }
     </script>
+
+    @if(session('lockoutSeconds'))
+        <script>
+            (function () {
+                var seconds = {{ (int) session('lockoutSeconds') }};
+                var countdownEl = document.getElementById('lockout-countdown');
+                var textEl = document.getElementById('login-error-text');
+                var alertBox = document.getElementById('login-alert-box');
+                var submitBtn = document.getElementById('login-submit-btn');
+                var originalLabel = submitBtn ? submitBtn.textContent.trim() : null;
+
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                }
+
+                var interval = setInterval(function () {
+                    seconds--;
+
+                    if (seconds <= 0) {
+                        clearInterval(interval);
+
+                        if (textEl) {
+                            textEl.textContent = 'You can try logging in again now.';
+                        }
+
+                        if (alertBox) {
+                            alertBox.classList.remove('border-red-200', 'bg-red-50', 'text-red-600', 'border-amber-300', 'bg-amber-50', 'text-amber-700');
+                            alertBox.classList.add('border-green-300', 'bg-green-50', 'text-green-700');
+                        }
+
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                            submitBtn.textContent = originalLabel;
+                        }
+
+                        return;
+                    }
+
+                    if (countdownEl) {
+                        countdownEl.textContent = seconds;
+                    }
+                }, 1000);
+            })();
+        </script>
+    @endif
 
 </body>
 

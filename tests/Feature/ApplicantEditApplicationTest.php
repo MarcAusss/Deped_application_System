@@ -18,6 +18,7 @@ class ApplicantEditApplicationTest extends TestCase
             ->post(route('apply.submit', $job), [
                 'full_name' => 'Original Name',
                 'email' => 'original@example.com',
+                'religion' => 'Roman Catholic',
                 'education' => [
                     ['level' => "Bachelor's Degree", 'school' => 'Original School', 'degree' => 'BS Original', 'year_graduated' => '2020'],
                 ],
@@ -52,6 +53,7 @@ class ApplicantEditApplicationTest extends TestCase
             ->put(route('applicant.applications.update', $application), [
                 'full_name' => 'Updated Name',
                 'email' => 'updated@example.com',
+                'religion' => 'Roman Catholic',
                 'education' => [
                     ['level' => "Bachelor's Degree", 'school' => 'Updated School', 'degree' => 'BS Updated', 'year_graduated' => '2021'],
                     ['level' => "Master's Degree", 'school' => 'New Grad School', 'degree' => 'MS New', 'year_graduated' => '2023'],
@@ -92,5 +94,40 @@ class ApplicantEditApplicationTest extends TestCase
 
         $response->assertRedirect(route('applicant.dashboard'));
         $response->assertSessionHas('error');
+    }
+
+    public function test_application_cannot_be_edited_once_the_position_is_closed(): void
+    {
+        $applicant = Applicant::create(['name' => 'Test Applicant', 'email' => 'applicant@example.com', 'password' => 'password123']);
+        $job = JobPosition::create(['title' => 'Test Position', 'description' => 'Test', 'is_open' => true]);
+        $application = $this->createSubmittedApplication($applicant, $job);
+        $job->update(['is_open' => false]);
+
+        $response = $this->actingAs($applicant, 'applicant')
+            ->get(route('applicant.applications.edit', $application));
+
+        $response->assertRedirect(route('applicant.dashboard'));
+        $response->assertSessionHas('error');
+    }
+
+    public function test_application_cannot_be_edited_once_the_positions_deadline_has_passed(): void
+    {
+        $applicant = Applicant::create(['name' => 'Test Applicant', 'email' => 'applicant@example.com', 'password' => 'password123']);
+        $job = JobPosition::create(['title' => 'Test Position', 'description' => 'Test', 'is_open' => true]);
+        $application = $this->createSubmittedApplication($applicant, $job);
+
+        // The position's deadline passes after the applicant already submitted.
+        $job->update(['until' => now()->subDay()->toDateString()]);
+
+        $response = $this->actingAs($applicant, 'applicant')
+            ->put(route('applicant.applications.update', $application), [
+                'full_name' => 'Should Not Save',
+                'email' => 'shouldnotsave@example.com',
+                'religion' => 'Roman Catholic',
+            ]);
+
+        $response->assertRedirect(route('applicant.dashboard'));
+        $response->assertSessionHas('error');
+        $this->assertSame('Original Name', $application->fresh()->profile->full_name);
     }
 }

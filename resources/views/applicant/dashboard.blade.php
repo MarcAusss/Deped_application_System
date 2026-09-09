@@ -211,9 +211,10 @@
                                     {{ ucfirst($application->status) }}
                                 </span>
 
-                                @if($application->status === 'pending')
+                                @if($application->status === 'pending' && $application->jobPosition?->is_open && !$application->jobPosition?->hasDeadlinePassed())
                                     <a
                                         href="{{ route('applicant.applications.edit', $application) }}"
+                                        title="Once the application period has ended, you can no longer edit or update your application."
                                         class="inline-flex w-fit items-center gap-1.5 rounded-full border border-government-navy px-4 py-1.5 text-xs font-bold text-government-navy transition hover:bg-government-navy hover:text-white"
                                     >
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-3.5 w-3.5">
@@ -359,6 +360,15 @@
                             <p class="mt-1 text-sm text-slate-700">
                                 {{ $meta['next'] }}
                             </p>
+
+                            @if($application->status === 'pending' && $application->jobPosition?->is_open && !$application->jobPosition?->hasDeadlinePassed())
+                                <p class="mt-2 flex items-start gap-1.5 rounded-lg bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-700 ring-1 ring-amber-200">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mt-0.5 h-3.5 w-3.5 shrink-0">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-8.25 3.75h.008v.008h-.008v-.008Z" />
+                                    </svg>
+                                    Once the application period has ended, you can no longer edit or update your application.
+                                </p>
+                            @endif
                         </div>
                     </article>
                 @empty

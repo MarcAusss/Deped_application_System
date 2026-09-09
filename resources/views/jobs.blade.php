@@ -135,7 +135,7 @@
                         </p>
 
                         <div class="mt-7 flex flex-wrap items-start justify-between gap-x-6 gap-y-3 border-t border-slate-100 pt-5 text-sm text-slate-600">
-                            @if(filled($job->attachment_paths) || $job->csc_publication_path)
+                            @if(filled($job->attachment_paths) || filled($job->csc_publication_paths))
                                 <div class="flex flex-wrap items-center gap-4">
                                 @foreach(($job->attachment_paths ?? []) as $index => $path)
                                     <a
@@ -151,9 +151,9 @@
                                     </a>
                                 @endforeach
 
-                                @if($job->csc_publication_path)
+                                @foreach(($job->csc_publication_paths ?? []) as $index => $path)
                                     <a
-                                        href="{{ route('public-file', $job->csc_publication_path) }}"
+                                        href="{{ route('public-file', $path) }}"
                                         target="_blank"
                                         rel="noopener"
                                         class="inline-flex items-center gap-2 text-sm font-bold text-government-blue hover:text-government-navy hover:underline"
@@ -161,9 +161,9 @@
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-5 w-5">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 9.75v6.75m0 0-3-3m3 3 3-3m-8.25 6a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.233-2.33 3 3 0 0 1 3.758 3.848A3.752 3.752 0 0 1 18 19.5H6.75Z" />
                                         </svg>
-                                         CSC Publication of Vacancy
+                                         CSC Publication of Vacancy{{ count($job->csc_publication_paths) > 1 ? ' ' . ($index + 1) : '' }}
                                     </a>
-                                @endif
+                                @endforeach
                             </div>
                         @endif
 
@@ -190,7 +190,7 @@
                     </div>
 
                     <div class="mt-3 flex flex-wrap items-start justify-between gap-x-6 gap-y-1">
-                        @if(filled($job->attachment_paths) || $job->csc_publication_path)
+                        @if(filled($job->attachment_paths) || filled($job->csc_publication_paths))
                             <p class="text-xs text-slate-500">
                                 Important: Review the D.M. Notice and CSC Publication of Vacancy for full qualifications, requirements, and deadlines.
                             </p>

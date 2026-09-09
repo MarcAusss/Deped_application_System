@@ -2,10 +2,10 @@
 
 namespace App\Filament\Resources\PublicationOfVacancy;
 
+use App\Filament\Resources\JobPositions\JobPositionResource;
 use App\Filament\Resources\PublicationOfVacancy\Pages;
 use App\Models\JobPosition;
 use Filament\Actions\Action;
-use Filament\Forms;
 use Filament\Resources\Resource;
 use Filament\Support\Colors\Color;
 use Filament\Tables;
@@ -37,6 +37,11 @@ class PublicationOfVacancyResource extends Resource
         return false;
     }
 
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getEloquentQuery()->whereNotNull('posted_at');
+    }
+
     public static function table(Table $table): Table
     {
         return $table
@@ -48,8 +53,9 @@ class PublicationOfVacancyResource extends Resource
                     ->sortable(),
 
                 Tables\Columns\IconColumn::make('is_open')
+                    ->label('Open')
                     ->boolean()
-                    ->label('Open'),
+                    ->getStateUsing(fn ($record) => $record->is_open && ! $record->hasDeadlinePassed()),
 
                 Tables\Columns\TextColumn::make('posted_at')
                     ->label('Posted')
@@ -63,44 +69,36 @@ class PublicationOfVacancyResource extends Resource
                     ->placeholder('—')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('csc_publication_path')
-                    ->label('CSC Publication of Vacancy')
-                    ->getStateUsing(fn ($record) => filled($record->csc_publication_path) ? 'Uploaded' : 'Not uploaded')
-                    ->badge()
-                    ->color(fn (string $state) => $state === 'Uploaded' ? 'success' : 'gray'),
+                Tables\Columns\TextColumn::make('references')
+                    ->label('References')
+                    ->getStateUsing(function ($record) {
+                        $paths = $record->csc_publication_paths ?? [];
 
-                Tables\Columns\TextColumn::make('view_csc_publication')
-                    ->label('View')
-                    ->getStateUsing(fn ($record) => filled($record->csc_publication_path) ? 'Publication of CSC' : '—')
-                    ->color(fn ($record) => filled($record->csc_publication_path) ? Color::Blue : Color::Gray)
-                    ->extraAttributes(fn ($record) => filled($record->csc_publication_path) ? ['class' => 'hover:underline'] : [])
-                    ->url(fn ($record) => filled($record->csc_publication_path)
-                        ? route('public-file', $record->csc_publication_path)
-                        : null)
-                    ->openUrlInNewTab(),
+                        return count($paths) > 0
+                            ? collect($paths)->map(fn ($path) => basename($path))->implode(', ')
+                            : 'No file';
+                    })
+                    ->badge()
+                    ->wrap()
+                    ->color(fn ($record) => filled($record->csc_publication_paths) ? Color::Blue : Color::Gray)
+                    ->action(
+                        Action::make('viewReferences')
+                            ->modalHeading('CSC Publication of Vacancy')
+                            ->modalWidth(\Filament\Support\Enums\Width::FourExtraLarge)
+                            ->modalSubmitAction(false)
+                            ->modalCancelActionLabel('Close')
+                            ->modalContent(fn ($record) => view('filament.tables.columns.references-preview', [
+                                'paths' => $record->csc_publication_paths ?? [],
+                            ]))
+                    ),
             ])
             ->recordActionsColumnLabel('Actions')
             ->recordActionsAlignment(\Filament\Support\Enums\Alignment::Center->value)
             ->actions([
-                Action::make('manage')
-                    ->label('Upload / Edit')
-                    ->modalHeading('CSC Publication of Vacancy')
-                    ->form([
-                        Forms\Components\FileUpload::make('csc_publication_path')
-                            ->label('CSC Publication of Vacancy')
-                            ->helperText('Upload the official CSC Publication of Vacancy (PDF). Applicants will be able to download this from the job listing.')
-                            ->disk('public')
-                            ->directory('job-positions')
-                            ->acceptedFileTypes(['application/pdf'])
-                            ->downloadable()
-                            ->openable(),
-                    ])
-                    ->fillForm(fn ($record) => [
-                        'csc_publication_path' => $record->csc_publication_path,
-                    ])
-                    ->action(fn ($record, array $data) => $record->update([
-                        'csc_publication_path' => $data['csc_publication_path'],
-                    ])),
+                Action::make('edit')
+                    ->label('Edit')
+                    ->icon('heroicon-o-pencil')
+                    ->url(fn ($record) => JobPositionResource::getUrl('edit', ['record' => $record])),
             ])
             ->bulkActions([]);
     }

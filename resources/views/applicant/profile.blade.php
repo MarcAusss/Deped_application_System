@@ -123,6 +123,7 @@
                                 type="text"
                                 name="full_name"
                                 value="{{ old('full_name', $personalInfo->full_name) }}"
+                                placeholder="Last Name|First Name|Middle Name|Name Extension"
                                 required
                                 class="w-full rounded-lg border border-slate-300 px-4 py-2.5 outline-none focus:border-government-navy focus:ring-2 focus:ring-government-navy/20"
                             >
@@ -194,7 +195,6 @@
                                 <option value="">Select sex</option>
                                 <option value="Male" @selected($selectedSex === 'Male')>Male</option>
                                 <option value="Female" @selected($selectedSex === 'Female')>Female</option>
-                                <option value="Prefer not to say" @selected($selectedSex === 'Prefer not to say')>Prefer not to say</option>
                             </select>
                             @error('sex', 'updatePersonalInfo')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -208,7 +208,7 @@
                                 class="w-full rounded-lg border border-slate-300 px-4 py-2.5 outline-none focus:border-government-navy focus:ring-2 focus:ring-government-navy/20"
                             >
                                 <option value="">Select civil status</option>
-                                @foreach(['Single', 'Married', 'Widowed', 'Separated', 'Other'] as $civilStatus)
+                                @foreach(['Single', 'Married', 'Widowed', 'Legally Separated', 'Divorced', 'Annulled', 'Other'] as $civilStatus)
                                     <option value="{{ $civilStatus }}" @selected($selectedCivilStatus === $civilStatus)>
                                         {{ $civilStatus }}
                                     </option>
@@ -225,6 +225,7 @@
                                 type="text"
                                 name="religion"
                                 value="{{ old('religion', $personalInfo->religion) }}"
+                                required
                                 class="w-full rounded-lg border border-slate-300 px-4 py-2.5 outline-none focus:border-government-navy focus:ring-2 focus:ring-government-navy/20"
                             >
                             @error('religion', 'updatePersonalInfo')

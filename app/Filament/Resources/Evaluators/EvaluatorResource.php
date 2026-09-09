@@ -11,6 +11,7 @@ use Filament\Schemas\Schema;
 use App\Filament\Resources\Evaluators\Pages;
 
 use Filament\Actions\Action;
+use Filament\Actions\BulkAction;
 
 class EvaluatorResource extends Resource
 {
@@ -81,7 +82,7 @@ class EvaluatorResource extends Resource
                     ->url(fn ($record) => static::getUrl('edit', ['record' => $record])),
             ])
             ->bulkActions([
-                Action::make('delete')
+                BulkAction::make('delete')
                     ->label('Delete Selected')
                     ->color('danger')
                     ->requiresConfirmation()

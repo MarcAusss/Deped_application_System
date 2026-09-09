@@ -54,7 +54,7 @@ class ListJobPostings extends ListRecords
                                 ? \Carbon\Carbon::parse($job->until_time)->format('g:i A')
                                 : null);
                             $set('attachment_paths', $job?->attachment_paths ?? []);
-                            $set('csc_publication_path', $job?->csc_publication_path);
+                            $set('csc_publication_paths', $job?->csc_publication_paths ?? []);
                         }),
 
                     ...JobPositionResource::formFields(),
