@@ -32,6 +32,15 @@ class ApplicationSeeder extends Seeder
                 'created_at' => '2026-09-01 16:35:05',
                 'updated_at' => '2026-09-01 16:35:05',
             ],
+            [
+                'id' => 26,
+                'name' => 'Nick L. Bio',
+                'email' => 'beunique.78@gmail.com',
+                'password' => '$2y$12$sRtZnT64RdVgfJdsaIj2c.167fEbsbkTr7TIPX8QTc/9gjLi1Ehj.',
+                'remember_token' => null,
+                'created_at' => '2026-09-09 09:13:31',
+                'updated_at' => '2026-09-09 09:13:31',
+            ],
         ]);
 
         DB::table('applications')->insert([
@@ -207,6 +216,17 @@ class ApplicationSeeder extends Seeder
                 'status' => 'pending',
                 'created_at' => '2026-09-03 13:47:12',
                 'updated_at' => '2026-09-03 13:47:12',
+                'resume_checked' => 0,
+                'credentials_valid' => 0,
+                'recommended' => 0,
+            ],
+            [
+                'id' => 88,
+                'job_position_id' => 8,
+                'applicant_id' => 26,
+                'status' => 'pending',
+                'created_at' => '2026-09-09 09:22:56',
+                'updated_at' => '2026-09-09 09:22:56',
                 'resume_checked' => 0,
                 'credentials_valid' => 0,
                 'recommended' => 0,
@@ -452,7 +472,23 @@ class ApplicationSeeder extends Seeder
                 'disability' => 'N/A',
                 'ethnic_group' => 'N/A',
                 'created_at' => '2026-09-03 13:47:12',
-                'updated_at' => '2026-09-03 16:16:44',
+                'updated_at' => '2026-09-09 10:50:37',
+            ],
+            [
+                'id' => 34,
+                'application_id' => 88,
+                'full_name' => 'BIO, NICK LONGGA',
+                'email' => 'beunique.78@gmail.com',
+                'phone' => '098888888',
+                'address' => 'Tiwi, Albay',
+                'birth_date' => '1900-09-09',
+                'sex' => 'Male',
+                'civil_status' => 'Other',
+                'religion' => null,
+                'disability' => null,
+                'ethnic_group' => null,
+                'created_at' => '2026-09-09 09:22:56',
+                'updated_at' => '2026-09-09 09:22:56',
             ],
         ]);
 
@@ -599,6 +635,28 @@ class ApplicationSeeder extends Seeder
                 'year_graduated' => '2025',
                 'created_at' => '2026-09-03 13:15:15',
                 'updated_at' => '2026-09-03 13:15:15',
+            ],
+            [
+                'id' => 29,
+                'application_id' => 88,
+                'level' => 'Bachelor\'s Degree',
+                'level_specify' => null,
+                'school' => null,
+                'degree' => null,
+                'year_graduated' => null,
+                'created_at' => '2026-09-09 09:22:56',
+                'updated_at' => '2026-09-09 09:22:56',
+            ],
+            [
+                'id' => 30,
+                'application_id' => 88,
+                'level' => 'Master\'s Degree',
+                'level_specify' => null,
+                'school' => null,
+                'degree' => null,
+                'year_graduated' => null,
+                'created_at' => '2026-09-09 09:22:56',
+                'updated_at' => '2026-09-09 09:22:56',
             ],
         ]);
 
@@ -1345,6 +1403,14 @@ class ApplicationSeeder extends Seeder
                 'generated_by' => null,
                 'created_at' => '2026-09-03 13:47:12',
                 'updated_at' => '2026-09-03 13:52:36',
+            ],
+            [
+                'id' => 80,
+                'application_id' => 88,
+                'control_number' => 'Alb-HT I-6076-2026',
+                'generated_by' => null,
+                'created_at' => '2026-09-09 09:22:56',
+                'updated_at' => '2026-09-09 09:22:56',
             ],
         ]);
 
