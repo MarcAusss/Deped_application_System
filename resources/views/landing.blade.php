@@ -78,7 +78,7 @@
                     Browse open positions, apply, and track your application status.
                 </p>
                 <span class="go mt-4 inline-flex items-center gap-1.5 text-sm font-bold text-[#123B6D]">
-                    Browse open positions
+                    Browse to Apply
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
                     </svg>
