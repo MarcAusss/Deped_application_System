@@ -1,5 +1,5 @@
 <div class="sticky top-0 z-30 border-b border-slate-200 bg-white">
-    <div class="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
+    <div class="flex min-h-16 items-center justify-between px-4 py-2 sm:px-6 lg:px-8">
         <div class="flex items-center gap-3 lg:hidden">
             <img
                 src="{{ url('images/Department_of_Education_(DepEd).svg.webp') }}"
@@ -40,6 +40,16 @@
                     <span class="font-bold normal-case text-slate-400">&middot;</span>
                     <span class="font-bold text-slate-800">Recruitment Portal</span>
                 </p>
+
+                <a
+                    href="mailto:cares.support@depedalbay.com"
+                    class="mt-0.5 inline-flex items-center gap-2 rounded-md bg-government-light px-2.5 py-1.5 text-sm font-bold normal-case text-government-navy transition hover:bg-blue-100"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" class="h-4 w-4 shrink-0">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
+                    </svg>
+                    <span class="truncate">For issues &amp; concerns: cares.support@depedalbay.com</span>
+                </a>
             </div>
         </div>
 

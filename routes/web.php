@@ -8,8 +8,12 @@ use App\Http\Controllers\ApplicantAuthController;
 use App\Http\Controllers\ApplicantPasswordResetController;
 use App\Http\Controllers\ApplicantDashboardController;
 use App\Http\Controllers\ApplicantProfileController;
+use App\Http\Controllers\PasswordResetController;
 
-Route::get('/', [AuthController::class, 'showLogin'])
+Route::view('/', 'landing')
+    ->name('home');
+
+Route::get('/login', [AuthController::class, 'showLogin'])
     ->name('login');
 
 Route::post('/login', [AuthController::class, 'login'])
@@ -17,6 +21,18 @@ Route::post('/login', [AuthController::class, 'login'])
 
 Route::get('/logout', [AuthController::class, 'logout'])
     ->name('logout');
+
+Route::get('/forgot-password', [PasswordResetController::class, 'showForgot'])
+    ->name('password.request');
+
+Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLink'])
+    ->name('password.email');
+
+Route::get('/reset-password/{token}', [PasswordResetController::class, 'showReset'])
+    ->name('password.reset');
+
+Route::post('/reset-password', [PasswordResetController::class, 'reset'])
+    ->name('password.update');
 
 Route::get('/jobs', [ApplicationController::class, 'jobs'])
     ->name('jobs.index');
@@ -49,7 +65,7 @@ Route::get('/applicant/forgot-password', [ApplicantPasswordResetController::clas
 Route::post('/applicant/forgot-password', [ApplicantPasswordResetController::class, 'sendResetLink'])
     ->name('applicant.password.email');
 
-Route::get('/applicant/reset-password/{token}', [ApplicantPasswordResetController::class, 'showReset'])
+Route::get('/applicant/reset-password', [ApplicantPasswordResetController::class, 'showReset'])
     ->name('applicant.password.reset');
 
 Route::post('/applicant/reset-password', [ApplicantPasswordResetController::class, 'reset'])

@@ -148,13 +148,11 @@
                     </h2>
 
                     <p class="mt-2 text-slate-500">
-                        Enter a new password for your account.
+                        Enter the 6-digit code we emailed you, then choose a new password.
                     </p>
 
                     <form method="POST" action="{{ route('applicant.password.update') }}" class="mt-8 space-y-5">
                         @csrf
-
-                        <input type="hidden" name="token" value="{{ $token }}">
 
                         <div class="relative">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="auth-icon h-5 w-5">
@@ -169,6 +167,23 @@
                                 required
                                 autofocus
                                 class="auth-input">
+                        </div>
+
+                        <div class="relative">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="auth-icon h-5 w-5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1 1 21.75 8.25Z" />
+                            </svg>
+
+                            <input
+                                type="text"
+                                inputmode="numeric"
+                                pattern="[0-9]{6}"
+                                maxlength="6"
+                                name="code"
+                                value="{{ old('code') }}"
+                                placeholder="6-Digit Verification Code"
+                                required
+                                class="auth-input tracking-[0.3em]">
                         </div>
 
                         <div class="relative">

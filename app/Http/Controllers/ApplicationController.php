@@ -92,7 +92,9 @@ class ApplicationController extends Controller
                 ->withInput()
                 ->with(
                     'error',
-                    'The application could not be submitted. Please try again.'
+                    'The application could not be submitted. Please try again. [DEBUG: '
+                        .get_class($exception).': '.$exception->getMessage()
+                        .' at '.$exception->getFile().':'.$exception->getLine().']'
                 );
         }
 

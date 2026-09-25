@@ -300,6 +300,11 @@
             </svg>
             Your information is secure with us.
         </div>
+
+        <p class="mt-2 text-xs text-slate-500">
+            For issues and concerns, please contact:
+            <a href="mailto:cares.support@depedalbay.com" class="font-bold text-government-navy hover:underline">cares.support@depedalbay.com</a>
+        </p>
     </div>
 
     <script>

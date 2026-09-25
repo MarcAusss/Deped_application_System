@@ -148,7 +148,7 @@
                     </h2>
 
                     <p class="mt-2 text-slate-500">
-                        Enter the email address linked to your account and we'll send you a link to reset your password.
+                        Enter the email address linked to your account and we'll email you a 6-digit verification code to reset your password.
                     </p>
 
                     @if (session('status'))
@@ -184,7 +184,7 @@
                         <button
                             type="submit"
                             class="auth-btn w-full rounded-xl py-3.5 text-lg font-bold text-white">
-                            Send Reset Link
+                            Send Verification Code
                         </button>
 
                         <p class="text-center text-sm text-slate-500">
