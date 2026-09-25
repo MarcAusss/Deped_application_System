@@ -21,7 +21,7 @@ class UserSeeder extends Seeder
                 'role' => 'admin',
                 'is_approved' => 1,
                 'created_at' => '2026-07-22 07:53:41',
-                'updated_at' => '2026-08-20 13:02:46',
+                'updated_at' => '2026-09-23 08:51:42',
             ],
             [
                 'id' => 2,
