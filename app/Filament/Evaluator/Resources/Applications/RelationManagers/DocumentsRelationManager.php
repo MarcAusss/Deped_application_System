@@ -25,10 +25,15 @@ class DocumentsRelationManager extends RelationManager
 
                 Tables\Columns\TextColumn::make('file_path')
                     ->label('File')
-                    ->formatStateUsing(fn ($state) => basename($state))
+                    ->formatStateUsing(fn ($state, $record) => $record->original_name ?: basename($state))
                     ->url(fn ($record) => route('public-file', $record->file_path))
                     ->openUrlInNewTab()
-                    ->tooltip('Click to open file'),
+                    // Opens in the shared viewer (partials/pdf-viewer); Ctrl+click still opens a new tab.
+                    ->extraAttributes(fn ($record) => [
+                        'data-pdf-preview' => true,
+                        'data-pdf-title' => $record->type.' — '.($record->original_name ?: basename($record->file_path)),
+                    ])
+                    ->tooltip('Click to view file'),
             ])
             ->headerActions([])
             ->actions([])

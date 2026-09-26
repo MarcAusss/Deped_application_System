@@ -29,6 +29,7 @@
             }
         }
     </script>
+    @include('partials.desktop-scale')
 </head>
 
 <body class="flex min-h-screen flex-col bg-slate-50 text-slate-800">
@@ -36,7 +37,7 @@
     @include('applicant.partials.topbar')
 
     <section class="relative overflow-hidden bg-gradient-to-r from-government-dark to-government-blue text-white">
-        <div class="mx-auto flex max-w-5xl flex-col items-center justify-center gap-2 px-4 py-12 sm:flex-row sm:px-6 lg:px-8">
+        <div class="mx-auto flex max-w-5xl flex-col items-center justify-center gap-2 px-4 py-12 sm:flex-row sm:px-6 lg:-translate-x-20 lg:px-8">
             <img
                 src="{{ url('images/depedalbay.png') }}"
                 alt="DepEd Division of Albay"
@@ -159,6 +160,14 @@
             </div>
         @endif
 
+        @if(request('upload_error') === 'too_large')
+            <div class="mb-8 rounded-xl border border-red-200 bg-red-50 p-4 text-red-800">
+                Your application was not submitted because the uploaded files were too large in total
+                (maximum {{ ini_get('post_max_size') }}B for all documents combined).
+                Please compress your PDFs or upload smaller files, then submit again.
+            </div>
+        @endif
+
         @if($errors->any())
             <div class="mb-8 rounded-xl border border-red-200 bg-red-50 p-5 text-red-800">
                 <p class="font-bold">
@@ -173,7 +182,43 @@
             </div>
         @endif
 
+        @php
+            // After a failed submit, refill every repeatable section from what the applicant
+            // just typed (old input) instead of the saved record, keeping the original indexes
+            // so each error lines up with its entry.
+            $hasOldInput = ! empty(old());
+
+            $entriesFor = function (string $key, $saved, array $fields) use ($hasOldInput) {
+                if ($hasOldInput) {
+                    return collect(old($key, []))->map(
+                        fn ($entry) => (object) array_merge(array_fill_keys($fields, null), (array) $entry)
+                    );
+                }
+
+                return collect($saved ?? [])->map(fn ($model) => (object) collect($fields)->mapWithKeys(
+                    fn ($field) => [$field => $model->{$field} instanceof \DateTimeInterface
+                        ? $model->{$field}->format('Y-m-d')
+                        : $model->{$field}]
+                )->all());
+            };
+
+            $educationEntries = $entriesFor('education', $application?->educations, ['level', 'level_specify', 'school', 'degree', 'year_graduated']);
+            $experienceEntries = $entriesFor('experience', $application?->experiences, ['title', 'company', 'first_day', 'last_day', 'details']);
+            $trainingEntries = $entriesFor('training', $application?->trainings, ['title', 'hours', 'training_date', 'training_end_date']);
+            $eligibilityEntries = $entriesFor('eligibility', $application?->eligibilities, ['license_name', 'license_specify', 'rating', 'date_issued', 'valid_until', 'never_expires']);
+
+            // Next index for entries added with "+ Add", so new ones never reuse an existing index.
+            $nextIndex = fn ($entries) => $entries->isEmpty() ? 0 : max(array_map('intval', $entries->keys()->all())) + 1;
+
+            // Server-side errors for one entry, e.g. everything under "education.2.".
+            $entryErrors = fn (string $prefix) => collect($errors->getMessages())
+                ->filter(fn ($messages, $key) => str_starts_with($key, $prefix))
+                ->flatten()
+                ->unique();
+        @endphp
+
         <form
+            id="application-form"
             method="POST"
             action="{{ $application ? route('applicant.applications.update', $application) : route('apply.submit', $job) }}"
             enctype="multipart/form-data"
@@ -372,12 +417,23 @@
                     </button>
                 </div>
 
+                <p id="education-empty-warning" class="mb-5 hidden rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
+                    ⚠ Educational Background is required. Click "+ Add Education" and fill it up before submitting.
+                </p>
+
+                @error('education')
+                    <p class="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
+                        ⚠ {{ $message }}
+                    </p>
+                @enderror
+
                 <div id="educationWrapper" class="space-y-5">
-                    @foreach($application?->educations ?? [] as $i => $education)
+                    @foreach($educationEntries as $i => $education)
                         <div class="dynamic-entry rounded-xl border border-slate-200 bg-slate-50 p-5">
                             <div class="mb-4 flex items-center justify-between">
                                 <h4 class="font-black text-government-dark">
                                     Education Entry
+                                    <span class="text-sm font-semibold text-red-600">(Don't use acronyms)</span>
                                 </h4>
 
                                 <button
@@ -392,6 +448,7 @@
                             <div class="grid gap-4 md:grid-cols-2">
                                 <select
                                     name="education[{{ $i }}][level]"
+                                    required
                                     class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100"
                                     onchange="toggleEducationSpecify(this)"
                                 >
@@ -407,12 +464,14 @@
                                     data-role="education-specify"
                                     placeholder="Please specify"
                                     value="{{ $education->level_specify }}"
+                                    @required($education->level === "Other's")
                                     class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100 {{ $education->level === "Other's" ? '' : 'hidden' }}"
                                 >
 
                                 <input
                                     type="text"
                                     name="education[{{ $i }}][school]"
+                                    required
                                     placeholder="School"
                                     value="{{ $education->school }}"
                                     class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100"
@@ -421,6 +480,7 @@
                                 <input
                                     type="text"
                                     name="education[{{ $i }}][degree]"
+                                    required
                                     placeholder="Degree or course"
                                     value="{{ $education->degree }}"
                                     class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100"
@@ -429,10 +489,13 @@
                                 <input
                                     type="text"
                                     name="education[{{ $i }}][year_graduated]"
+                                    required
                                     placeholder="Year graduated"
                                     value="{{ $education->year_graduated }}"
                                     class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100"
                                 >
+
+                                <p data-role="required-warning" class="hidden text-sm font-medium text-red-600 md:col-span-2"></p>
                             </div>
                         </div>
                     @endforeach
@@ -462,11 +525,12 @@
                 </div>
 
                 <div id="experienceWrapper" class="space-y-5">
-                    @foreach($application?->experiences ?? [] as $i => $experience)
+                    @foreach($experienceEntries as $i => $experience)
                         <div class="dynamic-entry rounded-xl border border-slate-200 bg-slate-50 p-5">
                             <div class="mb-4 flex items-center justify-between">
                                 <h4 class="font-black text-government-dark">
                                     Experience Entry
+                                    <span class="text-sm font-semibold text-red-600">(Don't use acronyms)</span>
                                 </h4>
 
                                 <button
@@ -546,11 +610,12 @@
                 </div>
 
                 <div id="trainingWrapper" class="space-y-5">
-                    @foreach($application?->trainings ?? [] as $i => $training)
+                    @foreach($trainingEntries as $i => $training)
                         <div class="dynamic-entry rounded-xl border border-slate-200 bg-slate-50 p-5">
                             <div class="mb-4 flex items-center justify-between">
                                 <h4 class="font-black text-government-dark">
                                     Training Entry
+                                    <span class="text-sm font-semibold text-red-600">(Don't use acronyms)</span>
                                 </h4>
 
                                 <button
@@ -591,10 +656,10 @@
 
                                     <input
                                         id="training_start_{{ $i }}"
-                                        type="month"
+                                        type="date"
                                         name="training[{{ $i }}][training_date]"
-                                        value="{{ $training->training_date?->format('Y-m') }}"
-                                        max="{{ now()->format('Y-m') }}"
+                                        value="{{ $training->training_date }}"
+                                        max="{{ now()->format('Y-m-d') }}"
                                         class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100"
                                     >
 
@@ -607,15 +672,19 @@
 
                                     <input
                                         id="training_end_{{ $i }}"
-                                        type="month"
+                                        type="date"
                                         name="training[{{ $i }}][training_end_date]"
-                                        value="{{ $training->training_end_date?->format('Y-m') }}"
-                                        max="{{ now()->format('Y-m') }}"
+                                        value="{{ $training->training_end_date }}"
+                                        min="{{ $training->training_date }}"
                                         class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100"
                                     >
 
+                                    <p data-role="training-date-warning" class="mt-2 hidden text-sm font-medium text-red-600">
+                                        ⚠ End of Training must be on or after the Start of Training.
+                                    </p>
+
                                     <p class="mt-2 text-xs text-slate-500">
-                                        Select the month and year when the training or seminar started and ended.
+                                        Select the exact date (day, month and year) when the training or seminar started and ended.
                                     </p>
                                 </div>
                             </div>
@@ -646,12 +715,23 @@
                     </button>
                 </div>
 
+                <p id="eligibility-empty-warning" class="mb-5 hidden rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
+                    ⚠ Eligibility and Licenses is required. Click "+ Add Eligibility" and fill it up before submitting.
+                </p>
+
+                @error('eligibility')
+                    <p class="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
+                        ⚠ {{ $message }}
+                    </p>
+                @enderror
+
                 <div id="eligibilityWrapper" class="space-y-5">
-                    @foreach($application?->eligibilities ?? [] as $i => $eligibility)
+                    @foreach($eligibilityEntries as $i => $eligibility)
                         <div class="dynamic-entry rounded-xl border border-slate-200 bg-slate-50 p-5">
                             <div class="mb-4 flex items-center justify-between">
                                 <h4 class="font-black text-government-dark">
                                     Eligibility Entry
+                                    <span class="text-sm font-semibold text-red-600">(Don't use acronyms)</span>
                                 </h4>
 
                                 <button
@@ -666,6 +746,7 @@
                             <div class="grid gap-4 md:grid-cols-2">
                                 <select
                                     name="eligibility[{{ $i }}][license_name]"
+                                    required
                                     class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100"
                                     onchange="toggleEligibilitySpecify(this)"
                                 >
@@ -681,12 +762,14 @@
                                     data-role="eligibility-specify"
                                     placeholder="Please specify"
                                     value="{{ $eligibility->license_specify }}"
+                                    @required(in_array($eligibility->license_name, ['RA1080', "Other's"], true))
                                     class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100 {{ in_array($eligibility->license_name, ['RA1080', "Other's"], true) ? '' : 'hidden' }}"
                                 >
 
                                 <input
                                     type="text"
                                     name="eligibility[{{ $i }}][rating]"
+                                    required
                                     placeholder="Rating"
                                     value="{{ $eligibility->rating }}"
                                     class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100"
@@ -700,6 +783,7 @@
                                     <input
                                         type="date"
                                         name="eligibility[{{ $i }}][date_issued]"
+                                        required
                                         value="{{ $eligibility->date_issued }}"
                                         class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100"
                                     >
@@ -713,9 +797,14 @@
                                     <input
                                         type="date"
                                         name="eligibility[{{ $i }}][valid_until]"
+                                        @required(! $eligibility->never_expires)
                                         value="{{ $eligibility->valid_until }}"
                                         class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100"
                                     >
+
+                                    <p data-role="eligibility-expired-warning" class="mt-2 hidden text-sm font-medium text-red-600">
+                                        ⚠ This license/eligibility has already expired. The application cannot be submitted.
+                                    </p>
                                 </div>
 
                                 <label class="mt-1 ml-auto flex w-fit items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 md:col-span-2">
@@ -732,6 +821,8 @@
                                         Never expires
                                     </span>
                                 </label>
+
+                                <p data-role="required-warning" class="hidden text-sm font-medium text-red-600 md:col-span-2"></p>
                             </div>
                         </div>
                     @endforeach
@@ -752,6 +843,13 @@
                     <p class="mt-2 text-sm text-slate-500">
                         PDF files only. Maximum file size is 10 MB per document.
                     </p>
+
+                    @if($hasOldInput)
+                        <p class="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-medium text-amber-800">
+                            ⚠ Your application was not saved yet. For security, browsers do not keep selected files,
+                            so please attach the PDF documents you selected again before submitting.
+                        </p>
+                    @endif
                 </div>
 
                 @php
@@ -783,31 +881,51 @@
                                 {{ $label }}
                             </label>
 
-                            @if($existingDocument)
-                                <p class="mb-3 text-sm text-slate-600">
-                                    Current file:
-                                    <a
-                                        href="{{ route('public-file', $existingDocument->file_path) }}"
-                                        target="_blank"
-                                        rel="noopener"
-                                        class="font-bold text-government-blue hover:underline"
-                                    >
-                                        View current file
-                                    </a>
-                                </p>
-                            @endif
+                            @php
+                                // Older uploads have no saved filename, so fall back to the document's label.
+                                $existingName = $existingDocument
+                                    ? ($existingDocument->original_name ?: $label.'.pdf')
+                                    : null;
+                            @endphp
 
-                            <input
-                                type="file"
-                                id="{{ $field }}"
-                                name="{{ $field }}"
-                                accept=".pdf,application/pdf"
-                                class="block w-full text-sm text-slate-600 file:mr-4 file:rounded-lg file:border-0 file:bg-government-navy file:px-4 file:py-2.5 file:font-bold file:text-white hover:file:bg-government-blue"
-                            >
+                            {{-- A browser can't pre-fill a file input, so the real input is hidden and
+                                 this picker shows the file already on record instead of "No file chosen". --}}
+                            <div data-role="file-picker" class="flex flex-wrap items-center gap-3">
+                                <input
+                                    type="file"
+                                    id="{{ $field }}"
+                                    name="{{ $field }}"
+                                    accept=".pdf,application/pdf"
+                                    class="sr-only"
+                                >
+
+                                <label
+                                    for="{{ $field }}"
+                                    class="cursor-pointer rounded-lg bg-government-navy px-4 py-2.5 text-sm font-bold text-white transition hover:bg-government-blue"
+                                >
+                                    {{ $existingDocument ? 'Replace File' : 'Choose File' }}
+                                </label>
+
+                                <span data-role="file-status" class="min-w-0 break-all text-sm">
+                                    @if($existingDocument)
+                                        <span class="font-semibold text-green-700">✓ {{ $existingName }}</span>
+                                        <a
+                                            href="{{ route('public-file', $existingDocument->file_path) }}"
+                                            target="_blank"
+                                            rel="noopener"
+                                            class="ml-1 font-bold text-government-blue hover:underline"
+                                        >
+                                            View
+                                        </a>
+                                    @else
+                                        <span class="text-slate-500">No file chosen</span>
+                                    @endif
+                                </span>
+                            </div>
 
                             @if($existingDocument)
-                                <p class="mt-2 text-xs text-slate-500">
-                                    Leave blank to keep the currently uploaded file.
+                                <p data-role="file-hint" class="mt-2 text-xs text-slate-500">
+                                    Already uploaded. Leave it as is to keep this file, or click "Replace File" to upload a new one.
                                 </p>
                             @endif
 
@@ -837,6 +955,11 @@
                 </label>
             </section>
 
+            <div
+                id="upload-size-error"
+                class="hidden rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800"
+            ></div>
+
             <div class="flex flex-col-reverse justify-end gap-3 sm:flex-row">
                 <a
                     href="{{ $application ? route('applicant.dashboard') : route('jobs.index') }}"
@@ -855,11 +978,328 @@
         </form>
     </main>
 
+    @php
+        // PHP's post_max_size (e.g. "40M") in bytes; the whole form must fit under it.
+        $postMaxSize = ini_get('post_max_size');
+        $postMaxBytes = (int) $postMaxSize * match (strtoupper(substr(trim($postMaxSize), -1))) {
+            'G' => 1024 ** 3,
+            'M' => 1024 ** 2,
+            'K' => 1024,
+            default => 1,
+        };
+    @endphp
+
     <script>
-        let educationIndex = {{ $application?->educations->count() ?? 0 }};
-        let experienceIndex = {{ $application?->experiences->count() ?? 0 }};
-        let trainingIndex = {{ $application?->trainings->count() ?? 0 }};
-        let eligibilityIndex = {{ $application?->eligibilities->count() ?? 0 }};
+        // End of Training must be on or after Start of Training.
+        (function () {
+            const form = document.getElementById('application-form');
+            const message = 'End of Training must be on or after the Start of Training.';
+
+            function checkTrainingDates(entry) {
+                const start = entry.querySelector('input[name$="[training_date]"]');
+                const end = entry.querySelector('input[name$="[training_end_date]"]');
+                const warning = entry.querySelector('[data-role="training-date-warning"]');
+
+                if (! start || ! end) {
+                    return;
+                }
+
+                end.min = start.value;
+
+                const invalid = start.value !== '' && end.value !== '' && end.value < start.value;
+
+                // setCustomValidity makes the browser refuse to submit the form.
+                end.setCustomValidity(invalid ? message : '');
+                end.classList.toggle('border-red-500', invalid);
+                warning?.classList.toggle('hidden', ! invalid);
+            }
+
+            ['input', 'change'].forEach(function (type) {
+                form.addEventListener(type, function (event) {
+                    if (/\[training_(end_)?date\]$/.test(event.target.name || '')) {
+                        checkTrainingDates(event.target.closest('.dynamic-entry'));
+                    }
+                });
+            });
+
+            form.querySelectorAll('.dynamic-entry').forEach(checkTrainingDates);
+        })();
+
+        // Block submitting when an eligibility's Valid Until date has passed.
+        (function () {
+            const form = document.getElementById('application-form');
+            const now = new Date();
+            const today = now.getFullYear() + '-'
+                + String(now.getMonth() + 1).padStart(2, '0') + '-'
+                + String(now.getDate()).padStart(2, '0');
+
+            function checkEligibilityExpiry(entry) {
+                const validUntil = entry.querySelector('input[name$="[valid_until]"]');
+                const neverExpires = entry.querySelector('input[name$="[never_expires]"]');
+                const warning = entry.querySelector('[data-role="eligibility-expired-warning"]');
+
+                if (! validUntil || ! warning) {
+                    return;
+                }
+
+                const expired = ! neverExpires?.checked && validUntil.value !== '' && validUntil.value < today;
+
+                // setCustomValidity makes the browser refuse to submit the form.
+                validUntil.setCustomValidity(expired ? 'This license/eligibility has already expired. The application cannot be submitted.' : '');
+                validUntil.classList.toggle('border-red-500', expired);
+                warning.classList.toggle('hidden', ! expired);
+            }
+
+            ['input', 'change'].forEach(function (type) {
+                form.addEventListener(type, function (event) {
+                    if (/\[(valid_until|never_expires)\]$/.test(event.target.name || '')) {
+                        checkEligibilityExpiry(event.target.closest('.dynamic-entry'));
+                    }
+                });
+            });
+
+            form.querySelectorAll('.dynamic-entry').forEach(checkEligibilityExpiry);
+        })();
+
+        // Required sections: at least one entry, and every required field of every entry filled.
+        function requireSection(wrapperId, emptyWarningId, labels) {
+            const form = document.getElementById('application-form');
+            const wrapper = document.getElementById(wrapperId);
+            const emptyWarning = document.getElementById(emptyWarningId);
+            const entrySelector = '#' + wrapperId + ' .dynamic-entry';
+
+            function checkEntry(entry) {
+                const warning = entry.querySelector('[data-role="required-warning"]');
+                const missing = [];
+
+                entry.querySelectorAll('input:not([type="checkbox"]), select').forEach(function (field) {
+                    const empty = field.required && field.value.trim() === '';
+                    const key = field.name.match(/\[(\w+)\]$/)[1];
+
+                    // Keep the red border from other checks (e.g. expired license).
+                    field.classList.toggle('border-red-500', empty || field.validity.customError);
+
+                    if (empty) {
+                        missing.push(labels[key] || key);
+                    }
+                });
+
+                warning.textContent = missing.length
+                    ? '⚠ Please fill up: ' + missing.join(', ') + '.'
+                    : '';
+                warning.classList.toggle('hidden', missing.length === 0);
+                entry.dataset.checked = '1';
+            }
+
+            // Fires for each blank required field when the applicant clicks Submit.
+            form.addEventListener('invalid', function (event) {
+                const entry = event.target.closest(entrySelector);
+
+                if (entry) {
+                    checkEntry(entry);
+                }
+            }, true);
+
+            // Once a warning is shown, update it live as the applicant types.
+            ['input', 'change'].forEach(function (type) {
+                form.addEventListener(type, function (event) {
+                    const entry = event.target.closest(entrySelector);
+
+                    if (entry && entry.dataset.checked) {
+                        checkEntry(entry);
+                    }
+                });
+            });
+
+            // At least one entry is required.
+            form.addEventListener('submit', function (event) {
+                const hasEntry = wrapper.querySelector('.dynamic-entry') !== null;
+
+                emptyWarning.classList.toggle('hidden', hasEntry);
+
+                if (! hasEntry) {
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                    emptyWarning.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+
+            new MutationObserver(function () {
+                if (wrapper.querySelector('.dynamic-entry')) {
+                    emptyWarning.classList.add('hidden');
+                }
+            }).observe(wrapper, { childList: true });
+        }
+
+        // After a failed submit: mark every field the server rejected and show its message
+        // right below it (or under its entry), then scroll to the first problem.
+        (function () {
+            const serverErrors = @json($errors->getMessages());
+            const form = document.getElementById('application-form');
+            let firstProblem = null;
+
+            Object.entries(serverErrors).forEach(function ([key, messages]) {
+                // "education.2.school" -> "education[2][school]"
+                const parts = key.split('.');
+                const name = parts[0] + parts.slice(1).map((part) => '[' + part + ']').join('');
+                const field = form.querySelector('[name="' + name + '"]');
+
+                if (! field) {
+                    return;
+                }
+
+                // Document uploads already print their own error; the file input itself is
+                // hidden, so outline its box instead.
+                if (field.type === 'file') {
+                    const box = field.closest('.border-dashed') || field;
+                    box.classList.add('border-red-400');
+                    firstProblem = firstProblem || box;
+                    return;
+                }
+
+                field.classList.add('border-red-500');
+                firstProblem = firstProblem || field;
+
+                const entry = field.closest('.dynamic-entry');
+                let warning;
+
+                if (entry) {
+                    // One warning line per entry, listing everything wrong with it.
+                    warning = entry.querySelector('[data-role="server-warning"]');
+
+                    if (! warning) {
+                        warning = document.createElement('p');
+                        warning.dataset.role = 'server-warning';
+                        warning.className = 'mt-3 text-sm font-medium text-red-600';
+                        entry.appendChild(warning);
+                    }
+                } else {
+                    warning = document.createElement('p');
+                    warning.className = 'mt-2 text-sm font-medium text-red-600';
+                    field.insertAdjacentElement('afterend', warning);
+                }
+
+                messages.forEach(function (message) {
+                    const line = document.createElement('span');
+                    line.className = 'block';
+                    line.textContent = '⚠ ' + message;
+                    warning.appendChild(line);
+                });
+            });
+
+            // Clear a field's red border once the applicant edits it.
+            form.addEventListener('input', function (event) {
+                if (! event.target.validity || event.target.validity.valid) {
+                    event.target.classList.remove('border-red-500');
+                }
+            });
+
+            if (firstProblem) {
+                firstProblem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        })();
+
+        // Supporting documents: show the chosen file's name, or go back to the file on record.
+        document.querySelectorAll('[data-role="file-picker"]').forEach(function (picker) {
+            const input = picker.querySelector('input[type="file"]');
+            const status = picker.querySelector('[data-role="file-status"]');
+            const hint = picker.parentElement.querySelector('[data-role="file-hint"]');
+            const originalStatus = status.innerHTML;
+            const originalHint = hint ? hint.textContent : '';
+            const hasExisting = hint !== null;
+
+            input.addEventListener('change', function () {
+                const file = input.files[0];
+
+                if (! file) {
+                    status.innerHTML = originalStatus;
+                    if (hint) hint.textContent = originalHint;
+                    return;
+                }
+
+                status.innerHTML = '';
+                const name = document.createElement('span');
+                name.className = 'font-semibold text-government-dark';
+                name.textContent = '📄 ' + file.name + ' (' + (file.size / 1024 / 1024).toFixed(1) + ' MB)';
+                status.appendChild(name);
+
+                if (hint) {
+                    hint.textContent = hasExisting
+                        ? 'This new file will replace the one already uploaded when you save.'
+                        : '';
+                }
+
+                picker.closest('.border-dashed')?.classList.remove('border-red-400');
+            });
+        });
+
+        requireSection('educationWrapper', 'education-empty-warning', {
+            level: 'Education level',
+            level_specify: 'Please specify',
+            school: 'School',
+            degree: 'Degree or course',
+            year_graduated: 'Year graduated',
+        });
+
+        requireSection('eligibilityWrapper', 'eligibility-empty-warning', {
+            license_name: 'Eligibility or license name',
+            license_specify: 'Please specify',
+            rating: 'Rating',
+            date_issued: 'Date Issued',
+            valid_until: 'Valid Until',
+        });
+    </script>
+
+    <script>
+        (function () {
+            const form = document.getElementById('application-form');
+            const errorBox = document.getElementById('upload-size-error');
+            const perFileLimit = 10 * 1024 * 1024;
+            // Leave 1 MB headroom for the text fields sent with the files.
+            const totalLimit = {{ $postMaxBytes }} > 0 ? {{ $postMaxBytes }} - 1024 * 1024 : Infinity;
+            const toMb = (bytes) => (bytes / 1024 / 1024).toFixed(1) + ' MB';
+
+            form.addEventListener('submit', function (event) {
+                const problems = [];
+                let total = 0;
+
+                form.querySelectorAll('input[type="file"]').forEach(function (input) {
+                    Array.from(input.files).forEach(function (file) {
+                        total += file.size;
+
+                        if (file.size > perFileLimit) {
+                            const label = form.querySelector('label[for="' + input.id + '"]');
+                            problems.push((label ? label.textContent.trim() : file.name) + ' is ' + toMb(file.size) + ' (max 10 MB per document).');
+                        }
+                    });
+                });
+
+                if (total > totalLimit) {
+                    problems.push('All documents together are ' + toMb(total) + ', but the maximum for one submission is ' + toMb(totalLimit) + '. Please compress your PDFs or upload smaller files.');
+                }
+
+                if (problems.length) {
+                    event.preventDefault();
+                    errorBox.innerHTML = '<p class="font-bold">Your files are too large:</p><ul class="mt-2 list-inside list-disc space-y-1"></ul>';
+                    problems.forEach(function (text) {
+                        const li = document.createElement('li');
+                        li.textContent = text;
+                        errorBox.querySelector('ul').appendChild(li);
+                    });
+                    errorBox.classList.remove('hidden');
+                    errorBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                } else {
+                    errorBox.classList.add('hidden');
+                }
+            });
+        })();
+    </script>
+
+    <script>
+        let educationIndex = {{ $nextIndex($educationEntries) }};
+        let experienceIndex = {{ $nextIndex($experienceEntries) }};
+        let trainingIndex = {{ $nextIndex($trainingEntries) }};
+        let eligibilityIndex = {{ $nextIndex($eligibilityEntries) }};
 
         const inputClass =
             'w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100';
@@ -874,8 +1314,10 @@
 
             if (selectEl.value === "Other's") {
                 specifyInput.classList.remove('hidden');
+                specifyInput.required = true;
             } else {
                 specifyInput.classList.add('hidden');
+                specifyInput.required = false;
                 specifyInput.value = '';
             }
         }
@@ -888,6 +1330,7 @@
                     <div class="mb-4 flex items-center justify-between">
                         <h4 class="font-black text-government-dark">
                             Education Entry
+                            <span class="text-sm font-semibold text-red-600">(Don't use acronyms)</span>
                         </h4>
 
                         <button
@@ -903,6 +1346,7 @@
                         
                         <select
                             name="education[${educationIndex}][level]"
+                            required
                             class="${inputClass}"
                             onchange="toggleEducationSpecify(this)"
                         >
@@ -924,6 +1368,7 @@
                         <input
                             type="text"
                             name="education[${educationIndex}][school]"
+                            required
                             placeholder="School"
                             class="${inputClass}"
                         >
@@ -931,6 +1376,7 @@
                         <input
                             type="text"
                             name="education[${educationIndex}][degree]"
+                            required
                             placeholder="Degree or course"
                             class="${inputClass}"
                         >
@@ -938,9 +1384,12 @@
                         <input
                             type="text"
                             name="education[${educationIndex}][year_graduated]"
+                            required
                             placeholder="Year graduated"
                             class="${inputClass}"
                         >
+
+                        <p data-role="required-warning" class="hidden text-sm font-medium text-red-600 md:col-span-2"></p>
                     </div>
                 </div>
             `);
@@ -956,6 +1405,7 @@
                     <div class="mb-4 flex items-center justify-between">
                         <h4 class="font-black text-government-dark">
                             Experience Entry
+                            <span class="text-sm font-semibold text-red-600">(Don't use acronyms)</span>
                         </h4>
 
                         <button
@@ -1017,6 +1467,7 @@
                     <div class="mb-4 flex items-center justify-between">
                         <h4 class="font-black text-government-dark">
                             Training Entry
+                            <span class="text-sm font-semibold text-red-600">(Don't use acronyms)</span>
                         </h4>
 
                         <button
@@ -1055,9 +1506,9 @@
 
                             <input
                                 id="training_start_${trainingIndex}"
-                                type="month"
+                                type="date"
                                 name="training[${trainingIndex}][training_date]"
-                                max="{{ now()->format('Y-m') }}"
+                                max="{{ now()->format('Y-m-d') }}"
                                 class="${inputClass}"
                             >
 
@@ -1070,14 +1521,17 @@
 
                             <input
                                 id="training_end_${trainingIndex}"
-                                type="month"
+                                type="date"
                                 name="training[${trainingIndex}][training_end_date]"
-                                max="{{ now()->format('Y-m') }}"
                                 class="${inputClass}"
                             >
 
+                            <p data-role="training-date-warning" class="mt-2 hidden text-sm font-medium text-red-600">
+                                ⚠ End of Training must be on or after the Start of Training.
+                            </p>
+
                             <p class="mt-2 text-xs text-slate-500">
-                                Select the month and year when the training or seminar started and ended.
+                                Select the exact date (day, month and year) when the training or seminar started and ended.
                             </p>
                         </div>
                     </div>
@@ -1093,8 +1547,10 @@
 
             if (selectEl.value === 'RA1080' || selectEl.value === "Other's") {
                 specifyInput.classList.remove('hidden');
+                specifyInput.required = true;
             } else {
                 specifyInput.classList.add('hidden');
+                specifyInput.required = false;
                 specifyInput.value = '';
             }
         }
@@ -1106,9 +1562,11 @@
 
             if (checkboxEl.checked) {
                 validUntilWrapper.classList.add('hidden');
+                validUntilInput.required = false;
                 validUntilInput.value = '';
             } else {
                 validUntilWrapper.classList.remove('hidden');
+                validUntilInput.required = true;
             }
         }
 
@@ -1120,6 +1578,7 @@
                     <div class="mb-4 flex items-center justify-between">
                         <h4 class="font-black text-government-dark">
                             Eligibility Entry
+                            <span class="text-sm font-semibold text-red-600">(Don't use acronyms)</span>
                         </h4>
 
                         <button
@@ -1134,6 +1593,7 @@
                     <div class="grid gap-4 md:grid-cols-2">
                         <select
                             name="eligibility[${eligibilityIndex}][license_name]"
+                            required
                             class="${inputClass}"
                             onchange="toggleEligibilitySpecify(this)"
                         >
@@ -1155,6 +1615,7 @@
                         <input
                             type="text"
                             name="eligibility[${eligibilityIndex}][rating]"
+                            required
                             placeholder="Rating"
                             class="${inputClass}"
                         >
@@ -1167,6 +1628,7 @@
                             <input
                                 type="date"
                                 name="eligibility[${eligibilityIndex}][date_issued]"
+                                required
                                 class="${inputClass}"
                             >
                         </div>
@@ -1179,8 +1641,13 @@
                             <input
                                 type="date"
                                 name="eligibility[${eligibilityIndex}][valid_until]"
+                                required
                                 class="${inputClass}"
                             >
+
+                            <p data-role="eligibility-expired-warning" class="mt-2 hidden text-sm font-medium text-red-600">
+                                ⚠ This license/eligibility has already expired. The application cannot be submitted.
+                            </p>
                         </div>
 
                         <label class="mt-1 ml-auto flex w-fit items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 md:col-span-2">
@@ -1196,6 +1663,8 @@
                                 Never expires
                             </span>
                         </label>
+
+                        <p data-role="required-warning" class="hidden text-sm font-medium text-red-600 md:col-span-2"></p>
                     </div>
                 </div>
             `);

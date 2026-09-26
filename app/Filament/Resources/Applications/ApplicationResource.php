@@ -161,7 +161,7 @@ class ApplicationResource extends Resource
                     $box = fn (string $title, string $value): \Illuminate\Support\HtmlString => new \Illuminate\Support\HtmlString(
                         '<div style="display:block;width:100%;height:100%;min-height:6rem;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:0.5rem;padding:0.5rem 0.75rem;">'
                         . '<p style="font-size:1rem;font-weight:700;margin-bottom:0.25rem;">' . e($title) . '</p>'
-                        . '<span>' . e($value) . '</span>'
+                        . '<span style="overflow-wrap:anywhere;">' . e($value) . '</span>'
                         . '</div>'
                     );
 
@@ -202,7 +202,7 @@ class ApplicationResource extends Resource
                                             return new \Illuminate\Support\HtmlString(
                                                 '<div style="display:block;width:100%;height:100%;min-height:6rem;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:0.5rem;padding:0.5rem 0.75rem;">'
                                                 . '<p style="font-size:1rem;font-weight:700;margin-bottom:0.25rem;">Qualification Standard</p>'
-                                                . '<p style="font-size:0.75rem;line-height:1.4;">' . e($value) . '</p>'
+                                                . '<p style="font-size:0.75rem;line-height:1.4;overflow-wrap:anywhere;">' . e($value) . '</p>'
                                                 . '</div>'
                                             );
                                         }),
@@ -263,7 +263,7 @@ class ApplicationResource extends Resource
                                             return new \Illuminate\Support\HtmlString(
                                                 '<div style="display:block;width:100%;height:100%;min-height:6rem;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:0.5rem;padding:0.5rem 0.75rem;">'
                                                 . '<p style="font-size:1rem;font-weight:700;margin-bottom:0.25rem;">Qualification Standard</p>'
-                                                . '<p style="font-size:0.75rem;line-height:1.4;">' . e($value) . '</p>'
+                                                . '<p style="font-size:0.75rem;line-height:1.4;overflow-wrap:anywhere;">' . e($value) . '</p>'
                                                 . '</div>'
                                             );
                                         }),
@@ -285,7 +285,7 @@ class ApplicationResource extends Resource
                     $box = fn (string $title, string $value): \Illuminate\Support\HtmlString => new \Illuminate\Support\HtmlString(
                         '<div style="display:block;width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:0.5rem;padding:0.5rem 0.75rem;">'
                         . '<p style="font-size:0.875rem;font-weight:700;margin-bottom:0.25rem;">' . e($title) . '</p>'
-                        . '<span>' . e($value) . '</span>'
+                        . '<span style="overflow-wrap:anywhere;">' . e($value) . '</span>'
                         . '</div>'
                     );
 
@@ -463,8 +463,8 @@ class ApplicationResource extends Resource
                             $record->trainings->map(fn ($training) => [
                                 e($training->title ?? '—'),
                                 e(($training->hours ?? '0') . ' hrs'),
-                                e($training->training_date?->format('F Y') ?? 'Not provided'),
-                                e($training->training_end_date?->format('F Y') ?? 'Not provided'),
+                                e($training->training_date?->format('F d, Y') ?? 'Not provided'),
+                                e($training->training_end_date?->format('F d, Y') ?? 'Not provided'),
                             ])->all()
                         )),
                 ]),
@@ -485,7 +485,10 @@ class ApplicationResource extends Resource
                                 e($eligibility->date_issued ? \Carbon\Carbon::parse($eligibility->date_issued)->format('M d, Y') : '—'),
                                 e($eligibility->never_expires
                                     ? 'Never Expires'
-                                    : ($eligibility->valid_until ? \Carbon\Carbon::parse($eligibility->valid_until)->format('M d, Y') : '—')),
+                                    : ($eligibility->valid_until ? \Carbon\Carbon::parse($eligibility->valid_until)->format('M d, Y') : '—'))
+                                    .(! $eligibility->never_expires && $eligibility->valid_until && \Carbon\Carbon::parse($eligibility->valid_until)->lt(today())
+                                        ? ' <span style="color:#dc2626;font-weight:600;">⚠ Expired</span>'
+                                        : ''),
                             ])->all()
                         )),
                 ]),
@@ -500,7 +503,8 @@ class ApplicationResource extends Resource
                             ['Document Type', 'File'],
                             $record->documents->map(fn ($document) => [
                                 '<span style="background:#eef2ff;color:#1e3a8a;padding:.125rem .625rem;border-radius:9999px;font-weight:600;font-size:.75rem;">' . e($document->type) . '</span>',
-                                '<a href="' . e(route('public-file', $document->file_path)) . '" target="_blank" rel="noopener" style="color:#1e3a8a;text-decoration:underline;">' . e(basename($document->file_path)) . '</a>',
+                                // data-pdf-preview opens the file in the shared viewer (partials/pdf-viewer).
+                                '<a href="' . e(route('public-file', $document->file_path)) . '" target="_blank" rel="noopener" data-pdf-preview data-pdf-title="' . e($document->type . ' — ' . ($document->original_name ?: basename($document->file_path))) . '" style="color:#1e3a8a;text-decoration:underline;overflow-wrap:anywhere;">' . e($document->original_name ?: basename($document->file_path)) . '</a>',
                             ])->all()
                         )),
                 ]),

@@ -46,6 +46,9 @@ class EligibilityRelationManager extends RelationManager
                     ->getStateUsing(fn ($record) => $record->never_expires
                         ? 'Never Expires'
                         : (filled($record->valid_until) ? \Carbon\Carbon::parse($record->valid_until)->format('M d, Y') : null))
+                    ->description(fn ($record) => static::isExpired($record) ? 'Expired' : null)
+                    ->color(fn ($record) => static::isExpired($record) ? 'danger' : null)
+                    ->icon(fn ($record) => static::isExpired($record) ? 'heroicon-o-exclamation-triangle' : null)
                     ->sortable(),
             ])
             ->headerActions([
@@ -100,5 +103,12 @@ class EligibilityRelationManager extends RelationManager
                 ->label('Never Expires')
                 ->live(),
         ])->columns(2);
+    }
+
+    private static function isExpired($record): bool
+    {
+        return ! $record->never_expires
+            && filled($record->valid_until)
+            && \Carbon\Carbon::parse($record->valid_until)->lt(today());
     }
 }

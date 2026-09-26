@@ -75,6 +75,7 @@
             background: #1D4E89;
         }
     </style>
+    @include('partials.desktop-scale')
 </head>
 
 <body class="min-h-screen bg-slate-50">

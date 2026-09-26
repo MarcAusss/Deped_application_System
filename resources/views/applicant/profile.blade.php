@@ -29,6 +29,7 @@
             }
         }
     </script>
+    @include('partials.desktop-scale')
 </head>
 
 <body class="flex min-h-screen flex-col bg-slate-50 text-slate-800">

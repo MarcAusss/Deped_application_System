@@ -61,7 +61,7 @@ class ApplicationController extends Controller
             abort(403, 'This job position is currently closed.');
         }
 
-        $validated = $request->validate($this->applicationValidationRules());
+        $validated = $request->validate($this->applicationValidationRules(), $this->applicationValidationMessages());
 
         try {
             $application = DB::transaction(function () use ($validated, $request, $job): Application {
@@ -183,7 +183,7 @@ class ApplicationController extends Controller
                 ->with('error', 'This application can no longer be edited since the position has closed.');
         }
 
-        $validated = $request->validate($this->applicationValidationRules());
+        $validated = $request->validate($this->applicationValidationRules(), $this->applicationValidationMessages());
 
         try {
             DB::transaction(function () use ($validated, $request, $application): void {
@@ -228,6 +228,30 @@ class ApplicationController extends Controller
         $job = $application->jobPosition;
 
         return ! $job || ! $job->is_open || $job->hasDeadlinePassed();
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function applicationValidationMessages(): array
+    {
+        return [
+            'education.required' => 'Educational Background is required. Please add and fill up at least one education entry.',
+            'education.min' => 'Educational Background is required. Please add and fill up at least one education entry.',
+            'education.*.level.required' => 'Please select the education level in your Educational Background.',
+            'education.*.level_specify.required_if' => 'Please specify the education level in your Educational Background.',
+            'education.*.school.required' => 'Please fill up the school in your Educational Background.',
+            'education.*.degree.required' => 'Please fill up the degree or course in your Educational Background.',
+            'education.*.year_graduated.required' => 'Please fill up the year graduated in your Educational Background.',
+
+            'eligibility.required' => 'Eligibility and Licenses is required. Please add and fill up at least one eligibility entry.',
+            'eligibility.min' => 'Eligibility and Licenses is required. Please add and fill up at least one eligibility entry.',
+            'eligibility.*.license_name.required' => 'Please select the eligibility or license name in your Eligibility and Licenses.',
+            'eligibility.*.license_specify.required_if' => 'Please specify the eligibility or license in your Eligibility and Licenses.',
+            'eligibility.*.rating.required' => 'Please fill up the rating in your Eligibility and Licenses.',
+            'eligibility.*.date_issued.required' => 'Please fill up the date issued in your Eligibility and Licenses.',
+            'eligibility.*.valid_until.required_unless' => 'Please fill up the Valid Until date in your Eligibility and Licenses, or tick "Never expires".',
+        ];
     }
 
     /**
@@ -309,36 +333,38 @@ class ApplicationController extends Controller
             */
 
             'education' => [
-                'nullable',
+                'required',
                 'array',
+                'min:1',
             ],
 
             'education.*.level' => [
-                'nullable',
+                'required',
                 'string',
                 'max:255',
             ],
 
             'education.*.level_specify' => [
                 'nullable',
+                'required_if:education.*.level,Other\'s',
                 'string',
                 'max:255',
             ],
 
             'education.*.school' => [
-                'nullable',
+                'required',
                 'string',
                 'max:255',
             ],
 
             'education.*.degree' => [
-                'nullable',
+                'required',
                 'string',
                 'max:255',
             ],
 
             'education.*.year_graduated' => [
-                'nullable',
+                'required',
                 'string',
                 'max:20',
             ],
@@ -415,14 +441,20 @@ class ApplicationController extends Controller
 
             'training.*.training_date' => [
                 'nullable',
-                'date_format:Y-m',
-                'before_or_equal:'.now()->format('Y-m'),
+                'date_format:Y-m-d',
+                'before_or_equal:today',
             ],
 
             'training.*.training_end_date' => [
                 'nullable',
-                'date_format:Y-m',
-                'before_or_equal:'.now()->format('Y-m'),
+                'date_format:Y-m-d',
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    $start = request()->input(str_replace('training_end_date', 'training_date', $attribute));
+
+                    if (filled($start) && filled($value) && $value < $start) {
+                        $fail('The End of Training must be on or after the Start of Training.');
+                    }
+                },
             ],
 
             /*
@@ -432,36 +464,46 @@ class ApplicationController extends Controller
             */
 
             'eligibility' => [
-                'nullable',
+                'required',
                 'array',
+                'min:1',
             ],
 
             'eligibility.*.license_name' => [
-                'nullable',
+                'required',
                 'string',
                 'max:255',
             ],
 
             'eligibility.*.license_specify' => [
                 'nullable',
+                'required_if:eligibility.*.license_name,RA1080,Other\'s',
                 'string',
                 'max:255',
             ],
 
             'eligibility.*.rating' => [
-                'nullable',
+                'required',
                 'string',
                 'max:100',
             ],
 
             'eligibility.*.date_issued' => [
-                'nullable',
+                'required',
                 'date',
             ],
 
             'eligibility.*.valid_until' => [
                 'nullable',
+                'required_unless:eligibility.*.never_expires,1',
                 'date',
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    $neverExpires = request()->boolean(str_replace('valid_until', 'never_expires', $attribute));
+
+                    if (! $neverExpires && filled($value) && Carbon::parse($value)->lt(today())) {
+                        $fail('Your license/eligibility has already expired. Please renew it before applying.');
+                    }
+                },
             ],
 
             'eligibility.*.never_expires' => [
@@ -643,10 +685,10 @@ class ApplicationController extends Controller
                 'title' => $training['title'] ?? null,
                 'hours' => $training['hours'] ?? null,
                 'training_date' => filled($training['training_date'] ?? null)
-                    ? Carbon::createFromFormat('!Y-m', $training['training_date'])->toDateString()
+                    ? Carbon::createFromFormat('!Y-m-d', $training['training_date'])->toDateString()
                     : null,
                 'training_end_date' => filled($training['training_end_date'] ?? null)
-                    ? Carbon::createFromFormat('!Y-m', $training['training_end_date'])->toDateString()
+                    ? Carbon::createFromFormat('!Y-m-d', $training['training_end_date'])->toDateString()
                     : null,
             ]);
         }
@@ -695,6 +737,7 @@ class ApplicationController extends Controller
             $application->documents()->create([
                 'type' => $field,
                 'file_path' => $path,
+                'original_name' => $file->getClientOriginalName(),
             ]);
         }
     }
@@ -719,6 +762,7 @@ class ApplicationController extends Controller
             $application->documents()->create([
                 'type' => $field,
                 'file_path' => $path,
+                'original_name' => $file->getClientOriginalName(),
             ]);
         }
     }

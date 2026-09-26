@@ -9,6 +9,7 @@ use Filament\Tables\Table;
 use Filament\Forms;
 use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Utilities\Get;
 use App\Filament\Resources\JobPositions\Pages;
 
  
@@ -29,7 +30,10 @@ class JobPositionResource extends Resource
         return $schema->components(static::formFields());
     }
 
-    public static function formFields(): array
+    /**
+     * @param  bool  $requireFutureDeadline  Posting/reposting must end in the future, or the position would be closed on arrival.
+     */
+    public static function formFields(bool $requireFutureDeadline = false): array
     {
         return [
             Grid::make(3)->schema([
@@ -65,7 +69,24 @@ class JobPositionResource extends Resource
                     Forms\Components\DatePicker::make('until')
                         ->label('Until')
                         ->native(false)
-                        ->afterOrEqual('posted_at'),
+                        ->afterOrEqual('posted_at')
+                        ->rule(fn (Get $get) => function (string $attribute, $value, \Closure $fail) use ($get, $requireFutureDeadline) {
+                            if (! $requireFutureDeadline || blank($value)) {
+                                return;
+                            }
+
+                            $time = filled($get('until_time')) ? static::normalizeClosingTime($get('until_time')) : '23:59:59';
+
+                            try {
+                                $deadline = \Carbon\Carbon::parse(\Carbon\Carbon::parse($value)->toDateString().' '.$time);
+                            } catch (\Throwable $e) {
+                                return; // The Closing Time field reports its own format error.
+                            }
+
+                            if ($deadline->lessThanOrEqualTo(now())) {
+                                $fail('The Until date and Closing Time have already passed. Please set a new deadline in the future.');
+                            }
+                        }),
 
                     Forms\Components\TextInput::make('until_time')
                         ->label('Closing Time')

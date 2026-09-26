@@ -29,6 +29,7 @@
             }
         }
     </script>
+    @include('partials.desktop-scale')
 </head>
 
 <body class="flex min-h-screen flex-col bg-slate-50 text-slate-800">
@@ -113,7 +114,7 @@
 
                 <div class="grid lg:grid-cols-[1fr_280px]">
 
-                    <div class="p-6 sm:p-8">
+                    <div class="flex flex-col p-6 sm:p-8">
                         <div class="mb-5 flex flex-wrap gap-3">
                             <span class="rounded-full bg-green-50 px-3 py-1.5 text-xs font-bold uppercase text-green-700 ring-1 ring-green-200">
                                 Open for Application
@@ -130,11 +131,33 @@
 
                         <div class="mt-4 h-1 w-20 rounded-full bg-government-gold"></div>
 
-                        <p class="mt-5 whitespace-pre-line leading-7 text-slate-600">
+                        <p class="mb-7 mt-5 whitespace-pre-line leading-7 text-slate-600 [overflow-wrap:anywhere]">
                             {{ $job->description ?: 'No description has been provided for this position.' }}
                         </p>
 
-                        <div class="mt-7 flex flex-wrap items-start justify-between gap-x-6 gap-y-3 border-t border-slate-100 pt-5 text-sm text-slate-600">
+                        @php
+                            $trainingHours = $job->min_training_hours;
+                            $experienceYears = filled($job->min_experience_years)
+                                ? rtrim(rtrim(number_format((float) $job->min_experience_years, 2, '.', ''), '0'), '.')
+                                : null;
+
+                            // Shown in the side panel above the Apply button.
+                            $sideQualifications = [
+                                'Education Requirement' => $job->education_requirement,
+                                'Training Requirement' => $job->training_requirement,
+                                'Minimum Training Hours' => filled($trainingHours)
+                                    ? $trainingHours.' '.\Illuminate\Support\Str::plural('hour', (int) $trainingHours)
+                                    : null,
+                                'Experience Requirement' => $job->experience_requirement,
+                                'Minimum Years of Experience' => filled($experienceYears)
+                                    ? $experienceYears.' '.((float) $experienceYears == 1 ? 'year' : 'years')
+                                    : null,
+                                'Eligibility Requirement' => $job->eligibility_requirement,
+                            ];
+                        @endphp
+
+                        {{-- mt-auto pins the dates row to the bottom of the card, level with the Apply button. --}}
+                        <div class="mt-auto flex flex-wrap items-start justify-between gap-x-6 gap-y-3 border-t border-slate-100 pt-5 text-sm text-slate-600">
                             @if(filled($job->attachment_paths) || filled($job->csc_publication_paths))
                                 <div class="flex flex-wrap items-center gap-4">
                                 @foreach(($job->attachment_paths ?? []) as $index => $path)
@@ -205,12 +228,16 @@
                     </div>
                     </div>
 
-                    <div class="flex items-center border-t border-slate-200 bg-slate-50 p-6 lg:border-l lg:border-t-0">
+                    <div class="flex min-w-0 items-center border-t border-slate-200 bg-slate-50 p-6 lg:border-l lg:border-t-0">
                         <div class="w-full">
-                            <p class="text-sm leading-6 text-slate-600">
-                                Complete the application form and upload the
-                                required PDF documents.
-                            </p>
+                            <dl class="space-y-3 text-sm leading-6 text-slate-600">
+                                @foreach($sideQualifications as $qualificationLabel => $qualificationValue)
+                                    <div>
+                                        <dt class="font-bold text-government-dark">{{ $qualificationLabel }}:</dt>
+                                        <dd class="whitespace-pre-line [overflow-wrap:anywhere]">{{ filled($qualificationValue) ? $qualificationValue : 'None specified' }}</dd>
+                                    </div>
+                                @endforeach
+                            </dl>
 
                             <a
                                 href="{{ route('apply.form', $job) }}"

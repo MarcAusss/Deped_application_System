@@ -17,7 +17,7 @@
     $metaValueStyle = 'background:#ffffff;border:1px solid #7dd3fc;color:#1e293b;font-size:10px;font-weight:600;line-height:1.4;padding:9px 11px;text-align:left;vertical-align:middle;';
     $qualificationTitleStyle = 'background:#0284c7;border:1px solid #075985;color:#ffffff;font-size:10px;font-weight:800;letter-spacing:.03em;padding:8px 11px;text-align:left;text-transform:uppercase;';
     $qualificationLabelStyle = 'background:#f0f9ff;border:1px solid #bae6fd;color:#0369a1;font-size:9.5px;font-weight:800;padding:8px 10px;text-align:left;vertical-align:top;';
-    $qualificationValueStyle = 'background:#ffffff;border:1px solid #bae6fd;color:#334155;font-size:9.5px;line-height:1.4;padding:8px 10px;text-align:left;vertical-align:top;';
+    $qualificationValueStyle = 'background:#ffffff;border:1px solid #bae6fd;color:#334155;font-size:9.5px;line-height:1.4;overflow-wrap:anywhere;padding:8px 10px;text-align:left;vertical-align:top;white-space:pre-line;';
     $tableFrameStyle = 'border:2px solid #075985;overflow:hidden;';
     $tableStyle = 'border-collapse:collapse;table-layout:fixed;width:100%;';
     $headerTopStyle = 'background:#0284c7;border:1px solid #075985;color:#ffffff;font-size:8px;font-weight:800;letter-spacing:.015em;line-height:1.25;padding:8px 5px;text-align:center;vertical-align:middle;';

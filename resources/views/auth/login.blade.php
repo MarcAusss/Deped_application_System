@@ -115,6 +115,7 @@
         }
     </style>
 
+    @include('partials.desktop-scale')
 </head>
 
 <body class="min-h-screen flex items-center justify-center p-5">

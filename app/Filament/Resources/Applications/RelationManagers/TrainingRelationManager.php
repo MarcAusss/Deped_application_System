@@ -34,13 +34,13 @@ class TrainingRelationManager extends RelationManager
 
                 Tables\Columns\TextColumn::make('training_date')
                     ->label('Start')
-                    ->date('F Y')
+                    ->date('F d, Y')
                     ->placeholder('Not provided')
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('training_end_date')
                     ->label('End')
-                    ->date('F Y')
+                    ->date('F d, Y')
                     ->placeholder('Not provided')
                     ->sortable(),
             ])
@@ -73,41 +73,21 @@ class TrainingRelationManager extends RelationManager
                 ->minValue(1)
                 ->suffix('hrs'),
 
-            Forms\Components\TextInput::make('training_date')
+            Forms\Components\DatePicker::make('training_date')
                 ->label('Start of Training')
-                ->type('month')
-                ->formatStateUsing(
-                    fn ($state): ?string => filled($state)
-                        ? \Carbon\Carbon::parse($state)->format('Y-m')
-                        : null
-                )
-                ->dehydrateStateUsing(
-                    fn ($state): ?string => filled($state)
-                        ? $state.'-01'
-                        : null
-                )
-                ->rules(['nullable', 'date_format:Y-m'])
-                ->extraInputAttributes([
-                    'max' => now()->format('Y-m'),
-                ]),
+                ->displayFormat('F d, Y')
+                ->maxDate(now()),
 
-            Forms\Components\TextInput::make('training_end_date')
+            Forms\Components\DatePicker::make('training_end_date')
                 ->label('End of Training')
-                ->type('month')
-                ->formatStateUsing(
-                    fn ($state): ?string => filled($state)
-                        ? \Carbon\Carbon::parse($state)->format('Y-m')
-                        : null
-                )
-                ->dehydrateStateUsing(
-                    fn ($state): ?string => filled($state)
-                        ? $state.'-01'
-                        : null
-                )
-                ->rules(['nullable', 'date_format:Y-m'])
-                ->extraInputAttributes([
-                    'max' => now()->format('Y-m'),
-                ]),
+                ->displayFormat('F d, Y')
+                ->rule(fn (callable $get) => function (string $attribute, mixed $value, \Closure $fail) use ($get): void {
+                    $start = $get('training_date');
+
+                    if (filled($start) && filled($value) && $value < $start) {
+                        $fail('The End of Training must be on or after the Start of Training.');
+                    }
+                }),
         ]);
     }
 }

@@ -105,7 +105,7 @@ class ClosedJobPostingResource extends Resource
                     ->modalSubmitActionLabel('Repost')
                     ->modalFooterActionsAlignment(\Filament\Support\Enums\Alignment::Right)
                     ->fillForm(fn ($record) => $record->attributesToArray())
-                    ->form(JobPositionResource::formFields())
+                    ->form(JobPositionResource::formFields(requireFutureDeadline: true))
                     ->action(function ($record, array $data) {
                         $data['is_open'] = true;
                         $data['posted_at'] = $data['posted_at'] ?? now()->toDateString();

@@ -36,6 +36,7 @@
             transform: translateX(3px);
         }
     </style>
+    @include('partials.desktop-scale')
 </head>
 
 <body class="min-h-screen flex items-center justify-center p-5 bg-slate-50">

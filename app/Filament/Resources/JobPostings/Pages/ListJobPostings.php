@@ -57,7 +57,7 @@ class ListJobPostings extends ListRecords
                             $set('csc_publication_paths', $job?->csc_publication_paths ?? []);
                         }),
 
-                    ...JobPositionResource::formFields(),
+                    ...JobPositionResource::formFields(requireFutureDeadline: true),
                 ])
                 ->action(function (array $data) {
                     $job = JobPosition::find($data['job_position_id']);

@@ -89,10 +89,10 @@ final class IerApplicationFormatter
                 $title = $training->title ?: '';
 
                 if (filled($training->training_date)) {
-                    $date = Carbon::parse($training->training_date)->format('F Y');
+                    $date = Carbon::parse($training->training_date)->format('F d, Y');
 
                     if (filled($training->training_end_date)) {
-                        $date .= ' - '.Carbon::parse($training->training_end_date)->format('F Y');
+                        $date .= ' - '.Carbon::parse($training->training_end_date)->format('F d, Y');
                     }
 
                     $title .= ($title !== '' ? ' ' : '').'('.$date.')';

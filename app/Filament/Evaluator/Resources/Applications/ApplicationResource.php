@@ -169,7 +169,7 @@ class ApplicationResource extends Resource
                     $boxed = fn (string $title, string $value): \Illuminate\Support\HtmlString => new \Illuminate\Support\HtmlString(
                         '<div style="display:block;width:100%;height:100%;min-height:6rem;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:0.5rem;padding:0.5rem 0.75rem;">'
                         . '<p style="font-size:1rem;font-weight:700;margin-bottom:0.25rem;">' . e($title) . '</p>'
-                        . '<span>' . e($value) . '</span>'
+                        . '<span style="overflow-wrap:anywhere;">' . e($value) . '</span>'
                         . '</div>'
                     );
 
@@ -191,7 +191,7 @@ class ApplicationResource extends Resource
                                         return new \Illuminate\Support\HtmlString(
                                             '<div style="display:block;width:100%;height:100%;min-height:6rem;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:0.5rem;padding:0.5rem 0.75rem;">'
                                             . '<p style="font-size:1rem;font-weight:700;margin-bottom:0.25rem;">Qualification Standard</p>'
-                                            . '<p style="font-size:0.75rem;line-height:1.4;">' . e($value) . '</p>'
+                                            . '<p style="font-size:0.75rem;line-height:1.4;overflow-wrap:anywhere;">' . e($value) . '</p>'
                                             . '</div>'
                                         );
                                     }),
@@ -304,7 +304,7 @@ class ApplicationResource extends Resource
                                         return new \Illuminate\Support\HtmlString(
                                             '<div style="display:block;width:100%;height:100%;min-height:6rem;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:0.5rem;padding:0.5rem 0.75rem;">'
                                             . '<p style="font-size:1rem;font-weight:700;margin-bottom:0.25rem;">Qualification Standard</p>'
-                                            . '<p style="font-size:0.75rem;line-height:1.4;">' . e($value) . '</p>'
+                                            . '<p style="font-size:0.75rem;line-height:1.4;overflow-wrap:anywhere;">' . e($value) . '</p>'
                                             . '</div>'
                                         );
                                     }),
@@ -343,7 +343,7 @@ class ApplicationResource extends Resource
                     $box = fn (string $title, string $value): \Illuminate\Support\HtmlString => new \Illuminate\Support\HtmlString(
                         '<div style="display:block;width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:0.5rem;padding:0.5rem 0.75rem;">'
                         . '<p style="font-size:0.875rem;font-weight:700;margin-bottom:0.25rem;">' . e($title) . '</p>'
-                        . '<span>' . e($value) . '</span>'
+                        . '<span style="overflow-wrap:anywhere;">' . e($value) . '</span>'
                         . '</div>'
                     );
 

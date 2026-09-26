@@ -9,6 +9,7 @@ class ApplicationDocument extends Model
         'application_id',
         'type',
         'file_path',
+        'original_name',
     ];
 
     public function application()
