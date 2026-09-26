@@ -75,7 +75,7 @@
             background: #1D4E89;
         }
     </style>
-    @include('partials.desktop-scale')
+    @include('partials.desktop-scale', ['fitHeight' => true])
 </head>
 
 <body class="min-h-screen bg-slate-50">
@@ -83,7 +83,7 @@
     <div class="mx-auto flex min-h-screen max-w-5xl flex-col items-center justify-center p-5">
         <div class="auth-card grid w-full grid-cols-1 overflow-hidden rounded-3xl bg-white lg:grid-cols-[2.3fr_2.7fr]">
 
-            <div class="relative hidden min-h-[640px] flex-col overflow-hidden lg:flex">
+            <div class="relative hidden min-h-[40rem] flex-col overflow-hidden lg:flex">
                 <img
                     src="{{ asset('images/mayon.jpg') }}"
                     class="absolute left-1/2 top-0 h-full w-[260%] -translate-x-1/2 object-cover object-[center_15%]"

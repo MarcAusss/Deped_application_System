@@ -60,15 +60,15 @@
         }
     </style>
 
-    @include('partials.desktop-scale')
+    @include('partials.desktop-scale', ['fitHeight' => true])
 </head>
 
 <body class="min-h-screen flex items-center justify-center p-5">
 
     <div
-         class="login-card w-full max-w-7xl rounded-[35px] overflow-hidden grid grid-cols-1 lg:grid-cols-[3fr_2fr]">
+         class="login-card w-full max-w-7xl rounded-[2.2rem] overflow-hidden grid grid-cols-1 lg:grid-cols-[3fr_2fr]">
 
-        <div class="relative hidden lg:block min-h-[700px]">
+        <div class="relative hidden lg:block min-h-[43.75rem]">
 
             <img
                 src="{{ asset('images/SDO-ALBAY.webp') }}"
