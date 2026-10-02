@@ -18,7 +18,7 @@ class Dashboard extends BaseDashboard
         return view('filament.pages.dashboard-header', [
             'pendingCount' => Application::where('status', 'pending')->count(),
             'approvalCount' => Application::where('status', 'evaluated')->count(),
-            'openPositionCount' => JobPosition::where('is_open', true)->count(),
+            'openPositionCount' => JobPosition::currentlyOpen()->count(),
         ]);
     }
 

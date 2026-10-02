@@ -1,0 +1,231 @@
+<?php
+define('PORTAL_BOOTED', true);
+require __DIR__.'/_boot.php';
+
+portal_require_login();
+$user = portal_user();
+
+$stmt = portal_pdo()->prepare(
+    'SELECT a.*,
+            jp.title AS job_title, jp.is_open AS job_is_open, jp.until AS job_until, jp.until_time AS job_until_time,
+            cn.control_number,
+            e.result AS eval_result, e.remarks AS eval_remarks,
+            e.qs_education_met, e.qs_experience_met, e.qs_training_met, e.qs_eligibility_met
+     FROM applications a
+     LEFT JOIN job_positions jp ON jp.id = a.job_position_id
+     LEFT JOIN application_control_numbers cn ON cn.application_id = a.id
+     LEFT JOIN application_evaluations e ON e.application_id = a.id
+     WHERE a.applicant_id = ?
+     ORDER BY a.created_at DESC'
+);
+$stmt->execute([$user->id]);
+$applications = $stmt->fetchAll();
+
+function job_deadline_passed(?string $until, ?string $untilTime): bool
+{
+    if (!$until) {
+        return false;
+    }
+    $deadline = strtotime($until.' '.($untilTime ?: '23:59:59'));
+
+    return time() > $deadline;
+}
+
+$pendingCount = count(array_filter($applications, fn ($a) => $a->status === 'pending'));
+$evaluatedCount = count(array_filter($applications, fn ($a) => in_array($a->status, ['evaluated', 'excluded'], true)));
+$qualifiedCount = count(array_filter($applications, fn ($a) => $a->status === 'qualified'));
+
+$hour = (int) date('H');
+$greeting = $hour < 12 ? 'Good morning' : ($hour < 18 ? 'Good afternoon' : 'Good evening');
+$firstName = explode(' ', $user->name)[0];
+
+$statusMeta = [
+    'pending' => ['badge' => 'bg-slate-100 text-slate-600 ring-slate-200', 'step' => 2, 'tone' => 'neutral', 'terminal' => false, 'next' => 'Your application is currently under review by our evaluators. You will be updated here once the initial evaluation is complete.'],
+    'evaluated' => ['badge' => 'bg-blue-50 text-blue-700 ring-blue-200', 'step' => 3, 'tone' => 'positive', 'terminal' => false, 'next' => 'Your application has been evaluated and meets the qualification standards. It is now awaiting the final hiring decision.'],
+    'excluded' => ['badge' => 'bg-red-50 text-red-700 ring-red-200', 'step' => 3, 'tone' => 'negative', 'terminal' => false, 'next' => 'Your application did not meet the required qualification standards for this position. No further action is needed.'],
+    'qualified' => ['badge' => 'bg-green-50 text-green-700 ring-green-200', 'step' => 3, 'tone' => 'positive', 'terminal' => true, 'next' => 'Congratulations! Your application has been marked Qualified. Please wait to be contacted regarding the next steps.'],
+    'disqualified' => ['badge' => 'bg-red-50 text-red-700 ring-red-200', 'step' => 3, 'tone' => 'negative', 'terminal' => true, 'next' => 'Your application was not selected for this position. Thank you for taking the time to apply.'],
+];
+$steps = ['Submitted', 'For Evaluation', 'For Final Qualification'];
+
+function qs_style(?string $result): array
+{
+    return match ($result) {
+        'qualified' => ['label' => 'Meet the QS', 'badge' => 'bg-green-50 text-green-700 ring-green-200'],
+        'not_qualified', 'excluded' => ['label' => 'Did not Meet the QS', 'badge' => 'bg-red-50 text-red-700 ring-red-200'],
+        default => ['label' => 'Pending', 'badge' => 'bg-slate-100 text-slate-600 ring-slate-200'],
+    };
+}
+
+function disqualified_categories(object $app): array
+{
+    $categories = [
+        "Bachelor's Degree" => $app->qs_education_met,
+        'Years of Experience' => $app->qs_experience_met,
+        'Hours of Training' => $app->qs_training_met,
+        'Eligibility' => $app->qs_eligibility_met,
+    ];
+
+    return array_keys(array_filter($categories, fn ($met) => $met === '0' || $met === 0));
+}
+
+$pageTitle = 'My Applications | DepEd Recruitment Portal';
+require __DIR__.'/_layout_head.php';
+?>
+
+<?php $activePage = 'dashboard'; require __DIR__.'/_layout_topbar.php'; ?>
+
+<div class="lg:flex lg:flex-1">
+    <?php require __DIR__.'/_layout_sidebar.php'; ?>
+
+    <div class="min-w-0 flex-1">
+        <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+
+            <?php if (flash_get('success')): ?>
+                <div class="mb-8 rounded-xl border border-green-200 bg-green-50 p-4 text-green-800"><?= portal_e(flash_get('success')) ?></div>
+            <?php endif; ?>
+
+            <section class="relative overflow-hidden rounded-2xl border border-government-dark bg-gradient-to-br from-government-dark to-government-blue text-white">
+                <div class="grid gap-0 lg:grid-cols-[1.65fr_0.9fr]">
+                    <div class="p-6 sm:p-8">
+                        <div class="mb-4 flex flex-wrap items-center gap-2">
+                            <span class="text-xs font-bold uppercase tracking-widest text-blue-200">Applicant workspace</span>
+                            <span class="inline-flex items-center gap-1.5 rounded-full border border-teal-300/30 bg-teal-900/40 px-2.5 py-1 text-[11px] font-bold text-teal-200">
+                                <span class="h-1.5 w-1.5 rounded-full bg-teal-300"></span> Application tracking
+                            </span>
+                        </div>
+                        <h1 class="text-2xl font-black leading-tight sm:text-3xl"><?= portal_e($greeting) ?>, <?= portal_e($firstName) ?>.</h1>
+                        <p class="mt-3 max-w-xl text-sm leading-relaxed text-blue-100">Track the status of every position you've applied for from one place, and explore new openings when you're ready for your next opportunity.</p>
+                        <div class="mt-6 flex flex-wrap gap-3">
+                            <a href="<?= portal_url('jobs.php') ?>" class="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-bold text-government-navy transition hover:bg-blue-50">Browse to Apply</a>
+                        </div>
+                    </div>
+                    <aside class="border-t border-white/15 bg-black/10 p-6 sm:p-8 lg:border-l lg:border-t-0">
+                        <span class="text-[11px] font-bold uppercase tracking-widest text-blue-200">Your applications today</span>
+                        <p class="mt-1 text-sm font-bold text-white"><?= portal_e(date('l, d F Y')) ?></p>
+                        <div class="mt-4 grid grid-cols-3 border-t border-white/15 pt-4">
+                            <div><strong class="block text-xl font-black text-white"><?= $pendingCount ?></strong><span class="text-[11px] font-bold text-blue-200">Pending</span></div>
+                            <div class="border-l border-white/15 pl-3"><strong class="block text-xl font-black text-white"><?= $evaluatedCount ?></strong><span class="text-[11px] font-bold text-blue-200">Evaluated</span></div>
+                            <div class="border-l border-white/15 pl-3"><strong class="block text-xl font-black text-white"><?= $qualifiedCount ?></strong><span class="text-[11px] font-bold text-blue-200">Qualified</span></div>
+                        </div>
+                    </aside>
+                </div>
+            </section>
+
+            <div class="mb-4 mt-8 border-b border-slate-200 pb-4">
+                <h2 class="text-xl font-black text-government-dark">My Applications</h2>
+                <p class="mt-1 text-sm text-slate-600">Track the status of every position you've applied for.</p>
+            </div>
+
+            <?php if (empty($applications)): ?>
+                <div class="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
+                    <h3 class="text-2xl font-black text-government-dark">You haven't applied to any positions yet</h3>
+                    <p class="mt-3 text-slate-500">Browse open job positions and submit your application.</p>
+                    <a href="<?= portal_url('jobs.php') ?>" class="mt-6 inline-flex items-center justify-center rounded-xl bg-government-navy px-5 py-3 font-bold text-white transition hover:bg-government-blue">View Open Positions</a>
+                </div>
+            <?php else: ?>
+                <?php foreach ($applications as $app):
+                    $meta = $statusMeta[$app->status] ?? $statusMeta['pending'];
+                    $currentStep = $meta['step'];
+                    $stepLabels = [1 => 'Submitted', 2 => $currentStep > 2 ? 'Evaluated' : 'For Evaluation', 3 => $meta['terminal'] ? ucfirst($app->status) : 'For Final Qualification'];
+                    $jobOpen = $app->job_is_open && !job_deadline_passed($app->job_until, $app->job_until_time);
+                    $canEdit = $app->status === 'pending' && $jobOpen;
+                    $qs = qs_style($app->eval_result);
+                    $qsReason = null;
+                    if (in_array($app->eval_result, ['not_qualified', 'excluded'], true)) {
+                        $cats = disqualified_categories($app);
+                        if ($cats) {
+                            $qsReason = 'Did not Meet the QS: '.implode(', ', $cats).'.';
+                        }
+                    }
+                ?>
+                <article class="mb-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                            <?php if ($app->control_number): ?>
+                                <p class="text-xs font-bold uppercase tracking-wide text-government-blue">Control No: <?= portal_e($app->control_number) ?></p>
+                            <?php endif; ?>
+                            <h3 class="text-lg font-black text-government-dark"><?= portal_e($app->job_title ?? 'Job position no longer available') ?></h3>
+                            <p class="mt-1 text-sm text-slate-500">Applied on <?= portal_e(date('F d, Y', strtotime($app->created_at))) ?></p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="inline-flex w-fit items-center rounded-full px-4 py-1.5 text-xs font-bold uppercase ring-1 <?= $meta['badge'] ?>"><?= portal_e(ucfirst($app->status)) ?></span>
+                            <?php if ($canEdit): ?>
+                                <a href="<?= portal_url('apply.php?application='.$app->id) ?>" title="Once the application period has ended, you can no longer edit or update your application." class="inline-flex w-fit items-center gap-1.5 rounded-full border border-government-navy px-4 py-1.5 text-xs font-bold text-government-navy transition hover:bg-government-navy hover:text-white">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-3.5 w-3.5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                                    </svg>
+                                    Edit
+                                </a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 flex items-center justify-center">
+                        <?php foreach ($steps as $index => $step):
+                            $stepNumber = $index + 1;
+                            $isDone = $stepNumber < $currentStep;
+                            $isCurrent = $stepNumber === $currentStep;
+                            $isTerminalStep = $isCurrent && $meta['terminal'];
+                            $isFinalNegative = $isTerminalStep && $meta['tone'] === 'negative';
+                            $isFinalPositive = $isTerminalStep && $meta['tone'] === 'positive';
+                            $circleStyle = match (true) {
+                                $isFinalNegative => 'border-red-600 bg-red-600 text-white',
+                                $isFinalPositive => 'border-green-600 bg-green-600 text-white',
+                                $isCurrent && $meta['tone'] === 'negative' => 'border-red-600 bg-red-600 text-white',
+                                $isCurrent => 'border-government-navy bg-government-navy text-white',
+                                $isDone => 'border-government-navy bg-white text-government-navy',
+                                default => 'border-slate-300 bg-white text-slate-400',
+                            };
+                            $labelStyle = $isCurrent ? ($meta['tone'] === 'negative' ? 'text-red-600' : 'text-government-navy') : ($isDone ? 'text-slate-600' : 'text-slate-400');
+                        ?>
+                            <div class="flex flex-col items-center text-center">
+                                <div class="flex items-center">
+                                    <div class="h-0.5 w-10 sm:w-16 <?= $index === 0 ? 'invisible' : 'bg-government-blue' ?>"></div>
+                                    <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 text-xs font-bold <?= $circleStyle ?>">
+                                        <?= $isDone ? '&check;' : $stepNumber ?>
+                                    </div>
+                                    <div class="h-0.5 w-10 sm:w-16 <?= $stepNumber === count($steps) ? 'invisible' : 'bg-government-blue' ?>"></div>
+                                </div>
+                                <p class="mt-2 whitespace-nowrap text-[11px] font-bold uppercase tracking-wide <?= $labelStyle ?>"><?= portal_e($stepLabels[$stepNumber]) ?></p>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+
+                    <?php if ($app->eval_result): ?>
+                        <div class="mt-5 rounded-xl border border-slate-200 bg-white p-4">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Qualification Standards</p>
+                                <span class="inline-flex w-fit items-center rounded-full px-3 py-1 text-xs font-bold uppercase ring-1 <?= $qs['badge'] ?>"><?= portal_e($qs['label']) ?></span>
+                            </div>
+                            <?php if ($qsReason): ?><p class="mt-2 text-sm text-slate-700"><?= portal_e($qsReason) ?></p><?php endif; ?>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if ($app->eval_remarks): ?>
+                        <div class="mt-3 rounded-xl border border-slate-200 bg-white p-4">
+                            <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Evaluator's Remarks</p>
+                            <p class="mt-1 text-sm text-slate-700"><?= portal_e($app->eval_remarks) ?></p>
+                        </div>
+                    <?php endif; ?>
+
+                    <div class="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <p class="text-xs font-bold uppercase tracking-wide text-slate-500">What's next</p>
+                        <p class="mt-1 text-sm text-slate-700"><?= portal_e($meta['next']) ?></p>
+                        <?php if ($canEdit): ?>
+                            <p class="mt-2 flex items-start gap-1.5 rounded-lg bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-700 ring-1 ring-amber-200">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mt-0.5 h-3.5 w-3.5 shrink-0">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-8.25 3.75h.008v.008h-.008v-.008Z" />
+                                </svg>
+                                Once the application period has ended, you can no longer edit or update your application.
+                            </p>
+                        <?php endif; ?>
+                    </div>
+                </article>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </main>
+    </div>
+</div>
+
+<?php require __DIR__.'/_layout_footer.php'; ?>
