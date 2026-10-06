@@ -524,6 +524,13 @@ class ApplicationController extends Controller
                 'max:10240',
             ],
 
+            'pds' => [
+                'nullable',
+                'file',
+                'mimes:pdf',
+                'max:10240',
+            ],
+
             'tor_diploma' => [
                 'nullable',
                 'file',
@@ -596,6 +603,7 @@ class ApplicationController extends Controller
     {
         return [
             'letter_of_intent',
+            'pds',
             'tor_diploma',
             'prc_license',
             'eligibility_file',

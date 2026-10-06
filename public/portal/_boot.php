@@ -46,6 +46,37 @@ function portal_env(string $key, mixed $default = null): mixed
     };
 }
 
+/*
+ * Production-safe error handling: never leak raw PHP errors/stack traces to
+ * applicants. Gated by APP_DEBUG (the same variable Laravel reads), so local
+ * dev still sees real errors while a live server shows a friendly page and
+ * logs the real detail to storage/logs/laravel.log instead.
+ */
+$portalDebug = portal_env('APP_DEBUG', false) === true;
+
+error_reporting(E_ALL);
+ini_set('log_errors', '1');
+ini_set('error_log', PORTAL_ROOT.'/storage/logs/laravel.log');
+ini_set('display_errors', $portalDebug ? '1' : '0');
+
+if (!$portalDebug) {
+    set_exception_handler(function (\Throwable $e) {
+        error_log('[portal] Uncaught: '.$e);
+        require __DIR__.'/_error.php';
+        exit;
+    });
+
+    register_shutdown_function(function () {
+        $error = error_get_last();
+        if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
+            error_log('[portal] Fatal: '.$error['message'].' in '.$error['file'].':'.$error['line']);
+            if (!headers_sent()) {
+                require __DIR__.'/_error.php';
+            }
+        }
+    });
+}
+
 session_name('depedcares_portal_sess');
 session_set_cookie_params([
     'lifetime' => 0,

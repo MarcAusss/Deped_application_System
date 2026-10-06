@@ -7,6 +7,7 @@ $user = portal_user();
 
 const DOCUMENT_FIELDS = [
     'letter_of_intent' => 'Letter of Intent',
+    'pds' => 'Personal Data Sheet (PDS)',
     'tor_diploma' => 'TOR / Diploma',
     'prc_license' => 'PRC License',
     'eligibility_file' => 'Eligibility Document',
