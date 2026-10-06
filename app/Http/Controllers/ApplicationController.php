@@ -40,10 +40,20 @@ class ApplicationController extends Controller
     |--------------------------------------------------------------------------
     */
 
-    public function create(JobPosition $job): View
+    public function create(JobPosition $job): View|RedirectResponse
     {
         if (! $job->is_open || $job->hasDeadlinePassed()) {
             abort(403, 'This job position is currently closed.');
+        }
+
+        $existing = Application::where('job_position_id', $job->id)
+            ->where('applicant_id', Auth::guard('applicant')->id())
+            ->first();
+
+        if ($existing) {
+            return redirect()
+                ->route('applicant.applications.edit', $existing)
+                ->with('error', 'You have already applied to this position. You can review or edit your existing application below.');
         }
 
         return view('apply', ['job' => $job, 'application' => null]);
@@ -59,6 +69,16 @@ class ApplicationController extends Controller
     {
         if (! $job->is_open || $job->hasDeadlinePassed()) {
             abort(403, 'This job position is currently closed.');
+        }
+
+        $alreadyApplied = Application::where('job_position_id', $job->id)
+            ->where('applicant_id', Auth::guard('applicant')->id())
+            ->exists();
+
+        if ($alreadyApplied) {
+            return redirect()
+                ->route('jobs.index')
+                ->with('error', 'You have already applied to this position.');
         }
 
         $validated = $request->validate($this->applicationValidationRules(), $this->applicationValidationMessages());

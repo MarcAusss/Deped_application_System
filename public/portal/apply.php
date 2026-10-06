@@ -153,6 +153,16 @@ if ($applicationId) {
         echo 'This job position is currently closed.';
         exit;
     }
+
+    $stmt = portal_pdo()->prepare('SELECT id FROM applications WHERE job_position_id = ? AND applicant_id = ?');
+    $stmt->execute([$jobId, $user->id]);
+    $existingApplicationId = $stmt->fetchColumn();
+
+    if ($existingApplicationId) {
+        flash_set('error', 'You have already applied to this position. You can review or edit your existing application below.');
+        header('Location: '.portal_url('apply.php').'?application='.$existingApplicationId);
+        exit;
+    }
 } else {
     http_response_code(404);
     exit;
@@ -220,6 +230,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         if (!is_pdf_file($_FILES[$field]['tmp_name'])) {
             $errors->add($field, "The {$label} must be a PDF file.");
+        }
+    }
+
+    if (!$isEdit) {
+        $stmt = portal_pdo()->prepare('SELECT id FROM applications WHERE job_position_id = ? AND applicant_id = ?');
+        $stmt->execute([$jobId, $user->id]);
+        if ($stmt->fetchColumn()) {
+            $errors->add('job_id', 'You have already applied to this position.');
         }
     }
 

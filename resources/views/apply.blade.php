@@ -1692,6 +1692,37 @@
         });
     </script>
 
+    <script>
+        // Guard against duplicate applications from a double-click or an
+        // impatient second click while the (slow, file-upload-heavy) submit
+        // is still in flight. Runs after the validators above, so it only
+        // disables the button once nothing else has already blocked submit.
+        (function () {
+            const form = document.getElementById('application-form');
+            const submitButton = form.querySelector('button[type="submit"]');
+            const originalLabel = submitButton.textContent.trim();
+
+            form.addEventListener('submit', function (event) {
+                if (event.defaultPrevented) {
+                    return;
+                }
+
+                submitButton.disabled = true;
+                submitButton.classList.add('opacity-50', 'cursor-not-allowed');
+                submitButton.textContent = 'Submitting…';
+
+                // Safety net: if something stops the navigation (e.g. the
+                // browser's back-forward cache restores this page), don't
+                // leave the button stuck disabled forever.
+                window.setTimeout(function () {
+                    submitButton.disabled = false;
+                    submitButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                    submitButton.textContent = originalLabel;
+                }, 15000);
+            });
+        })();
+    </script>
+
         </div>
     </div>
 
