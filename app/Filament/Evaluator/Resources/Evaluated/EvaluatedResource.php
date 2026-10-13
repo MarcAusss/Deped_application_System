@@ -1,0 +1,240 @@
+<?php
+
+namespace App\Filament\Evaluator\Resources\Evaluated;
+
+use App\Exports\ApplicationsExport;
+use App\Filament\Resources\Applications\ApplicationResource as ApplicationDetailsResource;
+use App\Filament\Evaluator\Resources\Applications\ApplicationResource as EvaluatorApplicationResource;
+use App\Filament\Evaluator\Resources\Evaluated\Pages;
+use App\Models\Application;
+use App\Models\ApplicationEvaluation;
+use App\Support\IerApplicationFormatter;
+use Filament\Actions\Action;
+use Filament\Actions\BulkAction;
+use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
+use Filament\Support\Enums\Width;
+use Filament\Tables;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Maatwebsite\Excel\Facades\Excel;
+
+class EvaluatedResource extends Resource
+{
+    protected static ?string $model = Application::class;
+
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-clipboard-document-check';
+
+    protected static ?string $navigationLabel = 'Evaluated Status';
+
+    protected static ?string $modelLabel = 'Evaluated Application';
+
+    protected static ?string $pluralModelLabel = 'Evaluated';
+
+    protected static ?string $slug = 'evaluated';
+
+    protected static ?int $navigationSort = 2;
+
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Applications';
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        // Everything the evaluator has already acted on (scored, or
+        // explicitly excluded) and is now waiting on the admin's final
+        // Qualified/Disqualified call — kept out of the main Applications
+        // queue so that list only shows what still needs the evaluator's
+        // attention.
+        return parent::getEloquentQuery()->whereIn('status', ['evaluated', 'excluded'])->with('evaluation');
+    }
+
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->columns([
+                Tables\Columns\TextColumn::make('controlNumber.control_number')
+                    ->label('Control #')
+                    ->placeholder('Not assigned')
+                    ->sortable()
+                    ->searchable()
+                    ->copyable(),
+
+                Tables\Columns\TextColumn::make('profile.full_name')
+                    ->label('Applicant Name')
+                    ->searchable()
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('profile.email')
+                    ->label('Email')
+                    ->searchable()
+                    ->toggleable(),
+
+                Tables\Columns\TextColumn::make('jobPosition.title')
+                    ->label('Position Applied')
+                    ->sortable()
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('status')
+                    ->label('Status')
+                    ->badge()
+                    ->color(function (string $state, $record): string {
+                        // "Evaluated" alone doesn't tell the evaluator whether this
+                        // applicant is heading toward Qualified or Disqualified once
+                        // admin reviews it — show the actual QS outcome instead.
+                        if ($state === 'evaluated') {
+                            return $record->evaluation?->result === ApplicationEvaluation::RESULT_QUALIFIED
+                                ? 'success'
+                                : 'warning';
+                        }
+
+                        return match ($state) {
+                            'excluded' => 'danger',
+                            default => 'gray',
+                        };
+                    })
+                    ->formatStateUsing(function (string $state, $record): string {
+                        if ($state === 'evaluated') {
+                            return $record->evaluation?->result === ApplicationEvaluation::RESULT_QUALIFIED
+                                ? 'Meet the QS'
+                                : 'Did Not Meet the QS';
+                        }
+
+                        return ucfirst($state);
+                    }),
+
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->label('Evaluated On')
+                    ->dateTime('M d, Y')
+                    ->sortable(),
+            ])
+
+            ->defaultGroup(
+                Tables\Grouping\Group::make('job_position_id')
+                    ->label('Position')
+                    ->getTitleFromRecordUsing(fn ($record) => $record->jobPosition->title ?? 'Position No Longer Available')
+                    ->collapsible()
+            )
+
+            ->defaultSort('updated_at', 'desc')
+
+            ->recordActionsColumnLabel('Actions')
+            ->recordActionsAlignment(\Filament\Support\Enums\Alignment::Center->value)
+
+            ->filters([
+                Tables\Filters\SelectFilter::make('job_position_id')
+                    ->label('Filter by Position')
+                    ->relationship('jobPosition', 'title'),
+
+                Tables\Filters\SelectFilter::make('status')
+                    ->label('Filter by Status')
+                    ->options([
+                        'evaluated' => 'Evaluated',
+                        'excluded' => 'Excluded',
+                    ]),
+            ])
+
+            ->actions([
+                Action::make('view')
+                    ->label('View')
+                    ->icon('heroicon-o-eye')
+                    ->modalHeading(fn ($record) => $record?->profile?->full_name ?? 'Application Details')
+                    ->modalWidth(Width::FiveExtraLarge)
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Close')
+                    ->modalAutofocus(false)
+                    ->fillForm(fn ($record) => $record->attributesToArray())
+                    ->schema(fn (Schema $schema) => ApplicationDetailsResource::form($schema)),
+
+                Action::make('edit')
+                    ->label('Edit')
+                    ->icon('heroicon-o-pencil')
+                    ->url(fn ($record) => EvaluatorApplicationResource::getUrl('edit', ['record' => $record]).'?from=evaluated')
+                    ->disabled(fn ($record) => $record->evaluation
+                        && $record->evaluation->evaluator_id
+                        && $record->evaluation->evaluator_id !== auth()->id())
+                    ->tooltip(fn ($record) => ($record->evaluation
+                        && $record->evaluation->evaluator_id
+                        && $record->evaluation->evaluator_id !== auth()->id())
+                        ? 'Evaluated by another evaluator.'
+                        : null),
+            ])
+
+            ->bulkActions([
+                BulkAction::make('export_selected')
+                    ->label('Preview & Export Selected IER')
+                    ->icon('heroicon-o-document-magnifying-glass')
+                    ->color('success')
+                    ->modalHeading('Initial Evaluation Result Preview')
+                    ->modalDescription('Review the selected records below before creating the Excel workbook.')
+                    ->modalWidth(Width::Full)
+                    ->stickyModalHeader()
+                    ->stickyModalFooter()
+                    ->modalSubmitActionLabel('Export Excel')
+                    ->modalCancelActionLabel('Cancel')
+                    ->modalContent(function (EloquentCollection $records) {
+                        $applications = Application::query()
+                            ->whereIn('id', $records->pluck('id'))
+                            ->with([
+                                'profile',
+                                'jobPosition',
+                                'controlNumber',
+                                'educations',
+                                'trainings',
+                                'experiences',
+                                'eligibilities',
+                                'evaluation',
+                            ])
+                            ->get();
+
+                        $groups = $applications
+                            ->groupBy(fn ($application) => (string) ($application->job_position_id ?? 'unassigned'))
+                            ->map(function ($positionApplications): array {
+                                $position = $positionApplications->first()?->jobPosition;
+
+                                return [
+                                    'position' => IerApplicationFormatter::positionSummary($position),
+                                    'rows' => $positionApplications
+                                        ->take(10)
+                                        ->values()
+                                        ->map(fn ($application, int $index) => IerApplicationFormatter::row(
+                                            $application,
+                                            $index + 1
+                                        ))
+                                        ->all(),
+                                    'total' => $positionApplications->count(),
+                                ];
+                            })
+                            ->values();
+
+                        return view('filament.evaluator.actions.ier-export-preview', [
+                            'groups' => $groups,
+                            'totalApplications' => $applications->count(),
+                        ]);
+                    })
+                    ->action(function (EloquentCollection $records) {
+                        $query = Application::query()->whereIn('id', $records->pluck('id'));
+
+                        return Excel::download(
+                            new ApplicationsExport($query),
+                            'initial-evaluation-result-selected-'.now()->format('Y-m-d-His').'.xlsx'
+                        );
+                    })
+                    ->deselectRecordsAfterCompletion(),
+            ]);
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index' => Pages\ListEvaluated::route('/'),
+        ];
+    }
+}

@@ -158,7 +158,7 @@
                             'step' => 3,
                             'tone' => 'negative',
                             'terminal' => false,
-                            'next' => 'Your application did not meet the required qualification standards for this position. No further action is needed.',
+                            'next' => 'Your application has been evaluated. It is now awaiting the final decision.',
                         ],
                         'qualified' => [
                             'badge' => 'bg-green-50 text-green-700 ring-green-200',
@@ -181,6 +181,12 @@
                     @php
                         $meta = $statusMeta[$application->status] ?? $statusMeta['pending'];
                         $currentStep = $meta['step'];
+
+                        // The badge, Mandatory Requirements/QS box, and Evaluator's
+                        // Remarks all stay generic until the admin makes the final
+                        // Qualified/Disqualified call — the evaluator's working verdict
+                        // (Evaluated/Excluded) isn't shown to the applicant before then.
+                        $isFinalDecision = in_array($application->status, ['qualified', 'disqualified'], true);
 
                         $stepLabels = [
                             1 => 'Submitted',
@@ -208,8 +214,8 @@
                             </div>
 
                             <div class="flex items-center gap-3">
-                                <span class="inline-flex w-fit items-center rounded-full px-4 py-1.5 text-xs font-bold uppercase ring-1 {{ $meta['badge'] }}">
-                                    {{ ucfirst($application->status) }}
+                                <span class="inline-flex w-fit items-center rounded-full px-4 py-1.5 text-xs font-bold uppercase ring-1 {{ $isFinalDecision ? $meta['badge'] : 'bg-slate-100 text-slate-600 ring-slate-200' }}">
+                                    {{ $isFinalDecision ? ucfirst($application->status) : 'Pending' }}
                                 </span>
 
                                 @if($application->status === 'pending' && $application->jobPosition?->is_open && !$application->jobPosition?->hasDeadlinePassed())
@@ -236,19 +242,25 @@
                                     $isTerminalStep = $isCurrent && ($meta['terminal'] ?? false);
                                     $isFinalNegative = $isTerminalStep && $meta['tone'] === 'negative';
                                     $isFinalPositive = $isTerminalStep && $meta['tone'] === 'positive';
+                                    // Step 3 reached but not yet terminal (Evaluated/Excluded —
+                                    // still awaiting the admin's Qualified/Disqualified call):
+                                    // render it as upcoming/not-yet-reached, not "in progress".
+                                    $isAwaitingAdmin = $isCurrent && $stepNumber === 3 && !($meta['terminal'] ?? false);
 
                                     $circleStyle = match(true) {
                                         $isFinalNegative => 'border-red-600 bg-red-600 text-white',
                                         $isFinalPositive => 'border-green-600 bg-green-600 text-white',
-                                        $isCurrent && $meta['tone'] === 'negative' => 'border-red-600 bg-red-600 text-white',
+                                        $isAwaitingAdmin => 'border-slate-300 bg-white text-slate-400',
                                         $isCurrent => 'border-government-navy bg-government-navy text-white',
                                         $isDone => 'border-government-navy bg-white text-government-navy',
                                         default => 'border-slate-300 bg-white text-slate-400',
                                     };
 
-                                    $labelStyle = $isCurrent
-                                        ? ($meta['tone'] === 'negative' ? 'text-red-600' : 'text-government-navy')
-                                        : ($isDone ? 'text-slate-600' : 'text-slate-400');
+                                    $labelStyle = $isAwaitingAdmin
+                                        ? 'text-slate-400'
+                                        : ($isCurrent
+                                            ? ($isFinalNegative ? 'text-red-600' : 'text-government-navy')
+                                            : ($isDone ? 'text-slate-600' : 'text-slate-400'));
 
                                     $lineStyle = 'bg-government-blue';
                                 @endphp
@@ -289,7 +301,7 @@
                                     'badge' => 'bg-red-50 text-red-700 ring-red-200',
                                 ],
                                 \App\Models\ApplicationEvaluation::RESULT_EXCLUDED => [
-                                    'label' => 'Did not Meet the QS',
+                                    'label' => 'Did Not Meet The Mandatory Requirements',
                                     'badge' => 'bg-red-50 text-red-700 ring-red-200',
                                 ],
                             ];
@@ -300,14 +312,9 @@
                             ];
 
                             $qsReason = null;
+                            $missingMandatory = [];
 
-                            if (
-                                in_array($qsResult, [
-                                    \App\Models\ApplicationEvaluation::RESULT_NOT_QUALIFIED,
-                                    \App\Models\ApplicationEvaluation::RESULT_EXCLUDED,
-                                ], true)
-                                && $evaluation
-                            ) {
+                            if ($qsResult === \App\Models\ApplicationEvaluation::RESULT_NOT_QUALIFIED && $evaluation) {
                                 $disqualifiedCategories = \App\Support\EvaluationChecklist::disqualifiedCategories(
                                     $evaluation->qs_education_met,
                                     $evaluation->qs_experience_met,
@@ -319,13 +326,27 @@
                                     $qsReason = 'Did not Meet the QS: ' . implode(', ', $disqualifiedCategories) . '.';
                                 }
                             }
+
+                            if ($qsResult === \App\Models\ApplicationEvaluation::RESULT_EXCLUDED && $evaluation) {
+                                // List which mandatory documents are still unchecked — this
+                                // reflects the checklist state only, never who checked it.
+                                $checkedMandatory = is_array($evaluation->documentary_mandatory)
+                                    ? $evaluation->documentary_mandatory
+                                    : [];
+
+                                foreach (\App\Support\EvaluationChecklist::mandatoryRequirements() as $key => $label) {
+                                    if (! in_array($key, $checkedMandatory, true)) {
+                                        $missingMandatory[] = \Illuminate\Support\Str::after($label, '] ');
+                                    }
+                                }
+                            }
                         @endphp
 
-                        @if($qsResult !== \App\Models\ApplicationEvaluation::RESULT_PENDING_DOCUMENT_REVIEW)
+                        @if($isFinalDecision && $qsResult !== \App\Models\ApplicationEvaluation::RESULT_PENDING_DOCUMENT_REVIEW)
                             <div class="mt-5 rounded-xl border border-slate-200 bg-white p-4">
                                 <div class="flex flex-wrap items-center justify-between gap-2">
                                     <p class="text-xs font-bold uppercase tracking-wide text-slate-500">
-                                        Qualification Standards
+                                        {{ $qsResult === \App\Models\ApplicationEvaluation::RESULT_EXCLUDED ? 'Mandatory Requirements' : 'Qualification Standards' }}
                                     </p>
 
                                     <span class="inline-flex w-fit items-center rounded-full px-3 py-1 text-xs font-bold uppercase ring-1 {{ $qsStyle['badge'] }}">
@@ -338,10 +359,19 @@
                                         {{ $qsReason }}
                                     </p>
                                 @endif
+
+                                @if($missingMandatory)
+                                    <p class="mt-2 text-sm text-slate-700">Missing:</p>
+                                    <ul class="mt-1 list-inside list-disc space-y-1 text-sm text-slate-700">
+                                        @foreach($missingMandatory as $item)
+                                            <li>{{ $item }}</li>
+                                        @endforeach
+                                    </ul>
+                                @endif
                             </div>
                         @endif
 
-                        @if(filled($evaluation?->remarks))
+                        @if($isFinalDecision && filled($evaluation?->remarks))
                             <div class="mt-3 rounded-xl border border-slate-200 bg-white p-4">
                                 <p class="text-xs font-bold uppercase tracking-wide text-slate-500">
                                     Evaluator's Remarks

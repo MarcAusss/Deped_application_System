@@ -6,7 +6,6 @@ use App\Filament\Resources\Applications\ApplicationResource;
 use App\Filament\Resources\Approvals\Pages;
 use App\Models\Application;
 use App\Models\ApplicationEvaluation;
-use App\Support\EvaluationChecklist;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
@@ -80,6 +79,13 @@ class ApprovalResource extends Resource
                     ->sortable(),
             ])
 
+            ->defaultGroup(
+                Tables\Grouping\Group::make('job_position_id')
+                    ->label('Position')
+                    ->getTitleFromRecordUsing(fn ($record) => $record->jobPosition->title ?? 'Position No Longer Available')
+                    ->collapsible()
+            )
+
             ->defaultSort('updated_at', 'desc')
 
             ->recordActionsColumnLabel('Actions')
@@ -112,25 +118,15 @@ class ApprovalResource extends Resource
                     ->modalDescription('This undoes the Qualified decision and moves the application back to the main Applications list for reconsideration.')
                     ->modalSubmitActionLabel('Yes, restore')
                     ->action(function ($record) {
-                        $evaluation = $record->evaluation;
-                        $newStatus = 'pending';
-
-                        if ($evaluation) {
-                            $result = EvaluationChecklist::computeResult(
-                                $evaluation->documentary_mandatory,
-                                $evaluation->qs_education_met,
-                                $evaluation->qs_experience_met,
-                                $evaluation->qs_training_met,
-                                $evaluation->qs_eligibility_met,
-                                currentlyExcluded: $evaluation->result === ApplicationEvaluation::RESULT_EXCLUDED,
-                            );
-
-                            $newStatus = match ($result) {
-                                ApplicationEvaluation::RESULT_QUALIFIED => 'evaluated',
-                                ApplicationEvaluation::RESULT_EXCLUDED => 'excluded',
-                                default => 'pending',
-                            };
-                        }
+                        // Restore to whatever the evaluator's own saved verdict actually
+                        // was — recomputing from the raw checklist fields (as this used
+                        // to) can diverge from that (e.g. "all QS met" always overrides a
+                        // stored Excluded result), silently erasing a real Excluded call.
+                        $newStatus = match ($record->evaluation?->result) {
+                            ApplicationEvaluation::RESULT_QUALIFIED, ApplicationEvaluation::RESULT_NOT_QUALIFIED => 'evaluated',
+                            ApplicationEvaluation::RESULT_EXCLUDED => 'excluded',
+                            default => 'pending',
+                        };
 
                         $record->update(['status' => $newStatus]);
 

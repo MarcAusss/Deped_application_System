@@ -10,7 +10,8 @@ $stmt = portal_pdo()->prepare(
             jp.title AS job_title, jp.is_open AS job_is_open, jp.until AS job_until, jp.until_time AS job_until_time,
             cn.control_number,
             e.result AS eval_result, e.remarks AS eval_remarks,
-            e.qs_education_met, e.qs_experience_met, e.qs_training_met, e.qs_eligibility_met
+            e.qs_education_met, e.qs_experience_met, e.qs_training_met, e.qs_eligibility_met,
+            e.documentary_mandatory
      FROM applications a
      LEFT JOIN job_positions jp ON jp.id = a.job_position_id
      LEFT JOIN application_control_numbers cn ON cn.application_id = a.id
@@ -42,7 +43,7 @@ $firstName = explode(' ', $user->name)[0];
 $statusMeta = [
     'pending' => ['badge' => 'bg-slate-100 text-slate-600 ring-slate-200', 'step' => 2, 'tone' => 'neutral', 'terminal' => false, 'next' => 'Your application is currently under review by our evaluators. You will be updated here once the initial evaluation is complete.'],
     'evaluated' => ['badge' => 'bg-blue-50 text-blue-700 ring-blue-200', 'step' => 3, 'tone' => 'positive', 'terminal' => false, 'next' => 'Your application has been evaluated and meets the qualification standards. It is now awaiting the final hiring decision.'],
-    'excluded' => ['badge' => 'bg-red-50 text-red-700 ring-red-200', 'step' => 3, 'tone' => 'negative', 'terminal' => false, 'next' => 'Your application did not meet the required qualification standards for this position. No further action is needed.'],
+    'excluded' => ['badge' => 'bg-red-50 text-red-700 ring-red-200', 'step' => 3, 'tone' => 'negative', 'terminal' => false, 'next' => 'Your application has been evaluated. It is now awaiting the final decision.'],
     'qualified' => ['badge' => 'bg-green-50 text-green-700 ring-green-200', 'step' => 3, 'tone' => 'positive', 'terminal' => true, 'next' => 'Congratulations! Your application has been marked Qualified. Please wait to be contacted regarding the next steps.'],
     'disqualified' => ['badge' => 'bg-red-50 text-red-700 ring-red-200', 'step' => 3, 'tone' => 'negative', 'terminal' => true, 'next' => 'Your application was not selected for this position. Thank you for taking the time to apply.'],
 ];
@@ -52,9 +53,49 @@ function qs_style(?string $result): array
 {
     return match ($result) {
         'qualified' => ['label' => 'Meet the QS', 'badge' => 'bg-green-50 text-green-700 ring-green-200'],
-        'not_qualified', 'excluded' => ['label' => 'Did not Meet the QS', 'badge' => 'bg-red-50 text-red-700 ring-red-200'],
+        'not_qualified' => ['label' => 'Did not Meet the QS', 'badge' => 'bg-red-50 text-red-700 ring-red-200'],
+        'excluded' => ['label' => 'Did Not Meet The Mandatory Requirements', 'badge' => 'bg-red-50 text-red-700 ring-red-200'],
         default => ['label' => 'Pending', 'badge' => 'bg-slate-100 text-slate-600 ring-slate-200'],
     };
+}
+
+/**
+ * Mirrors App\Support\EvaluationChecklist::mandatoryRequirements() — kept
+ * as its own local copy rather than calling into the Laravel app, matching
+ * how qs_style()/disqualified_categories() above are already independent
+ * reimplementations for this pure-PHP portal.
+ *
+ * @return array<string, string>
+ */
+function mandatory_requirements(): array
+{
+    return [
+        'letter_of_intent' => 'Letter of Intent addressed to the Head of Office or Highest Human Resource Officer',
+        'eligibility_certificate' => 'Photocopy of Certificate of Eligibility/Report of Rating, if applicable',
+        'academic_records' => 'Photocopy of Scholastic/Academic Records such as Transcript of Records (TOR) and Diploma, including graduate and post-graduate units/degrees, if available',
+        'pds_work_experience' => 'Duly accomplished Personal Data Sheet (PDS, CS Form No. 212, Revised 2017) and Work Experience Sheet, if applicable',
+        'checklist_omnibus_sworn' => 'Checklist of Requirements and Omnibus Sworn Statement on the CAV of documents submitted and Data Privacy Consent Form',
+    ];
+}
+
+/**
+ * Which mandatory requirements are still unchecked — document names only,
+ * never who checked (or didn't check) them.
+ *
+ * @return array<int, string>
+ */
+function missing_mandatory_requirements(object $app): array
+{
+    $checked = json_decode($app->documentary_mandatory ?? '[]', true) ?: [];
+
+    $missing = [];
+    foreach (mandatory_requirements() as $key => $label) {
+        if (!in_array($key, $checked, true)) {
+            $missing[] = $label;
+        }
+    }
+
+    return $missing;
 }
 
 function disqualified_categories(object $app): array
@@ -127,16 +168,24 @@ require __DIR__.'/_layout_head.php';
                 <?php foreach ($applications as $app):
                     $meta = $statusMeta[$app->status] ?? $statusMeta['pending'];
                     $currentStep = $meta['step'];
+                    // The badge, Mandatory Requirements/QS box, and Evaluator's Remarks
+                    // all stay generic until the admin makes the final Qualified/
+                    // Disqualified call — the evaluator's working verdict (Evaluated/
+                    // Excluded) isn't shown to the applicant before then.
+                    $isFinalDecision = in_array($app->status, ['qualified', 'disqualified'], true);
                     $stepLabels = [1 => 'Submitted', 2 => $currentStep > 2 ? 'Evaluated' : 'For Evaluation', 3 => $meta['terminal'] ? ucfirst($app->status) : 'For Final Qualification'];
                     $jobOpen = $app->job_is_open && !job_deadline_passed($app->job_until, $app->job_until_time);
                     $canEdit = $app->status === 'pending' && $jobOpen;
                     $qs = qs_style($app->eval_result);
                     $qsReason = null;
-                    if (in_array($app->eval_result, ['not_qualified', 'excluded'], true)) {
+                    $missingMandatory = [];
+                    if ($app->eval_result === 'not_qualified') {
                         $cats = disqualified_categories($app);
                         if ($cats) {
                             $qsReason = 'Did not Meet the QS: '.implode(', ', $cats).'.';
                         }
+                    } elseif ($app->eval_result === 'excluded') {
+                        $missingMandatory = missing_mandatory_requirements($app);
                     }
                 ?>
                 <article class="mb-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -149,7 +198,7 @@ require __DIR__.'/_layout_head.php';
                             <p class="mt-1 text-sm text-slate-500">Applied on <?= portal_e(date('F d, Y', strtotime($app->created_at))) ?></p>
                         </div>
                         <div class="flex items-center gap-3">
-                            <span class="inline-flex w-fit items-center rounded-full px-4 py-1.5 text-xs font-bold uppercase ring-1 <?= $meta['badge'] ?>"><?= portal_e(ucfirst($app->status)) ?></span>
+                            <span class="inline-flex w-fit items-center rounded-full px-4 py-1.5 text-xs font-bold uppercase ring-1 <?= $isFinalDecision ? $meta['badge'] : 'bg-slate-100 text-slate-600 ring-slate-200' ?>"><?= $isFinalDecision ? portal_e(ucfirst($app->status)) : 'Pending' ?></span>
                             <?php if ($canEdit): ?>
                                 <a href="<?= portal_url('apply.php?application='.$app->id) ?>" title="Once the application period has ended, you can no longer edit or update your application." class="inline-flex w-fit items-center gap-1.5 rounded-full border border-government-navy px-4 py-1.5 text-xs font-bold text-government-navy transition hover:bg-government-navy hover:text-white">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-3.5 w-3.5">
@@ -169,15 +218,23 @@ require __DIR__.'/_layout_head.php';
                             $isTerminalStep = $isCurrent && $meta['terminal'];
                             $isFinalNegative = $isTerminalStep && $meta['tone'] === 'negative';
                             $isFinalPositive = $isTerminalStep && $meta['tone'] === 'positive';
+                            // Step 3 reached but not yet terminal (Evaluated/Excluded — still
+                            // awaiting the admin's Qualified/Disqualified call): render it as
+                            // upcoming/not-yet-reached, not "in progress".
+                            $isAwaitingAdmin = $isCurrent && $stepNumber === 3 && !$meta['terminal'];
                             $circleStyle = match (true) {
                                 $isFinalNegative => 'border-red-600 bg-red-600 text-white',
                                 $isFinalPositive => 'border-green-600 bg-green-600 text-white',
-                                $isCurrent && $meta['tone'] === 'negative' => 'border-red-600 bg-red-600 text-white',
+                                $isAwaitingAdmin => 'border-slate-300 bg-white text-slate-400',
                                 $isCurrent => 'border-government-navy bg-government-navy text-white',
                                 $isDone => 'border-government-navy bg-white text-government-navy',
                                 default => 'border-slate-300 bg-white text-slate-400',
                             };
-                            $labelStyle = $isCurrent ? ($meta['tone'] === 'negative' ? 'text-red-600' : 'text-government-navy') : ($isDone ? 'text-slate-600' : 'text-slate-400');
+                            $labelStyle = $isAwaitingAdmin
+                                ? 'text-slate-400'
+                                : ($isCurrent
+                                    ? ($isFinalNegative ? 'text-red-600' : 'text-government-navy')
+                                    : ($isDone ? 'text-slate-600' : 'text-slate-400'));
                         ?>
                             <div class="flex flex-col items-center text-center">
                                 <div class="flex items-center">
@@ -192,17 +249,25 @@ require __DIR__.'/_layout_head.php';
                         <?php endforeach; ?>
                     </div>
 
-                    <?php if ($app->eval_result): ?>
+                    <?php if ($isFinalDecision && $app->eval_result): ?>
                         <div class="mt-5 rounded-xl border border-slate-200 bg-white p-4">
                             <div class="flex flex-wrap items-center justify-between gap-2">
-                                <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Qualification Standards</p>
+                                <p class="text-xs font-bold uppercase tracking-wide text-slate-500"><?= $app->eval_result === 'excluded' ? 'Mandatory Requirements' : 'Qualification Standards' ?></p>
                                 <span class="inline-flex w-fit items-center rounded-full px-3 py-1 text-xs font-bold uppercase ring-1 <?= $qs['badge'] ?>"><?= portal_e($qs['label']) ?></span>
                             </div>
                             <?php if ($qsReason): ?><p class="mt-2 text-sm text-slate-700"><?= portal_e($qsReason) ?></p><?php endif; ?>
+                            <?php if ($missingMandatory): ?>
+                                <p class="mt-2 text-sm text-slate-700">Missing:</p>
+                                <ul class="mt-1 list-inside list-disc space-y-1 text-sm text-slate-700">
+                                    <?php foreach ($missingMandatory as $item): ?>
+                                        <li><?= portal_e($item) ?></li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            <?php endif; ?>
                         </div>
                     <?php endif; ?>
 
-                    <?php if ($app->eval_remarks): ?>
+                    <?php if ($isFinalDecision && $app->eval_remarks): ?>
                         <div class="mt-3 rounded-xl border border-slate-200 bg-white p-4">
                             <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Evaluator's Remarks</p>
                             <p class="mt-1 text-sm text-slate-700"><?= portal_e($app->eval_remarks) ?></p>

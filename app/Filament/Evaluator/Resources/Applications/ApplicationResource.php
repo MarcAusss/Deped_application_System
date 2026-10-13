@@ -6,6 +6,7 @@ use App\Filament\Resources\Applications\ApplicationResource as ApplicationDetail
 use App\Models\Application;
 use App\Models\ApplicationEvaluation;
 use App\Models\ApplicationStatusLog;
+use App\Filament\Evaluator\Resources\Evaluated\EvaluatedResource;
 use App\Exports\ApplicationsExport;
 use App\Support\EvaluationChecklist;
 use Maatwebsite\Excel\Facades\Excel;
@@ -53,18 +54,52 @@ class ApplicationResource extends Resource
 
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
-        return parent::getEloquentQuery()->whereNotIn('status', ['disqualified', 'qualified']);
+        return parent::getEloquentQuery()->whereNotIn('status', ['disqualified', 'qualified', 'evaluated', 'excluded']);
     }
 
     public static function getRecordRouteBindingEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
-        // Disqualified/qualified applications are excluded from the list query above
-        // (they live in the Archive/Approvals pages instead), but the View page
-        // still needs to resolve them — e.g. from those pages' "View" link.
+        // Disqualified/qualified/evaluated/excluded applications are excluded from the
+        // list query above (they live in the Evaluated Status/Archive/Approvals pages
+        // instead), but the View/Edit pages still need to resolve them — e.g. from
+        // those pages' "View" link, or when an evaluation action updates this same
+        // record and Filament re-fetches it afterward.
         return parent::getEloquentQuery();
     }
 
-    
+    // Public (not private) and called via the fully-qualified class name,
+    // never static:: / self:: — Filament's closure-evaluation mechanism
+    // rebinds ->disabled()/->tooltip() closures to a different scope, which
+    // breaks both late-static-binding resolution and private-method
+    // visibility from inside them (confirmed crash: "Method ...
+    // isClaimedByAnotherEvaluator does not exist", falling through to
+    // Macroable::__callStatic because static:: no longer pointed at this
+    // class once rebound).
+    public static function isClaimedByAnotherEvaluator($record): bool
+    {
+        return $record->evaluation
+            && $record->evaluation->evaluator_id
+            && $record->evaluation->evaluator_id !== auth()->id();
+    }
+
+    /**
+     * Evaluation only opens once the position's application period has
+     * actually ended — evaluators shouldn't start scoring applicants while
+     * the position is still accepting new submissions. "Ended" means either
+     * explicitly closed (is_open = false) or its deadline has passed; a
+     * closed position with no deadline ever set must still count as ended,
+     * not stay open forever just because there's no date to compare against.
+     */
+    public static function isPastApplicationDeadline($record): bool
+    {
+        $job = $record->jobPosition;
+
+        if (! $job) {
+            return true;
+        }
+
+        return ! $job->is_open || $job->hasDeadlinePassed();
+    }
 
 
 
@@ -467,9 +502,24 @@ class ApplicationResource extends Resource
                             ->modalDescription('This marks the applicant as Excluded from further consideration. You can change this later by re-editing the checklist.')
                             ->modalSubmitActionLabel('Yes, exclude')
                             ->action(function ($livewire) {
+                                // Persist whatever is currently on screen (checked
+                                // requirements, QS answers, remarks) first — this
+                                // action used to skip straight to a raw DB update of
+                                // just the "result" column, silently discarding every
+                                // other field the evaluator had filled in.
+                                $livewire->save(shouldRedirect: false);
+
                                 $application = $livewire->getRecord();
 
-                                $application->evaluation()->update(['result' => ApplicationEvaluation::RESULT_EXCLUDED]);
+                                // save() above may have just computed "pending document
+                                // review" (null evaluated_at) if the checklist wasn't
+                                // complete — Exclude is a deliberate, final call the
+                                // evaluator can make regardless of checklist completeness,
+                                // so it must stamp evaluated_at itself, not inherit null.
+                                $application->evaluation()->update([
+                                    'result' => ApplicationEvaluation::RESULT_EXCLUDED,
+                                    'evaluated_at' => now(),
+                                ]);
 
                                 if (in_array($application->status, ['pending', 'evaluated'], true)) {
                                     $application->update(['status' => 'excluded']);
@@ -482,19 +532,34 @@ class ApplicationResource extends Resource
                                     ]);
                                 }
 
+                                // No email here — Excluded is still the evaluator's working
+                                // verdict, not the admin's final call. The applicant is only
+                                // emailed once the admin actually marks Qualified/Disqualified.
+
                                 Notification::make()
                                     ->title('Applicant excluded')
                                     ->success()
                                     ->send();
 
-                                return redirect($livewire->getResource()::getUrl('edit', ['record' => $application->id]));
+                                // Land back on whichever list this evaluator actually came
+                                // from — Evaluated Status if that's where they opened this
+                                // from, otherwise the main Applications queue. Read from the
+                                // Livewire component's own property, not request()->query()
+                                // — this action runs as a Livewire AJAX call to its own
+                                // endpoint, which carries no query string from the page the
+                                // evaluator is actually looking at.
+                                $redirectUrl = $livewire->from === 'evaluated'
+                                    ? EvaluatedResource::getUrl('index')
+                                    : $livewire->getResource()::getUrl('index');
+
+                                return redirect($redirectUrl);
                             }),
 
                         Action::make('save_evaluation')
                             ->label('Save Changes')
                             ->outlined()
                             ->extraAttributes(['style' => 'box-shadow:inset 0 0 0 1px #1e3a8a;color:#1e3a8a;background-color:transparent;'])
-                            ->action(fn ($livewire) => $livewire->save(shouldRedirect: false)),
+                            ->action(fn ($livewire) => $livewire->save()),
                     ])
                         ->alignBetween(),
                 ])
@@ -564,6 +629,13 @@ class ApplicationResource extends Resource
                     ->toggleable(),
             ])
 
+            ->defaultGroup(
+                Tables\Grouping\Group::make('job_position_id')
+                    ->label('Position')
+                    ->getTitleFromRecordUsing(fn ($record) => $record->jobPosition->title ?? 'Position No Longer Available')
+                    ->collapsible()
+            )
+
             ->defaultSort('created_at', 'desc')
 
             ->recordActionsColumnLabel('Actions')
@@ -597,7 +669,19 @@ class ApplicationResource extends Resource
                 Action::make('edit')
                     ->label('Evaluate')
                     ->icon('heroicon-o-pencil')
-                    ->url(fn ($record) => static::getUrl('edit', ['record' => $record])),
+                    ->url(fn ($record) => static::getUrl('edit', ['record' => $record]))
+                    ->disabled(fn ($record) => ApplicationResource::isClaimedByAnotherEvaluator($record) || !ApplicationResource::isPastApplicationDeadline($record))
+                    ->tooltip(function ($record) {
+                        if (ApplicationResource::isClaimedByAnotherEvaluator($record)) {
+                            return 'Already being evaluated by another evaluator.';
+                        }
+
+                        if (!ApplicationResource::isPastApplicationDeadline($record)) {
+                            return 'Evaluation opens once the application period for this position has closed.';
+                        }
+
+                        return null;
+                    }),
             ])
 
              

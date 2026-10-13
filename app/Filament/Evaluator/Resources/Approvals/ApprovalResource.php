@@ -32,7 +32,7 @@ class ApprovalResource extends Resource
 
     protected static ?string $slug = 'approvals';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 3;
 
     public static function getNavigationGroup(): ?string
     {
@@ -80,6 +80,13 @@ class ApprovalResource extends Resource
                     ->dateTime('M d, Y')
                     ->sortable(),
             ])
+
+            ->defaultGroup(
+                Tables\Grouping\Group::make('job_position_id')
+                    ->label('Position')
+                    ->getTitleFromRecordUsing(fn ($record) => $record->jobPosition->title ?? 'Position No Longer Available')
+                    ->collapsible()
+            )
 
             ->defaultSort('updated_at', 'desc')
 

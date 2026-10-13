@@ -2,11 +2,14 @@
 
 namespace App\Filament\Resources\Applications;
 
+use App\Mail\ApplicationDisqualified;
+use App\Mail\ApplicationQualified;
 use App\Models\Application;
 use App\Models\ApplicationEvaluation;
 use App\Filament\Resources\Applications\Pages;
 use App\Filament\Resources\Applications\RelationManagers;
 use App\Support\EvaluationChecklist;
+use Illuminate\Support\Facades\Mail;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Grid;
@@ -39,7 +42,7 @@ class ApplicationResource extends Resource
 
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
-        return parent::getEloquentQuery()->whereNotIn('status', ['disqualified', 'qualified']);
+        return parent::getEloquentQuery()->whereNotIn('status', ['disqualified', 'qualified'])->with('evaluation');
     }
 
     public static function getRecordRouteBindingEloquentQuery(): \Illuminate\Database\Eloquent\Builder
@@ -545,15 +548,34 @@ class ApplicationResource extends Resource
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'pending'      => 'gray',
-                        'evaluated'    => 'warning',
-                        'excluded'     => 'danger',
-                        'qualified'    => 'success',
-                        'disqualified' => 'danger',
-                        default        => 'gray',
+                    ->color(function (string $state, $record): string {
+                        // "Evaluated" alone doesn't tell the admin whether this
+                        // applicant is heading toward Qualified or Disqualified —
+                        // show the actual QS outcome instead so that's visible
+                        // without opening View on every single row.
+                        if ($state === 'evaluated') {
+                            return $record->evaluation?->result === ApplicationEvaluation::RESULT_QUALIFIED
+                                ? 'success'
+                                : 'warning';
+                        }
+
+                        return match ($state) {
+                            'pending'      => 'gray',
+                            'excluded'     => 'danger',
+                            'qualified'    => 'success',
+                            'disqualified' => 'danger',
+                            default        => 'gray',
+                        };
                     })
-                    ->formatStateUsing(fn (string $state): string => ucfirst($state)),
+                    ->formatStateUsing(function (string $state, $record): string {
+                        if ($state === 'evaluated') {
+                            return $record->evaluation?->result === ApplicationEvaluation::RESULT_QUALIFIED
+                                ? 'Meet the QS'
+                                : 'Did Not Meet the QS';
+                        }
+
+                        return ucfirst($state);
+                    }),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Applied On')
@@ -561,6 +583,13 @@ class ApplicationResource extends Resource
                     ->sortable()
                     ->toggleable(),
             ])
+
+            ->defaultGroup(
+                Tables\Grouping\Group::make('job_position_id')
+                    ->label('Position')
+                    ->getTitleFromRecordUsing(fn ($record) => $record->jobPosition->title ?? 'Position No Longer Available')
+                    ->collapsible()
+            )
 
             ->defaultSort('created_at', 'desc')
 
@@ -611,6 +640,13 @@ class ApplicationResource extends Resource
                 'changed_by' => auth()->id(),
             ]);
 
+            try {
+                $record->load(['jobPosition', 'profile', 'evaluation']);
+                Mail::to($record->profile->email)->send(new ApplicationQualified($record));
+            } catch (\Throwable $exception) {
+                report($exception);
+            }
+
             \Filament\Notifications\Notification::make()
                 ->title('Application marked Qualified')
                 ->success()
@@ -634,6 +670,13 @@ class ApplicationResource extends Resource
                         'status' => 'disqualified',
                         'changed_by' => auth()->id(),
                     ]);
+
+                    try {
+                        $record->load(['jobPosition', 'profile', 'evaluation']);
+                        Mail::to($record->profile->email)->send(new ApplicationDisqualified($record));
+                    } catch (\Throwable $exception) {
+                        report($exception);
+                    }
 
                     \Filament\Notifications\Notification::make()
                         ->title('Application marked Disqualified')

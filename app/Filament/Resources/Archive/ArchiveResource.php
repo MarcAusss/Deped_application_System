@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Archive;
 use App\Filament\Resources\Applications\ApplicationResource;
 use App\Filament\Resources\Archive\Pages;
 use App\Models\Application;
+use App\Models\ApplicationEvaluation;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
@@ -78,6 +79,13 @@ class ArchiveResource extends Resource
                     ->sortable(),
             ])
 
+            ->defaultGroup(
+                Tables\Grouping\Group::make('job_position_id')
+                    ->label('Position')
+                    ->getTitleFromRecordUsing(fn ($record) => $record->jobPosition->title ?? 'Position No Longer Available')
+                    ->collapsible()
+            )
+
             ->defaultSort('updated_at', 'desc')
 
             ->recordActionsColumnLabel('Actions')
@@ -107,13 +115,22 @@ class ArchiveResource extends Resource
                     ->color('gray')
                     ->requiresConfirmation()
                     ->modalHeading('Restore Application')
-                    ->modalDescription('This moves the application out of the archive and back to evaluated status for reconsideration.')
+                    ->modalDescription('This moves the application out of the archive and back to its pre-decision status (Evaluated, or Excluded if that\'s what the evaluator originally set) for reconsideration.')
                     ->modalSubmitActionLabel('Yes, restore')
                     ->action(function ($record) {
-                        $record->update(['status' => 'evaluated']);
+                        // Restore to whatever the evaluator's own saved verdict actually
+                        // was — not a hardcoded 'evaluated', which silently erased an
+                        // Excluded verdict every time an admin undid a Disqualified call.
+                        $newStatus = match ($record->evaluation?->result) {
+                            ApplicationEvaluation::RESULT_EXCLUDED => 'excluded',
+                            ApplicationEvaluation::RESULT_QUALIFIED, ApplicationEvaluation::RESULT_NOT_QUALIFIED => 'evaluated',
+                            default => 'pending',
+                        };
+
+                        $record->update(['status' => $newStatus]);
 
                         $record->logs()->create([
-                            'status' => 'evaluated',
+                            'status' => $newStatus,
                             'changed_by' => Auth::id(),
                         ]);
 
