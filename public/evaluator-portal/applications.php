@@ -21,10 +21,10 @@ if ($jobFilter !== '' && ctype_digit((string) $jobFilter)) {
 }
 
 $sql = 'SELECT a.id, a.status, a.created_at,
-               jp.title AS job_title,
+               jp.title AS job_title, jp.is_open, jp.until, jp.until_time,
                cn.control_number,
                p.full_name, p.email,
-               e.evaluated_at, e.recommended
+               e.evaluated_at, e.recommended, e.evaluator_id, e.result
         FROM applications a
         LEFT JOIN job_positions jp ON jp.id = a.job_position_id
         LEFT JOIN application_control_numbers cn ON cn.application_id = a.id
@@ -38,12 +38,6 @@ $stmt->execute($params);
 $applications = $stmt->fetchAll();
 
 $jobs = portal_pdo()->query('SELECT id, title FROM job_positions ORDER BY title')->fetchAll();
-
-$statusBadge = [
-    'pending' => 'bg-slate-100 text-slate-600',
-    'evaluated' => 'bg-amber-100 text-amber-700',
-    'excluded' => 'bg-rose-100 text-rose-700',
-];
 
 $pageTitle = 'Applications | Evaluation Desk';
 require __DIR__.'/_layout_head.php';
@@ -130,6 +124,18 @@ require __DIR__.'/_layout_head.php';
                                 <tr><td colspan="10" class="px-4 py-10 text-center text-slate-500">No applications found.</td></tr>
                             <?php endif; ?>
                             <?php foreach ($applications as $app): ?>
+                                <?php
+                                    $claimedByOther = $app->evaluator_id && (int) $app->evaluator_id !== (int) $user->id;
+                                    $periodBlocked = $app->status === 'pending' && !eval_application_period_ended((object) [
+                                        'is_open' => $app->is_open,
+                                        'until' => $app->until,
+                                        'until_time' => $app->until_time,
+                                    ]);
+                                    $canEvaluate = !$claimedByOther && !$periodBlocked;
+                                    $blockedReason = $claimedByOther
+                                        ? 'Claimed by another evaluator'
+                                        : ($periodBlocked ? 'Application period is still open' : '');
+                                ?>
                                 <tr class="hover:bg-slate-50">
                                     <td class="px-4 py-3"><input type="checkbox" name="ids[]" value="<?= $app->id ?>" class="row-check"></td>
                                     <td class="px-4 py-3 font-mono text-xs"><?= evaluator_e($app->control_number ?: 'Not assigned') ?></td>
@@ -142,11 +148,22 @@ require __DIR__.'/_layout_head.php';
                                             <?= eval_bool($app->recommended) ? '<span class="text-emerald-600">&#10003;</span>' : '<span class="text-rose-500">&#10007;</span>' ?>
                                         <?php endif; ?>
                                     </td>
-                                    <td class="px-4 py-3"><span class="pill <?= $statusBadge[$app->status] ?? 'bg-slate-100 text-slate-600' ?>"><?= evaluator_e(ucfirst($app->status)) ?></span></td>
+                                    <td class="px-4 py-3">
+                                        <?php if ($app->status === 'pending'): ?>
+                                            <span class="pill bg-slate-100 text-slate-600">Pending</span>
+                                        <?php else: ?>
+                                            <?php [$qsLabel, $qsClasses] = eval_qs_outcome_badge($app->result); ?>
+                                            <span class="pill <?= $qsClasses ?>"><?= evaluator_e($qsLabel) ?></span>
+                                        <?php endif; ?>
+                                    </td>
                                     <td class="px-4 py-3 text-slate-500"><?= evaluator_e(date('M d, Y', strtotime($app->created_at))) ?></td>
                                     <td class="px-4 py-3 text-center">
                                         <a href="<?= evaluator_url('view.php?id='.$app->id) ?>" class="mr-2 font-bold text-slate-600 hover:text-evaluator-indigo">View</a>
-                                        <a href="<?= evaluator_url('evaluate.php?id='.$app->id) ?>" class="font-bold text-evaluator-indigo hover:underline">Evaluate</a>
+                                        <?php if ($canEvaluate): ?>
+                                            <a href="<?= evaluator_url('evaluate.php?id='.$app->id) ?>" class="font-bold text-evaluator-indigo hover:underline">Evaluate</a>
+                                        <?php else: ?>
+                                            <span class="cursor-not-allowed font-bold text-slate-300" title="<?= evaluator_e($blockedReason) ?>">Evaluate</span>
+                                        <?php endif; ?>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>

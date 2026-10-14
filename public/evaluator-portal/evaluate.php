@@ -24,27 +24,143 @@ $stmt = portal_pdo()->prepare('SELECT * FROM job_positions WHERE id = ?');
 $stmt->execute([$application->job_position_id]);
 $job = $stmt->fetch();
 
-// Lazily create the evaluation row, tagging the current evaluator only on
-// first creation — mirrors mutateFormDataBeforeFill()'s firstOrCreate().
-$stmt = portal_pdo()->prepare('SELECT id FROM application_evaluations WHERE application_id = ?');
+// Evaluation only opens once the position's application period has actually
+// ended — but that only gates STARTING a fresh evaluation on a still-pending
+// application. An application that's already been evaluated or excluded
+// must stay editable regardless of the position's current deadline (e.g. it
+// was later reopened/extended).
+if ($application->status === 'pending' && !eval_application_period_ended($job)) {
+    http_response_code(403);
+    require __DIR__.'/_error.php';
+    exit;
+}
+
+// Opening this page does NOT claim it — ownership is only assigned on save,
+// so an evaluator who opens this by accident and goes "Back to List" without
+// saving leaves it free for anyone, including themselves, to pick up later.
+$stmt = portal_pdo()->prepare('SELECT * FROM application_evaluations WHERE application_id = ?');
 $stmt->execute([$applicationId]);
-if (!$stmt->fetch()) {
+$existingEvaluation = $stmt->fetch();
+
+if ($existingEvaluation && $existingEvaluation->evaluator_id && (int) $existingEvaluation->evaluator_id !== (int) $user->id) {
+    http_response_code(403);
+    require __DIR__.'/_error.php';
+    exit;
+}
+
+if (!$existingEvaluation) {
     portal_insert('application_evaluations', [
         'application_id' => $applicationId,
-        'evaluator_id' => $user->id,
         'result' => EVAL_RESULT_PENDING,
         'created_at' => date('Y-m-d H:i:s'),
         'updated_at' => date('Y-m-d H:i:s'),
     ]);
 }
 
+/**
+ * True once this evaluator has actually saved something — the evaluation
+ * row's updated_at only moves past created_at when an update() has
+ * happened, which only occurs via Save/Exclude. Merely opening the page
+ * (which creates the row to claim it) does not.
+ */
+function eval_has_unsaved_claim_only(int $applicationId, int $userId): bool
+{
+    $stmt = portal_pdo()->prepare('SELECT evaluator_id, created_at, updated_at FROM application_evaluations WHERE application_id = ?');
+    $stmt->execute([$applicationId]);
+    $evaluation = $stmt->fetch();
+
+    if (!$evaluation) {
+        return false;
+    }
+
+    if ($evaluation->evaluator_id && (int) $evaluation->evaluator_id !== $userId) {
+        return false;
+    }
+
+    return $evaluation->created_at === $evaluation->updated_at;
+}
+
+/**
+ * Persists the checklist/QS/remarks fields currently on screen and returns
+ * the newly computed result — shared by both the "save" and "exclude"
+ * actions so Exclude never again silently discards whatever was checked.
+ */
+function eval_save_checklist(int $applicationId, int $userId): string
+{
+    $mandatorySelected = $_POST['documentary_mandatory'] ?? [];
+    $otherSelected = $_POST['documentary_other'] ?? [];
+    $mandatorySelected = array_values(array_intersect($mandatorySelected, array_keys(eval_mandatory_requirements())));
+    $otherSelected = array_values(array_intersect($otherSelected, array_keys(eval_other_requirements())));
+
+    $qsValue = fn (string $field) => match ($_POST[$field] ?? '') {
+        '1' => true,
+        '0' => false,
+        default => null,
+    };
+    $qsEducation = $qsValue('qs_education_met');
+    $qsExperience = $qsValue('qs_experience_met');
+    $qsTraining = $qsValue('qs_training_met');
+    $qsEligibility = $qsValue('qs_eligibility_met');
+    $remarks = trim($_POST['remarks'] ?? '') ?: null;
+
+    $stmt = portal_pdo()->prepare('SELECT result FROM application_evaluations WHERE application_id = ?');
+    $stmt->execute([$applicationId]);
+    $preUpdateResult = $stmt->fetch()->result ?? EVAL_RESULT_PENDING;
+
+    portal_pdo()->prepare(
+        'UPDATE application_evaluations
+         SET documentary_mandatory = :dm, documentary_other = :do_, qs_education_met = :qe,
+             qs_experience_met = :qx, qs_training_met = :qt, qs_eligibility_met = :ql,
+             remarks = :remarks, evaluator_id = COALESCE(evaluator_id, :evaluator_id), updated_at = :updated_at
+         WHERE application_id = :aid'
+    )->execute([
+        'dm' => json_encode($mandatorySelected),
+        'do_' => json_encode($otherSelected),
+        'qe' => $qsEducation === null ? null : (int) $qsEducation,
+        'qx' => $qsExperience === null ? null : (int) $qsExperience,
+        'qt' => $qsTraining === null ? null : (int) $qsTraining,
+        'ql' => $qsEligibility === null ? null : (int) $qsEligibility,
+        'remarks' => $remarks,
+        'evaluator_id' => $userId,
+        'updated_at' => date('Y-m-d H:i:s'),
+        'aid' => $applicationId,
+    ]);
+
+    return eval_compute_result(
+        $mandatorySelected, $qsEducation, $qsExperience, $qsTraining, $qsEligibility,
+        currentlyExcluded: $preUpdateResult === EVAL_RESULT_EXCLUDED
+    );
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_verify();
     $action = $_POST['action'] ?? '';
 
+    if ($action === 'cancel') {
+        // Leaving without ever saving releases the claim, so this
+        // application is free again for any evaluator — including this
+        // one — to pick up later.
+        if (eval_has_unsaved_claim_only($applicationId, $user->id)) {
+            portal_pdo()->prepare('DELETE FROM application_evaluations WHERE application_id = ?')->execute([$applicationId]);
+        }
+
+        header('Location: '.evaluator_url('applications.php'));
+        exit;
+    }
+
     if ($action === 'exclude') {
-        portal_pdo()->prepare("UPDATE application_evaluations SET result = ?, updated_at = ? WHERE application_id = ?")
-            ->execute([EVAL_RESULT_EXCLUDED, date('Y-m-d H:i:s'), $applicationId]);
+        // Persist whatever is currently on screen (checked requirements, QS
+        // answers, remarks) first — this used to skip straight to forcing
+        // "result", silently discarding every other field the evaluator had
+        // filled in.
+        eval_save_checklist($applicationId, $user->id);
+
+        // The save above may have just computed "pending document review"
+        // (null evaluated_at) if the checklist wasn't complete — Exclude is
+        // a deliberate, final call the evaluator can make regardless of
+        // checklist completeness, so it must stamp evaluated_at itself.
+        portal_pdo()->prepare("UPDATE application_evaluations SET result = ?, evaluated_at = ?, updated_at = ? WHERE application_id = ?")
+            ->execute([EVAL_RESULT_EXCLUDED, date('Y-m-d H:i:s'), date('Y-m-d H:i:s'), $applicationId]);
 
         if (in_array($application->status, ['pending', 'evaluated'], true)) {
             $stmt = portal_pdo()->prepare('SELECT remarks FROM application_evaluations WHERE application_id = ?');
@@ -70,55 +186,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'save') {
-        $mandatorySelected = $_POST['documentary_mandatory'] ?? [];
-        $otherSelected = $_POST['documentary_other'] ?? [];
-        $mandatorySelected = array_values(array_intersect($mandatorySelected, array_keys(eval_mandatory_requirements())));
-        $otherSelected = array_values(array_intersect($otherSelected, array_keys(eval_other_requirements())));
-
-        $qsValue = fn (string $field) => match ($_POST[$field] ?? '') {
-            '1' => true,
-            '0' => false,
-            default => null,
-        };
-        $qsEducation = $qsValue('qs_education_met');
-        $qsExperience = $qsValue('qs_experience_met');
-        $qsTraining = $qsValue('qs_training_met');
-        $qsEligibility = $qsValue('qs_eligibility_met');
         $remarks = trim($_POST['remarks'] ?? '') ?: null;
-
-        // Read the pre-update result for the currentlyExcluded check — result
-        // is never itself a form field, matches afterSave()'s behavior.
-        $stmt = portal_pdo()->prepare('SELECT result FROM application_evaluations WHERE application_id = ?');
-        $stmt->execute([$applicationId]);
-        $preUpdateResult = $stmt->fetch()->result ?? EVAL_RESULT_PENDING;
+        $result = eval_save_checklist($applicationId, $user->id);
 
         portal_pdo()->prepare(
-            'UPDATE application_evaluations
-             SET documentary_mandatory = :dm, documentary_other = :do_, qs_education_met = :qe,
-                 qs_experience_met = :qx, qs_training_met = :qt, qs_eligibility_met = :ql,
-                 remarks = :remarks, updated_at = :updated_at
-             WHERE application_id = :aid'
+            'UPDATE application_evaluations SET evaluated_at = ?, result = ?, recommended = ? WHERE application_id = ?'
         )->execute([
-            'dm' => json_encode($mandatorySelected),
-            'do_' => json_encode($otherSelected),
-            'qe' => $qsEducation === null ? null : (int) $qsEducation,
-            'qx' => $qsExperience === null ? null : (int) $qsExperience,
-            'qt' => $qsTraining === null ? null : (int) $qsTraining,
-            'ql' => $qsEligibility === null ? null : (int) $qsEligibility,
-            'remarks' => $remarks,
-            'updated_at' => date('Y-m-d H:i:s'),
-            'aid' => $applicationId,
-        ]);
-
-        $result = eval_compute_result(
-            $mandatorySelected, $qsEducation, $qsExperience, $qsTraining, $qsEligibility,
-            currentlyExcluded: $preUpdateResult === EVAL_RESULT_EXCLUDED
-        );
-
-        portal_pdo()->prepare(
-            'UPDATE application_evaluations SET evaluator_id = ?, evaluated_at = ?, result = ?, recommended = ? WHERE application_id = ?'
-        )->execute([
-            $user->id,
             $result === EVAL_RESULT_PENDING ? null : date('Y-m-d H:i:s'),
             $result,
             $result === EVAL_RESULT_QUALIFIED ? 1 : 0,
@@ -230,7 +303,10 @@ function qs_button(string $field, ?bool $current, bool $wantTrue): void
     <div class="min-w-0 flex-1">
         <main class="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
 
-            <a href="<?= evaluator_url('applications.php') ?>" class="mb-4 inline-flex items-center gap-1.5 text-sm font-bold text-slate-500 hover:text-evaluator-indigo">&larr; Back to Applications</a>
+            <form method="POST" action="<?= evaluator_url('evaluate.php?id='.$applicationId) ?>" class="mb-4 inline-block">
+                <?= evaluator_csrf_field() ?>
+                <button type="submit" formnovalidate name="action" value="cancel" class="inline-flex items-center gap-1.5 text-sm font-bold text-slate-500 hover:text-evaluator-indigo">&larr; Back to List</button>
+            </form>
 
             <?php if (flash_get('success')): ?>
                 <div class="mb-6 rounded-xl border border-green-200 bg-green-50 p-4 text-green-800"><?= evaluator_e(flash_get('success')) ?></div>

@@ -39,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             );
 
             $newStatus = match ($result) {
-                EVAL_RESULT_QUALIFIED => 'evaluated',
+                EVAL_RESULT_QUALIFIED, EVAL_RESULT_NOT_QUALIFIED => 'evaluated',
                 EVAL_RESULT_EXCLUDED => 'excluded',
                 default => 'pending',
             };
@@ -76,6 +76,7 @@ $stmt->execute($params);
 $applications = $stmt->fetchAll();
 
 $jobs = $pdo->query('SELECT id, title FROM job_positions ORDER BY title')->fetchAll();
+$positionGroups = admin_group_by_position($applications);
 
 $pageTitle = 'Qualified Applications | Administration';
 require __DIR__.'/_layout_head.php';
@@ -111,43 +112,50 @@ require __DIR__.'/_layout_head.php';
                 </div>
             </form>
 
-            <div class="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <table class="min-w-full divide-y divide-slate-200 text-sm">
-                    <thead class="bg-slate-50">
-                        <tr>
-                            <th class="px-4 py-3 text-left font-bold text-slate-600">Control #</th>
-                            <th class="px-4 py-3 text-left font-bold text-slate-600">Applicant Name</th>
-                            <th class="px-4 py-3 text-left font-bold text-slate-600">Email</th>
-                            <th class="px-4 py-3 text-left font-bold text-slate-600">Position Applied</th>
-                            <th class="px-4 py-3 text-left font-bold text-slate-600">Qualified On</th>
-                            <th class="px-4 py-3 text-center font-bold text-slate-600">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100">
-                        <?php if (empty($applications)): ?>
-                            <tr><td colspan="6" class="px-4 py-10 text-center text-slate-500">No qualified applications.</td></tr>
-                        <?php endif; ?>
-                        <?php foreach ($applications as $app): ?>
-                            <tr class="hover:bg-slate-50">
-                                <td class="px-4 py-3 font-mono text-xs"><?= admin_e($app->control_number ?: 'Not assigned') ?></td>
-                                <td class="px-4 py-3 font-bold text-slate-800"><?= admin_e($app->full_name ?? '—') ?></td>
-                                <td class="px-4 py-3 text-slate-600"><?= admin_e($app->email ?? '—') ?></td>
-                                <td class="px-4 py-3 text-slate-600"><?= admin_e($app->job_title ?? '—') ?></td>
-                                <td class="px-4 py-3 text-slate-500"><?= admin_e(date('M d, Y', strtotime($app->updated_at))) ?></td>
-                                <td class="px-4 py-3 text-center">
-                                    <a href="<?= admin_url('application-view.php?id='.$app->id) ?>" class="mr-3 font-bold text-slate-600 hover:text-admin-indigo">View</a>
-                                    <form method="POST" action="<?= admin_url('approvals.php') ?>" class="inline" onsubmit="return confirm('This undoes the Qualified decision and moves the application back to the main Applications list for reconsideration.');">
-                                        <?= admin_csrf_field() ?>
-                                        <input type="hidden" name="action" value="restore">
-                                        <input type="hidden" name="id" value="<?= $app->id ?>">
-                                        <button type="submit" class="font-bold text-admin-indigo hover:underline">Restore</button>
-                                    </form>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
+            <?php if (empty($applications)): ?>
+                <div class="rounded-2xl border border-slate-200 bg-white p-10 text-center text-slate-500 shadow-sm">No qualified applications.</div>
+            <?php endif; ?>
+
+            <?php foreach ($positionGroups as $positionTitle => $rows): ?>
+                <details class="group mb-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm" open>
+                    <summary class="flex cursor-pointer select-none items-center justify-between gap-3 bg-slate-50 px-4 py-3">
+                        <span class="font-black text-admin-indigoDark"><?= admin_e($positionTitle) ?></span>
+                        <span class="pill bg-slate-200 text-slate-700"><?= count($rows) ?> application(s)</span>
+                    </summary>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-slate-200 text-sm">
+                            <thead class="bg-slate-50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left font-bold text-slate-600">Control #</th>
+                                    <th class="px-4 py-3 text-left font-bold text-slate-600">Applicant Name</th>
+                                    <th class="px-4 py-3 text-left font-bold text-slate-600">Email</th>
+                                    <th class="px-4 py-3 text-left font-bold text-slate-600">Qualified On</th>
+                                    <th class="px-4 py-3 text-center font-bold text-slate-600">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <?php foreach ($rows as $app): ?>
+                                    <tr class="hover:bg-slate-50">
+                                        <td class="px-4 py-3 font-mono text-xs"><?= admin_e($app->control_number ?: 'Not assigned') ?></td>
+                                        <td class="px-4 py-3 font-bold text-slate-800"><?= admin_e($app->full_name ?? '—') ?></td>
+                                        <td class="px-4 py-3 text-slate-600"><?= admin_e($app->email ?? '—') ?></td>
+                                        <td class="px-4 py-3 text-slate-500"><?= admin_e(date('M d, Y', strtotime($app->updated_at))) ?></td>
+                                        <td class="px-4 py-3 text-center">
+                                            <a href="<?= admin_url('application-view.php?id='.$app->id) ?>" class="mr-3 font-bold text-slate-600 hover:text-admin-indigo">View</a>
+                                            <form method="POST" action="<?= admin_url('approvals.php') ?>" class="inline" onsubmit="return confirm('This undoes the Qualified decision and moves the application back to the main Applications list for reconsideration.');">
+                                                <?= admin_csrf_field() ?>
+                                                <input type="hidden" name="action" value="restore">
+                                                <input type="hidden" name="id" value="<?= $app->id ?>">
+                                                <button type="submit" class="font-bold text-admin-indigo hover:underline">Restore</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </details>
+            <?php endforeach; ?>
         </main>
     </div>
 </div>

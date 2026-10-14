@@ -184,3 +184,29 @@ function evaluator_initials(string $name): string
 
     return implode('', $initials);
 }
+
+/**
+ * Mirrors ApplicationResource::isPastApplicationDeadline() — "application
+ * period has ended" means either explicitly closed (is_open = false) or its
+ * deadline has passed. A closed position with no deadline ever set must
+ * still count as ended, not stay open forever just because there's no date
+ * to compare against.
+ */
+function eval_application_period_ended(?object $job): bool
+{
+    if (!$job) {
+        return true;
+    }
+
+    if (!$job->is_open) {
+        return true;
+    }
+
+    if (empty($job->until)) {
+        return false;
+    }
+
+    $deadline = strtotime($job->until.' '.($job->until_time ?: '23:59:59'));
+
+    return time() > $deadline;
+}

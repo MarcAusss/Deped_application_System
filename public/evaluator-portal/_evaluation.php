@@ -114,6 +114,22 @@ function eval_compute_result(
     return EVAL_RESULT_PENDING;
 }
 
+/**
+ * List-page QS-outcome badge for evaluated/excluded rows — splits the old
+ * flat "Evaluated" label by the evaluation's actual stored result, mirroring
+ * the Laravel EvaluatedResource list's "Meet the QS" / "Did Not Meet the QS"
+ * badges. Shared by both evaluator-portal and admin-portal application lists.
+ */
+function eval_qs_outcome_badge(?string $result): array
+{
+    return match ($result) {
+        EVAL_RESULT_QUALIFIED => ['Meet the QS', 'bg-emerald-100 text-emerald-700'],
+        EVAL_RESULT_NOT_QUALIFIED => ['Did Not Meet the QS', 'bg-rose-100 text-rose-700'],
+        EVAL_RESULT_EXCLUDED => ['Excluded', 'bg-rose-100 text-rose-700'],
+        default => ['Pending Document Review', 'bg-slate-100 text-slate-600'],
+    };
+}
+
 function eval_result_label(string $result): string
 {
     return match ($result) {

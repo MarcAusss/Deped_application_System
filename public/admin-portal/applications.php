@@ -22,11 +22,13 @@ if ($jobFilter !== '' && ctype_digit((string) $jobFilter)) {
 $sql = 'SELECT a.id, a.status, a.created_at,
                jp.title AS job_title,
                cn.control_number,
-               p.full_name, p.email
+               p.full_name, p.email,
+               e.result
         FROM applications a
         LEFT JOIN job_positions jp ON jp.id = a.job_position_id
         LEFT JOIN application_control_numbers cn ON cn.application_id = a.id
         LEFT JOIN applicant_profiles p ON p.application_id = a.id
+        LEFT JOIN application_evaluations e ON e.application_id = a.id
         WHERE '.implode(' AND ', $where).'
         ORDER BY a.created_at DESC';
 
@@ -35,12 +37,7 @@ $stmt->execute($params);
 $applications = $stmt->fetchAll();
 
 $jobs = portal_pdo()->query('SELECT id, title FROM job_positions ORDER BY title')->fetchAll();
-
-$statusBadge = [
-    'pending' => 'bg-slate-100 text-slate-600',
-    'evaluated' => 'bg-amber-100 text-amber-700',
-    'excluded' => 'bg-rose-100 text-rose-700',
-];
+$positionGroups = admin_group_by_position($applications);
 
 $pageTitle = 'Applications | Administration';
 require __DIR__.'/_layout_head.php';
@@ -88,55 +85,69 @@ require __DIR__.'/_layout_head.php';
                 </div>
             </form>
 
-            <div class="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <table class="min-w-full divide-y divide-slate-200 text-sm">
-                    <thead class="bg-slate-50">
-                        <tr>
-                            <th class="px-4 py-3 text-left font-bold text-slate-600">Control #</th>
-                            <th class="px-4 py-3 text-left font-bold text-slate-600">Applicant Name</th>
-                            <th class="px-4 py-3 text-left font-bold text-slate-600">Email</th>
-                            <th class="px-4 py-3 text-left font-bold text-slate-600">Position Applied</th>
-                            <th class="px-4 py-3 text-left font-bold text-slate-600">Status</th>
-                            <th class="px-4 py-3 text-left font-bold text-slate-600">Applied On</th>
-                            <th class="px-4 py-3 text-center font-bold text-slate-600">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100">
-                        <?php if (empty($applications)): ?>
-                            <tr><td colspan="7" class="px-4 py-10 text-center text-slate-500">No applications found.</td></tr>
-                        <?php endif; ?>
-                        <?php foreach ($applications as $app): $canDecide = in_array($app->status, ['evaluated', 'excluded'], true); ?>
-                            <tr class="hover:bg-slate-50">
-                                <td class="px-4 py-3 font-mono text-xs"><?= admin_e($app->control_number ?: 'Not assigned') ?></td>
-                                <td class="px-4 py-3 font-bold text-slate-800"><?= admin_e($app->full_name ?? '—') ?></td>
-                                <td class="px-4 py-3 text-slate-600"><?= admin_e($app->email ?? '—') ?></td>
-                                <td class="px-4 py-3 text-slate-600"><?= admin_e($app->job_title ?? '—') ?></td>
-                                <td class="px-4 py-3"><span class="pill <?= $statusBadge[$app->status] ?? 'bg-slate-100 text-slate-600' ?>"><?= admin_e(ucfirst($app->status)) ?></span></td>
-                                <td class="px-4 py-3 text-slate-500"><?= admin_e(date('M d, Y', strtotime($app->created_at))) ?></td>
-                                <td class="px-4 py-3 text-center">
-                                    <div class="flex items-center justify-center gap-2">
-                                        <a href="<?= admin_url('application-view.php?id='.$app->id) ?>" class="font-bold text-slate-600 hover:text-admin-indigo">View</a>
+            <?php if (empty($applications)): ?>
+                <div class="rounded-2xl border border-slate-200 bg-white p-10 text-center text-slate-500 shadow-sm">No applications found.</div>
+            <?php endif; ?>
 
-                                        <form method="POST" action="<?= admin_url('application-status.php') ?>" onsubmit="return confirm('Are you sure you want to mark this application Qualified? This finalizes the hiring decision.');">
-                                            <?= admin_csrf_field() ?>
-                                            <input type="hidden" name="id" value="<?= $app->id ?>">
-                                            <input type="hidden" name="action" value="qualify">
-                                            <button type="submit" <?= $canDecide ? '' : 'disabled' ?> class="font-bold <?= $canDecide ? 'text-emerald-600 hover:underline' : 'cursor-not-allowed text-slate-300' ?>">Qualified</button>
-                                        </form>
+            <?php foreach ($positionGroups as $positionTitle => $rows): ?>
+                <details class="group mb-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm" open>
+                    <summary class="flex cursor-pointer select-none items-center justify-between gap-3 bg-slate-50 px-4 py-3">
+                        <span class="font-black text-admin-indigoDark"><?= admin_e($positionTitle) ?></span>
+                        <span class="pill bg-slate-200 text-slate-700"><?= count($rows) ?> application(s)</span>
+                    </summary>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-slate-200 text-sm">
+                            <thead class="bg-slate-50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left font-bold text-slate-600">Control #</th>
+                                    <th class="px-4 py-3 text-left font-bold text-slate-600">Applicant Name</th>
+                                    <th class="px-4 py-3 text-left font-bold text-slate-600">Email</th>
+                                    <th class="px-4 py-3 text-left font-bold text-slate-600">Status</th>
+                                    <th class="px-4 py-3 text-left font-bold text-slate-600">Applied On</th>
+                                    <th class="px-4 py-3 text-center font-bold text-slate-600">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <?php foreach ($rows as $app): $canDecide = in_array($app->status, ['evaluated', 'excluded'], true); ?>
+                                    <tr class="hover:bg-slate-50">
+                                        <td class="px-4 py-3 font-mono text-xs"><?= admin_e($app->control_number ?: 'Not assigned') ?></td>
+                                        <td class="px-4 py-3 font-bold text-slate-800"><?= admin_e($app->full_name ?? '—') ?></td>
+                                        <td class="px-4 py-3 text-slate-600"><?= admin_e($app->email ?? '—') ?></td>
+                                        <td class="px-4 py-3">
+                                            <?php if ($app->status === 'pending'): ?>
+                                                <span class="pill bg-slate-100 text-slate-600">Pending</span>
+                                            <?php else: ?>
+                                                <?php [$qsLabel, $qsClasses] = eval_qs_outcome_badge($app->result); ?>
+                                                <span class="pill <?= $qsClasses ?>"><?= admin_e($qsLabel) ?></span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td class="px-4 py-3 text-slate-500"><?= admin_e(date('M d, Y', strtotime($app->created_at))) ?></td>
+                                        <td class="px-4 py-3 text-center">
+                                            <div class="flex items-center justify-center gap-2">
+                                                <a href="<?= admin_url('application-view.php?id='.$app->id) ?>" class="font-bold text-slate-600 hover:text-admin-indigo">View</a>
 
-                                        <form method="POST" action="<?= admin_url('application-status.php') ?>" onsubmit="return confirm('Are you sure you want to mark this application Disqualified? This application will be moved to archive.');">
-                                            <?= admin_csrf_field() ?>
-                                            <input type="hidden" name="id" value="<?= $app->id ?>">
-                                            <input type="hidden" name="action" value="disqualify">
-                                            <button type="submit" <?= $canDecide ? '' : 'disabled' ?> class="font-bold <?= $canDecide ? 'text-rose-600 hover:underline' : 'cursor-not-allowed text-slate-300' ?>">Disqualified</button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
+                                                <form method="POST" action="<?= admin_url('application-status.php') ?>" onsubmit="return confirm('Are you sure you want to mark this application Qualified? This finalizes the hiring decision.');">
+                                                    <?= admin_csrf_field() ?>
+                                                    <input type="hidden" name="id" value="<?= $app->id ?>">
+                                                    <input type="hidden" name="action" value="qualify">
+                                                    <button type="submit" <?= $canDecide ? '' : 'disabled' ?> class="font-bold <?= $canDecide ? 'text-emerald-600 hover:underline' : 'cursor-not-allowed text-slate-300' ?>">Qualified</button>
+                                                </form>
+
+                                                <form method="POST" action="<?= admin_url('application-status.php') ?>" onsubmit="return confirm('Are you sure you want to mark this application Disqualified? This application will be moved to archive.');">
+                                                    <?= admin_csrf_field() ?>
+                                                    <input type="hidden" name="id" value="<?= $app->id ?>">
+                                                    <input type="hidden" name="action" value="disqualify">
+                                                    <button type="submit" <?= $canDecide ? '' : 'disabled' ?> class="font-bold <?= $canDecide ? 'text-rose-600 hover:underline' : 'cursor-not-allowed text-slate-300' ?>">Disqualified</button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </details>
+            <?php endforeach; ?>
         </main>
     </div>
 </div>

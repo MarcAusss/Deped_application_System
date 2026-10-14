@@ -111,6 +111,7 @@ require PORTAL_ROOT.'/public/evaluator-portal/_evaluation.php';
 require __DIR__.'/_csrf.php';
 require __DIR__.'/_flash.php';
 require __DIR__.'/_upload.php';
+require __DIR__.'/_mailer.php';
 
 flash_rotate();
 
@@ -233,6 +234,30 @@ function admin_document_types(): array
         'Government ID' => 'Government ID',
         'Other' => 'Other',
     ];
+}
+
+/**
+ * Groups a flat, already-sorted list of application rows (each must have a
+ * ->job_title property) into position buckets, sorted alphabetically by
+ * position title, for the collapsible per-position tables on
+ * applications.php/approvals.php/archive.php. Row order within each bucket
+ * is preserved from the original query.
+ *
+ * @param array<int, object> $applications
+ * @return array<string, array<int, object>>
+ */
+function admin_group_by_position(array $applications): array
+{
+    $groups = [];
+
+    foreach ($applications as $app) {
+        $title = $app->job_title ?? 'Unassigned Position';
+        $groups[$title][] = $app;
+    }
+
+    ksort($groups, SORT_NATURAL | SORT_FLAG_CASE);
+
+    return $groups;
 }
 
 /**
