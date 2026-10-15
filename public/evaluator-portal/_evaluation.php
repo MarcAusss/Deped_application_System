@@ -64,6 +64,27 @@ function eval_is_documentary_complete(mixed $mandatorySelected): bool
     return count(array_intersect(array_keys(eval_mandatory_requirements()), $mandatorySelected)) === eval_mandatory_count();
 }
 
+/**
+ * Which mandatory requirement labels are still unchecked — used to show
+ * admins/evaluators why an application was auto-excluded for an incomplete
+ * checklist. Never shown to the applicant before the admin's final action.
+ *
+ * @return array<int, string>
+ */
+function eval_missing_mandatory_requirements(mixed $mandatorySelected): array
+{
+    $mandatorySelected = is_array($mandatorySelected) ? $mandatorySelected : [];
+    $missing = [];
+
+    foreach (eval_mandatory_requirements() as $key => $label) {
+        if (!in_array($key, $mandatorySelected, true)) {
+            $missing[] = $label;
+        }
+    }
+
+    return $missing;
+}
+
 function eval_is_qualified(mixed $education, mixed $experience, mixed $training, mixed $eligibility): bool
 {
     return $education === true && $experience === true && $training === true && $eligibility === true;
@@ -95,8 +116,17 @@ function eval_compute_result(
     mixed $eligibility,
     bool $currentlyExcluded = false
 ): string {
+    // Incomplete mandatory requirements auto-exclude the applicant as soon as
+    // the evaluator saves — there is no "pending, come back later" state for
+    // a checklist that's missing mandatory documents. This still counts
+    // toward "evaluated" for dashboard/queue purposes (status becomes
+    // 'excluded', which is grouped with 'evaluated' everywhere that counts
+    // applications awaiting the admin's final action), but the applicant
+    // only ever sees a generic "evaluated, awaiting final decision" message
+    // until that final action happens — see portal/dashboard.php's
+    // $isFinalDecision gate.
     if (!eval_is_documentary_complete($mandatorySelected)) {
-        return EVAL_RESULT_PENDING;
+        return EVAL_RESULT_EXCLUDED;
     }
 
     if (eval_is_qualified($education, $experience, $training, $eligibility)) {
@@ -149,14 +179,16 @@ function eval_result_color(string $result): string
     };
 }
 
-function eval_result_description(string $result, array $disqualifiedCategories = []): string
+function eval_result_description(string $result, array $disqualifiedCategories = [], array $missingMandatory = []): string
 {
     return match ($result) {
         EVAL_RESULT_QUALIFIED => 'Documents are complete and all qualification standards are marked Meet the QS.',
         EVAL_RESULT_NOT_QUALIFIED => $disqualifiedCategories === []
             ? 'At least one qualification standard is marked Did not Meet the QS.'
             : 'Did not Meet the QS: '.implode(', ', $disqualifiedCategories).'.',
-        EVAL_RESULT_EXCLUDED => 'This applicant does Not Meet Qualification Standards.',
+        EVAL_RESULT_EXCLUDED => $missingMandatory === []
+            ? 'This applicant was excluded by the evaluator.'
+            : 'Automatically excluded — the Mandatory Requirements checklist is incomplete.',
         default => 'The status defaults to Pending Document Review until mandatory requirements are complete. Applicants are marked Qualified when all qualification standards are marked Meet the QS. Applicants can be marked Excluded only when specifically using the Exclude button below.',
     };
 }

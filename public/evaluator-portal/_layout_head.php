@@ -10,6 +10,7 @@ $pageTitle = $pageTitle ?? 'Evaluation Desk | DepEd Recruitment Portal';
     <title><?= evaluator_e($pageTitle) ?></title>
 
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.1/chart.umd.min.js"></script>
 
     <script>
         tailwind.config = {

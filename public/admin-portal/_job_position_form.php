@@ -7,7 +7,8 @@ if (!defined('PORTAL_BOOTED')) { http_response_code(404); exit; }
  */
 $position = $position ?? null;
 $isEdit = $position !== null;
-$action = $isEdit ? admin_url('job-position-edit.php?id='.$position->id) : admin_url('job-position-create.php');
+$fromParam = isset($_GET['from']) ? '&from='.urlencode($_GET['from']) : '';
+$action = $isEdit ? admin_url('job-position-edit.php?id='.$position->id.$fromParam) : admin_url('job-position-create.php');
 $existingAttachments = $isEdit ? (json_decode($position->attachment_paths ?? '[]', true) ?: []) : [];
 $existingCsc = $isEdit ? (json_decode($position->csc_publication_paths ?? '[]', true) ?: []) : [];
 ?>
@@ -93,9 +94,10 @@ $existingCsc = $isEdit ? (json_decode($position->csc_publication_paths ?? '[]', 
         <?php if ($existingAttachments): ?>
             <ul class="mb-2 space-y-1">
                 <?php foreach ($existingAttachments as $path): ?>
-                    <li class="flex items-center gap-2 text-sm">
-                        <label class="flex items-center gap-1.5"><input type="checkbox" name="remove_attachment_paths[]" value="<?= admin_e($path) ?>"> <span class="text-slate-500">Remove</span></label>
-                        <a href="<?= admin_url('document.php?path='.urlencode($path)) ?>" target="_blank" class="text-admin-indigo underline"><?= admin_e(basename($path)) ?></a>
+                    <li class="file-remove-row flex items-center gap-2 text-sm" data-path="<?= admin_e($path) ?>">
+                        <input type="checkbox" name="remove_attachment_paths[]" value="<?= admin_e($path) ?>" class="file-remove-checkbox hidden">
+                        <a href="<?= admin_url('document.php?path='.urlencode($path)) ?>" target="_blank" class="file-remove-link text-admin-indigo underline"><?= admin_e(basename($path)) ?></a>
+                        <button type="button" class="file-remove-toggle font-bold text-rose-600 hover:underline">Remove</button>
                     </li>
                 <?php endforeach; ?>
             </ul>
@@ -110,9 +112,10 @@ $existingCsc = $isEdit ? (json_decode($position->csc_publication_paths ?? '[]', 
         <?php if ($existingCsc): ?>
             <ul class="mb-2 space-y-1">
                 <?php foreach ($existingCsc as $path): ?>
-                    <li class="flex items-center gap-2 text-sm">
-                        <label class="flex items-center gap-1.5"><input type="checkbox" name="remove_csc_publication_paths[]" value="<?= admin_e($path) ?>"> <span class="text-slate-500">Remove</span></label>
-                        <a href="<?= admin_url('document.php?path='.urlencode($path)) ?>" target="_blank" class="text-admin-indigo underline"><?= admin_e(basename($path)) ?></a>
+                    <li class="file-remove-row flex items-center gap-2 text-sm" data-path="<?= admin_e($path) ?>">
+                        <input type="checkbox" name="remove_csc_publication_paths[]" value="<?= admin_e($path) ?>" class="file-remove-checkbox hidden">
+                        <a href="<?= admin_url('document.php?path='.urlencode($path)) ?>" target="_blank" class="file-remove-link text-admin-indigo underline"><?= admin_e(basename($path)) ?></a>
+                        <button type="button" class="file-remove-toggle font-bold text-rose-600 hover:underline">Remove</button>
                     </li>
                 <?php endforeach; ?>
             </ul>
@@ -124,3 +127,22 @@ $existingCsc = $isEdit ? (json_decode($position->csc_publication_paths ?? '[]', 
         <button type="submit" class="rounded-lg bg-admin-indigo px-5 py-2.5 text-sm font-bold text-white hover:bg-admin-indigoDark"><?= admin_e($submitLabel ?? ($isEdit ? 'Save Changes' : 'Create Job Position')) ?></button>
     </div>
 </form>
+
+<script>
+    document.querySelectorAll('.file-remove-toggle').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var row = btn.closest('.file-remove-row');
+            var checkbox = row.querySelector('.file-remove-checkbox');
+            var link = row.querySelector('.file-remove-link');
+            var marked = checkbox.checked;
+
+            checkbox.checked = !marked;
+            link.classList.toggle('line-through', !marked);
+            link.classList.toggle('text-slate-400', !marked);
+            link.classList.toggle('text-admin-indigo', marked);
+            btn.textContent = marked ? 'Remove' : 'Undo';
+            btn.classList.toggle('text-rose-600', marked);
+            btn.classList.toggle('text-slate-500', !marked);
+        });
+    });
+</script>

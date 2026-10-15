@@ -18,6 +18,11 @@ if (!defined('PORTAL_BOOTED')) {
 
 define('PORTAL_ROOT', dirname(__DIR__, 2));
 
+// Matches config/app.php's former 'timezone' => 'Asia/Manila' — without this,
+// PHP defaults to UTC and every date()/time()/strtotime() call (greetings,
+// deadline checks, displayed dates) is 8 hours off from real local time.
+date_default_timezone_set('Asia/Manila');
+
 require PORTAL_ROOT.'/vendor/autoload.php';
 
 if (!isset($_ENV['APP_KEY']) && !getenv('APP_KEY')) {

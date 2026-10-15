@@ -48,6 +48,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!v_present($description)) {
         $errors->add('description', 'The description field is required.');
     }
+    if ($until !== '' && $postedAt !== '' && $until < $postedAt) {
+        $errors->add('until', 'Until must be on or after Posted.');
+    }
 
     $untilTimeNormalized = null;
     if ($untilTimeRaw !== '') {
@@ -58,6 +61,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $untilTimeNormalized = date('H:i:s', $ts);
         }
+    }
+
+    // Posting/reposting is supposed to make the position actually open to
+    // applicants — accepting an already-elapsed deadline here would mark
+    // is_open=1 while every deadline-aware query (jobs.php, the dashboard's
+    // open count, etc.) immediately treats it as closed again, producing the
+    // confusing "says posted but isn't open" state.
+    if ($until !== '' && !$errors->has('until')) {
+        $deadlineCheckTime = $untilTimeNormalized ?: '23:59:59';
+        if (strtotime($until.' '.$deadlineCheckTime) < time()) {
+            $errors->add('until', 'The Until date/time has already passed — choose a deadline in the future to post this position as open.');
+        }
+    }
+
+    $attachmentPaths = json_decode($position->attachment_paths ?? '[]', true) ?: [];
+    $cscPaths = json_decode($position->csc_publication_paths ?? '[]', true) ?: [];
+
+    $removeAttachments = $_POST['remove_attachment_paths'] ?? [];
+    $removeCsc = $_POST['remove_csc_publication_paths'] ?? [];
+
+    foreach ($removeAttachments as $path) {
+        admin_delete_upload($path);
+    }
+    foreach ($removeCsc as $path) {
+        admin_delete_upload($path);
+    }
+    $attachmentPaths = array_values(array_diff($attachmentPaths, $removeAttachments));
+    $cscPaths = array_values(array_diff($cscPaths, $removeCsc));
+
+    try {
+        if (!empty($_FILES['attachment_paths']['name'][0])) {
+            $attachmentPaths = array_merge($attachmentPaths, admin_store_uploads_preserve_names($_FILES['attachment_paths'], 'job-positions', ['pdf']));
+        }
+        if (!empty($_FILES['csc_publication_paths']['name'][0])) {
+            $cscPaths = array_merge($cscPaths, admin_store_uploads_preserve_names($_FILES['csc_publication_paths'], 'job-positions', ['pdf']));
+        }
+    } catch (RuntimeException $e) {
+        $errors->add('attachment_paths', $e->getMessage());
     }
 
     if (!$errors->any()) {
@@ -73,6 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 title = ?, abbreviation = ?, slots = ?, description = ?, posted_at = ?, `until` = ?, until_time = ?,
                 salary_grade = ?, monthly_salary = ?, education_requirement = ?, training_requirement = ?, min_training_hours = ?,
                 experience_requirement = ?, min_experience_years = ?, eligibility_requirement = ?,
+                attachment_paths = ?, csc_publication_paths = ?,
                 is_open = 1, jp_number = ?, updated_at = NOW()
              WHERE id = ?'
         )->execute([
@@ -82,12 +124,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $educationRequirement ?: null, $trainingRequirement ?: null, $minTrainingHours !== '' ? (int) $minTrainingHours : null,
             $experienceRequirement ?: null, $minExperienceYears !== '' ? $minExperienceYears : null,
             $eligibilityRequirement ?: null,
+            json_encode($attachmentPaths), json_encode($cscPaths),
             $jpNumber,
             $positionId,
         ]);
 
         flash_set('success', 'Job position posted.');
+
+        if (($_POST['ajax'] ?? '') === '1') {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'redirect' => $returnUrl]);
+            exit;
+        }
+
         header('Location: '.$returnUrl);
+        exit;
+    }
+
+    if (($_POST['ajax'] ?? '') === '1') {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'errors' => $errors->all()]);
         exit;
     }
 
@@ -112,7 +168,7 @@ require __DIR__.'/_layout_head.php';
     <?php require __DIR__.'/_layout_sidebar.php'; ?>
 
     <div class="min-w-0 flex-1">
-        <main class="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+        <main class="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
             <a href="<?= $returnUrl ?>" class="mb-4 inline-flex items-center gap-1.5 text-sm font-bold text-slate-500 hover:text-admin-indigo">&larr; Back</a>
 
             <h2 class="mb-2 text-2xl font-black text-admin-indigoDark">Publish / Repost: <?= admin_e($position->title) ?></h2>

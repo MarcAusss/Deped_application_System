@@ -24,7 +24,12 @@ function eval_ier_resolve_ids(): array
 
         $where = ["a.status NOT IN ('qualified','disqualified')"];
         $params = [];
-        if (in_array($status, ['pending', 'evaluated', 'excluded'], true)) {
+        if ($status === 'evaluated_excluded') {
+            // The Evaluated page's combined list (evaluated + excluded,
+            // both awaiting the admin's final decision) — not a single
+            // status value, so it needs its own branch.
+            $where[] = "a.status IN ('evaluated', 'excluded')";
+        } elseif (in_array($status, ['pending', 'evaluated', 'excluded'], true)) {
             $where[] = 'a.status = :status';
             $params['status'] = $status;
         }

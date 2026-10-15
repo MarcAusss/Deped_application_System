@@ -106,7 +106,7 @@ require __DIR__.'/_layout_head.php';
     <?php require __DIR__.'/_layout_sidebar.php'; ?>
 
     <div class="min-w-0 flex-1">
-        <main class="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+        <main class="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
             <a href="<?= admin_url('job-positions.php') ?>" class="mb-4 inline-flex items-center gap-1.5 text-sm font-bold text-slate-500 hover:text-admin-indigo">&larr; Back to Job Positions</a>
 
             <h2 class="mb-6 text-2xl font-black text-admin-indigoDark">New Job Position</h2>

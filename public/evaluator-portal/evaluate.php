@@ -11,6 +11,17 @@ if (!$applicationId) {
     exit;
 }
 
+// Which list page this evaluation was opened from — so Back to List, Save,
+// and Exclude all return the evaluator to where they actually came from
+// (e.g. editing from the Evaluated page should return to Evaluated, not
+// fall through to the Applications queue).
+$returnDestinations = [
+    'evaluated' => ['url' => evaluator_url('evaluated.php'), 'label' => 'evaluated'],
+];
+$from = $_POST['from'] ?? $_GET['from'] ?? '';
+$returnTo = $returnDestinations[$from] ?? ['url' => evaluator_url('applications.php'), 'label' => 'applications'];
+$fromParam = $from !== '' ? '&from='.urlencode($from) : '';
+
 $stmt = portal_pdo()->prepare('SELECT * FROM applications WHERE id = ?');
 $stmt->execute([$applicationId]);
 $application = $stmt->fetch();
@@ -103,9 +114,18 @@ function eval_save_checklist(int $applicationId, int $userId): string
     $qsEligibility = $qsValue('qs_eligibility_met');
     $remarks = trim($_POST['remarks'] ?? '') ?: null;
 
-    $stmt = portal_pdo()->prepare('SELECT result FROM application_evaluations WHERE application_id = ?');
+    $stmt = portal_pdo()->prepare('SELECT result, documentary_mandatory FROM application_evaluations WHERE application_id = ?');
     $stmt->execute([$applicationId]);
-    $preUpdateResult = $stmt->fetch()->result ?? EVAL_RESULT_PENDING;
+    $prevRow = $stmt->fetch();
+    $preUpdateResult = $prevRow->result ?? EVAL_RESULT_PENDING;
+
+    // "Currently excluded" must only stick across re-saves for a *manual*
+    // Exclude (made with a complete checklist) — not for the automatic
+    // exclusion incomplete mandatory requirements now produce. Otherwise,
+    // finishing the checklist on a later save would never be able to move
+    // the applicant out of Excluded.
+    $prevMandatorySelected = json_decode($prevRow->documentary_mandatory ?? '[]', true) ?: [];
+    $wasManuallyExcluded = $preUpdateResult === EVAL_RESULT_EXCLUDED && eval_is_documentary_complete($prevMandatorySelected);
 
     portal_pdo()->prepare(
         'UPDATE application_evaluations
@@ -128,7 +148,7 @@ function eval_save_checklist(int $applicationId, int $userId): string
 
     return eval_compute_result(
         $mandatorySelected, $qsEducation, $qsExperience, $qsTraining, $qsEligibility,
-        currentlyExcluded: $preUpdateResult === EVAL_RESULT_EXCLUDED
+        currentlyExcluded: $wasManuallyExcluded
     );
 }
 
@@ -144,7 +164,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             portal_pdo()->prepare('DELETE FROM application_evaluations WHERE application_id = ?')->execute([$applicationId]);
         }
 
-        header('Location: '.evaluator_url('applications.php'));
+        header('Location: '.$returnTo['url']);
         exit;
     }
 
@@ -159,7 +179,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // (null evaluated_at) if the checklist wasn't complete — Exclude is
         // a deliberate, final call the evaluator can make regardless of
         // checklist completeness, so it must stamp evaluated_at itself.
-        portal_pdo()->prepare("UPDATE application_evaluations SET result = ?, evaluated_at = ?, updated_at = ? WHERE application_id = ?")
+        // recommended must also be reset to 0 here — otherwise an applicant
+        // who was previously Qualified (recommended=1) and then gets
+        // Excluded keeps showing as "Recommended" alongside "Excluded".
+        portal_pdo()->prepare("UPDATE application_evaluations SET result = ?, evaluated_at = ?, recommended = 0, updated_at = ? WHERE application_id = ?")
             ->execute([EVAL_RESULT_EXCLUDED, date('Y-m-d H:i:s'), date('Y-m-d H:i:s'), $applicationId]);
 
         if (in_array($application->status, ['pending', 'evaluated'], true)) {
@@ -181,7 +204,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         flash_set('success', 'Applicant excluded.');
-        header('Location: '.evaluator_url('evaluate.php?id='.$applicationId));
+        header('Location: '.$returnTo['url']);
         exit;
     }
 
@@ -218,8 +241,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
         }
 
+        if ($newStatus === 'excluded') {
+            flash_set('success', 'Applicant excluded.');
+            header('Location: '.$returnTo['url']);
+            exit;
+        }
+
+        // Editing from the Evaluated page is a one-shot correction, not a
+        // multi-step build-up like a fresh evaluation from the Applications
+        // queue — so Save there returns straight to the list instead of
+        // staying on this page.
+        if ($from === 'evaluated') {
+            flash_set('success', 'Evaluation saved.');
+            header('Location: '.$returnTo['url']);
+            exit;
+        }
+
         flash_set('success', 'Evaluation saved.');
-        header('Location: '.evaluator_url('evaluate.php?id='.$applicationId));
+        header('Location: '.evaluator_url('evaluate.php?id='.$applicationId.$fromParam));
         exit;
     }
 
@@ -266,8 +305,36 @@ $documentaryComplete = eval_is_documentary_complete($mandatorySelected);
 $mandatoryCount = eval_count_selected(eval_mandatory_requirements(), $mandatorySelected);
 $otherCount = eval_count_selected(eval_other_requirements(), $otherSelected);
 
-$computedResult = eval_compute_result($mandatorySelected, $qsEducation, $qsExperience, $qsTraining, $qsEligibility, $evaluation->result === EVAL_RESULT_EXCLUDED);
+// "Currently excluded" only sticks across re-saves for a manual Exclude made
+// with a complete checklist — not for the automatic exclusion an incomplete
+// mandatory checklist now produces (see eval_compute_result()).
+$wasManuallyExcluded = $evaluation->result === EVAL_RESULT_EXCLUDED && $documentaryComplete;
+
+$computedResult = eval_compute_result($mandatorySelected, $qsEducation, $qsExperience, $qsTraining, $qsEligibility, $wasManuallyExcluded);
 $disqualifiedCategories = eval_disqualified_categories($qsEducation, $qsExperience, $qsTraining, $qsEligibility);
+
+// Nothing has actually been saved if this evaluation has never been
+// evaluated before (evaluated_at is still null). In that case, the badge
+// below is only a live preview of what WOULD happen on save — and if the
+// evaluator hasn't touched the checklist at all yet (nothing checked,
+// no QS marked), there is nothing to warn about yet, so stay neutral
+// rather than defaulting a blank, untouched evaluation straight to a
+// scary "Excluded" state. Once they start checking items, or once a save
+// has genuinely committed an exclusion, the real computed result shows.
+$neverEvaluated = $evaluation->evaluated_at === null;
+$hasAnyProgress = $mandatorySelected !== [] || $otherSelected !== []
+    || $qsEducation !== null || $qsExperience !== null || $qsTraining !== null || $qsEligibility !== null;
+
+if ($computedResult === EVAL_RESULT_EXCLUDED && $neverEvaluated && !$hasAnyProgress) {
+    $computedResult = EVAL_RESULT_PENDING;
+}
+
+$missingMandatory = $computedResult === EVAL_RESULT_EXCLUDED ? eval_missing_mandatory_requirements($mandatorySelected) : [];
+
+$resultDescription = eval_result_description($computedResult, $disqualifiedCategories, $missingMandatory);
+if ($computedResult === EVAL_RESULT_EXCLUDED && $missingMandatory && $neverEvaluated) {
+    $resultDescription = 'Will be automatically excluded if you save now — the Mandatory Requirements checklist below is still incomplete.';
+}
 
 $eduRequirementFallback = "Bachelor's Degree in Guidance Counseling or Psychology; or any Bachelor's Degree with atleast eighteen (18) units of courses in Guidance and Psychology; or Any  Bachelor's Degree with a minimum of eighteen (18) units of Behavioral Science courses that shall include 200 hours of supervised practicum or internship experience on guidance and counseling, preferably in a school or community setting";
 $eligRequirementFallback = 'Career Service Professional, Second Level Eligibility and RA 1080.';
@@ -303,56 +370,56 @@ function qs_button(string $field, ?bool $current, bool $wantTrue): void
     <div class="min-w-0 flex-1">
         <main class="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
 
-            <form method="POST" action="<?= evaluator_url('evaluate.php?id='.$applicationId) ?>" class="mb-4 inline-block">
+            <form method="POST" action="<?= evaluator_url('evaluate.php?id='.$applicationId.$fromParam) ?>" class="mb-4 inline-block">
                 <?= evaluator_csrf_field() ?>
-                <button type="submit" formnovalidate name="action" value="cancel" class="inline-flex items-center gap-1.5 text-sm font-bold text-slate-500 hover:text-evaluator-indigo">&larr; Back to List</button>
+                <button type="submit" formnovalidate name="action" value="cancel" class="inline-flex items-center gap-1.5 rounded-lg border-2 border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-600 transition hover:border-evaluator-indigo hover:text-evaluator-indigo">&larr; Back to List</button>
             </form>
 
             <?php if (flash_get('success')): ?>
                 <div class="mb-6 rounded-xl border border-green-200 bg-green-50 p-4 text-green-800"><?= evaluator_e(flash_get('success')) ?></div>
             <?php endif; ?>
 
-            <form method="POST" action="<?= evaluator_url('evaluate.php?id='.$applicationId) ?>" class="space-y-6">
+            <form method="POST" action="<?= evaluator_url('evaluate.php?id='.$applicationId.$fromParam) ?>" class="space-y-6">
                 <?= evaluator_csrf_field() ?>
                 <input type="hidden" name="action" value="save">
 
-                <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                    <h3 class="mb-4 text-lg font-black text-evaluator-indigoDark">Application Info</h3>
-                    <div class="grid gap-4 sm:grid-cols-2">
+                <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    <?= evaluator_section_header('Application Info', 'briefcase') ?>
+                    <div class="grid gap-4 p-6 sm:grid-cols-2">
                         <div><p class="text-xs font-bold uppercase text-slate-500">Job Position</p><p class="mt-1 rounded-lg border border-slate-300 px-3 py-2 text-sm"><?= evaluator_e($job->title ?? '—') ?></p></div>
                         <div><p class="text-xs font-bold uppercase text-slate-500">Current Status</p><p class="mt-1 rounded-lg border border-slate-300 px-3 py-2 text-sm"><?= evaluator_e(ucfirst($application->status)) ?></p></div>
                     </div>
                 </section>
 
-                <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                    <h3 class="mb-1 text-lg font-black text-evaluator-indigoDark">Control Number</h3>
-                    <p class="mb-3 text-xs text-slate-500">Automatically generated by the system when the applicant submitted this application.</p>
-                    <div class="rounded-lg border border-slate-300 px-3 py-2 text-sm"><?= evaluator_e($controlNumber ?: 'Not yet assigned') ?></div>
+                <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    <?= evaluator_section_header('Control Number', 'hashtag', 'Automatically generated by the system when the applicant submitted this application.') ?>
+                    <div class="p-6">
+                        <div class="rounded-lg border border-slate-300 px-3 py-2 text-sm"><?= evaluator_e($controlNumber ?: 'Not yet assigned') ?></div>
+                    </div>
                 </section>
 
-                <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                    <h3 class="mb-1 text-lg font-black text-evaluator-indigoDark">Documentary Requirements</h3>
-                    <p class="mb-4 text-xs text-slate-500">Click submitted requirements. The mandatory requirements unlock the QS Evaluation automatically once completed.</p>
-
-                    <div class="mb-4 rounded-xl border border-slate-200 p-4">
+                <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    <?= evaluator_section_header('Documentary Requirements', 'clipboard', 'Click submitted requirements. The mandatory requirements unlock the QS Evaluation automatically once completed.') ?>
+                    <div class="p-6">
+                    <div class="mb-4">
                         <p class="mb-2 text-sm font-bold text-slate-700" id="mandatory-count-label">Mandatory Requirements (<?= $mandatoryCount ?> of <?= eval_mandatory_count() ?>)</p>
                         <div class="grid gap-2 sm:grid-cols-2">
                             <?php foreach (eval_mandatory_requirements() as $key => $label): ?>
-                                <label class="flex items-start gap-2 text-sm">
-                                    <input type="checkbox" name="documentary_mandatory[]" value="<?= evaluator_e($key) ?>" class="mandatory-check mt-1" <?= in_array($key, $mandatorySelected, true) ? 'checked' : '' ?>>
-                                    <span><?= evaluator_e($label) ?></span>
+                                <label class="requirement-card flex items-start gap-2 rounded-lg border border-slate-200 px-3 py-2.5 text-sm transition has-[:checked]:border-emerald-300 has-[:checked]:bg-emerald-50 has-[:checked]:[&_span]:font-bold has-[:checked]:[&_span]:text-indigo-700">
+                                    <input type="checkbox" name="documentary_mandatory[]" value="<?= evaluator_e($key) ?>" class="mandatory-check mt-0.5 h-4 w-4 accent-emerald-600" <?= in_array($key, $mandatorySelected, true) ? 'checked' : '' ?>>
+                                    <span class="text-slate-600"><?= evaluator_e($label) ?></span>
                                 </label>
                             <?php endforeach; ?>
                         </div>
                     </div>
 
-                    <div class="mb-4 rounded-xl border border-slate-200 p-4">
+                    <div class="mb-4">
                         <p class="mb-2 text-sm font-bold text-slate-700" id="other-count-label">Other Requirements (<?= $otherCount ?> of <?= eval_other_count() ?>)</p>
                         <div class="grid gap-2 sm:grid-cols-2">
                             <?php foreach (eval_other_requirements() as $key => $label): ?>
-                                <label class="flex items-start gap-2 text-sm">
-                                    <input type="checkbox" name="documentary_other[]" value="<?= evaluator_e($key) ?>" class="other-check mt-1" <?= in_array($key, $otherSelected, true) ? 'checked' : '' ?>>
-                                    <span><?= evaluator_e($label) ?></span>
+                                <label class="requirement-card flex items-start gap-2 rounded-lg border border-slate-200 px-3 py-2.5 text-sm transition has-[:checked]:border-emerald-300 has-[:checked]:bg-emerald-50 has-[:checked]:[&_span]:font-bold has-[:checked]:[&_span]:text-indigo-700">
+                                    <input type="checkbox" name="documentary_other[]" value="<?= evaluator_e($key) ?>" class="other-check mt-0.5 h-4 w-4 accent-emerald-600" <?= in_array($key, $otherSelected, true) ? 'checked' : '' ?>>
+                                    <span class="text-slate-600"><?= evaluator_e($label) ?></span>
                                 </label>
                             <?php endforeach; ?>
                         </div>
@@ -365,13 +432,12 @@ function qs_button(string $field, ?bool $current, bool $wantTrue): void
                             <?= $mandatoryCount ?> of <?= eval_mandatory_count() ?> Mandatory Requirements complete. Complete all mandatory requirements to unlock the QS Evaluation.
                         <?php endif; ?>
                     </p>
+                    </div>
                 </section>
 
-                <section id="qs-section" class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm" style="<?= $documentaryComplete ? '' : 'display:none;' ?>">
-                    <h3 class="mb-1 text-lg font-black text-evaluator-indigoDark">Qualification Standards</h3>
-                    <p class="mb-4 text-xs text-slate-500">Review the applicant's details against each qualification standard, then mark whether each was Meet the QS or Did not Meet the QS.</p>
-
-                    <div class="grid gap-4 sm:grid-cols-2">
+                <section id="qs-section" class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm" style="<?= $documentaryComplete ? '' : 'display:none;' ?>">
+                    <?= evaluator_section_header('Qualification Standards', 'scale', "Review the applicant's details against each qualification standard, then mark whether each was Meet the QS or Did not Meet the QS.") ?>
+                    <div class="grid gap-4 p-6 sm:grid-cols-2">
                         <?php
                         $qsBlocks = [
                             ['field' => 'qs_education_met', 'title' => "Bachelor's Degree", 'applicant' => eval_applicant_bachelors_degree($educations), 'standard' => $job->education_requirement ?: $eduRequirementFallback, 'value' => $qsEducation],
@@ -394,9 +460,9 @@ function qs_button(string $field, ?bool $current, bool $wantTrue): void
                     </div>
                 </section>
 
-                <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                    <h3 class="mb-4 text-lg font-black text-evaluator-indigoDark">Applicant Profile</h3>
-                    <div class="grid gap-4 sm:grid-cols-2">
+                <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    <?= evaluator_section_header('Applicant Profile', 'user') ?>
+                    <div class="grid gap-4 p-6 sm:grid-cols-2">
                         <?php
                         $profileFields = [
                             'Full Name' => $profile->full_name ?? null, 'Email Address' => $profile->email ?? null,
@@ -412,44 +478,54 @@ function qs_button(string $field, ?bool $current, bool $wantTrue): void
                     </div>
                 </section>
 
-                <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                    <h3 class="mb-4 text-lg font-black text-evaluator-indigoDark">Evaluation Result</h3>
-                    <p class="mb-3 text-xs text-slate-500">The status defaults to Pending Document Review until mandatory requirements are complete. Applicants are marked Excluded only when specifically using the Exclude button below.</p>
+                <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    <?= evaluator_section_header('Evaluation Result', 'flag', 'The status defaults to Pending Document Review until mandatory requirements are complete. Applicants are marked Excluded only when specifically using the Exclude button below.') ?>
+                    <div class="p-6">
+                        <div id="result-badge-box" class="mb-4 rounded-lg border-2 px-4 py-2" style="background:<?= $resultStyle['bg'] ?>;border-color:<?= $resultStyle['fg'] ?>;">
+                            <span id="result-badge-label" class="inline-block rounded-md px-2.5 py-1 text-sm font-bold text-white" style="background:<?= $resultStyle['badge'] ?>;"><?= evaluator_e(strtoupper(eval_result_label($computedResult))) ?></span>
+                            <span id="result-badge-desc" class="ml-2 text-xs font-bold" style="color:#1e3a8a;"><?= evaluator_e($resultDescription) ?></span>
+                        </div>
+                        <?php if ($missingMandatory): ?>
+                            <div id="result-missing-box" class="mb-4 rounded-lg border border-rose-200 bg-rose-50 p-4">
+                                <p class="mb-2 text-xs font-bold uppercase tracking-wide text-rose-700">Missing Mandatory Requirements</p>
+                                <ul class="list-inside list-disc space-y-1 text-sm text-rose-700">
+                                    <?php foreach ($missingMandatory as $item): ?>
+                                        <li><?= evaluator_e($item) ?></li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            </div>
+                        <?php endif; ?>
 
-                    <div id="result-badge-box" class="mb-4 rounded-lg border-2 px-4 py-2" style="background:<?= $resultStyle['bg'] ?>;border-color:<?= $resultStyle['fg'] ?>;">
-                        <span id="result-badge-label" class="inline-block rounded-md px-2.5 py-1 text-sm font-bold text-white" style="background:<?= $resultStyle['badge'] ?>;"><?= evaluator_e(strtoupper(eval_result_label($computedResult))) ?></span>
-                        <span id="result-badge-desc" class="ml-2 text-xs font-bold" style="color:#1e3a8a;"><?= evaluator_e(eval_result_description($computedResult, $disqualifiedCategories)) ?></span>
-                    </div>
+                        <label class="mb-1 block text-sm font-bold text-slate-700">Remarks / Notes</label>
+                        <textarea name="remarks" rows="4" placeholder="Enter evaluation remarks..." class="mb-4 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"><?= evaluator_e($evaluation->remarks ?? '') ?></textarea>
 
-                    <label class="mb-1 block text-sm font-bold text-slate-700">Remarks / Notes</label>
-                    <textarea name="remarks" rows="4" placeholder="Enter evaluation remarks..." class="mb-4 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"><?= evaluator_e($evaluation->remarks ?? '') ?></textarea>
-
-                    <div class="flex items-center justify-between">
-                        <button type="submit" formaction="<?= evaluator_url('evaluate.php?id='.$applicationId) ?>" formnovalidate onclick="return confirm('This marks the applicant as Excluded from further consideration. You can change this later by re-editing the checklist.\n\nExclude this applicant?');" name="action" value="exclude" class="rounded-lg border-2 border-rose-600 px-4 py-2 text-sm font-bold text-rose-600 hover:bg-rose-50">
-                            Exclude Applicant
-                        </button>
-                        <button type="submit" name="action" value="save" class="rounded-lg border-2 border-evaluator-indigo px-4 py-2 text-sm font-bold text-evaluator-indigo hover:bg-evaluator-indigoLight">
-                            Save Changes
-                        </button>
+                        <div class="flex items-center justify-between">
+                            <button type="submit" formaction="<?= evaluator_url('evaluate.php?id='.$applicationId.$fromParam) ?>" formnovalidate data-confirm="This marks the applicant as Excluded from further consideration. You can change this later by re-editing the checklist.&#10;&#10;Exclude this applicant?" name="action" value="exclude" class="rounded-lg border-2 border-rose-600 px-4 py-2 text-sm font-bold text-rose-600 hover:bg-rose-50">
+                                Exclude Applicant
+                            </button>
+                            <button type="submit" name="action" value="save" class="rounded-lg border-2 border-evaluator-indigo px-4 py-2 text-sm font-bold text-evaluator-indigo hover:bg-evaluator-indigoLight">
+                                Save Changes
+                            </button>
+                        </div>
                     </div>
                 </section>
             </form>
 
             <?php
             $readonlyTables = [
-                ['title' => 'Educational Background', 'headers' => ['Level', 'School / Institution', 'Degree / Course', 'Year Graduated'], 'rows' => array_map(fn ($e) => [
+                ['title' => 'Educational Background', 'icon' => 'academic-cap', 'headers' => ['Level', 'School / Institution', 'Degree / Course', 'Year Graduated'], 'rows' => array_map(fn ($e) => [
                     ($e->level === "Other's" && $e->level_specify) ? $e->level.' - '.$e->level_specify : $e->level,
                     $e->school ?: '—', $e->degree ?: '—', $e->year_graduated ?: '—',
                 ], $educations)],
-                ['title' => 'Work Experience', 'headers' => ['Job Title', 'Company', 'First Day', 'Last Day', 'Details'], 'rows' => array_map(fn ($e) => [
+                ['title' => 'Work Experience', 'icon' => 'building', 'headers' => ['Job Title', 'Company', 'First Day', 'Last Day', 'Details'], 'rows' => array_map(fn ($e) => [
                     $e->title ?: '—', $e->company ?: '—', $e->first_day ?: 'Not provided', $e->last_day ?: 'Not provided', $e->details ?: 'Not provided',
                 ], $experiences)],
-                ['title' => 'Trainings & Seminars', 'headers' => ['Title', 'Hours', 'Start', 'End'], 'rows' => array_map(fn ($t) => [
+                ['title' => 'Trainings & Seminars', 'icon' => 'presentation', 'headers' => ['Title', 'Hours', 'Start', 'End'], 'rows' => array_map(fn ($t) => [
                     $t->title ?: '—', ($t->hours ?: '0').' hrs',
                     $t->training_date ? date('F Y', strtotime($t->training_date)) : 'Not provided',
                     $t->training_end_date ? date('F Y', strtotime($t->training_end_date)) : 'Not provided',
                 ], $trainings)],
-                ['title' => 'Eligibilities / Licenses', 'headers' => ['License / Eligibility', 'Rating', 'Date Issued', 'Valid Until'], 'rows' => array_map(fn ($el) => [
+                ['title' => 'Eligibilities / Licenses', 'icon' => 'id-card', 'headers' => ['License / Eligibility', 'Rating', 'Date Issued', 'Valid Until'], 'rows' => array_map(fn ($el) => [
                     (in_array($el->license_name, ['RA1080', "Other's"], true) && $el->license_specify) ? $el->license_name.' - '.$el->license_specify : $el->license_name,
                     $el->rating ?: '—',
                     $el->date_issued ? date('M d, Y', strtotime($el->date_issued)) : '—',
@@ -457,8 +533,9 @@ function qs_button(string $field, ?bool $current, bool $wantTrue): void
                 ], $eligibilities)],
             ];
             foreach ($readonlyTables as $t): ?>
-                <section class="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                    <h3 class="mb-4 text-lg font-black text-evaluator-indigoDark"><?= evaluator_e($t['title']) ?></h3>
+                <section class="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    <?= evaluator_section_header($t['title'], $t['icon']) ?>
+                    <div class="p-6">
                     <?php if (empty($t['rows'])): ?>
                         <p class="text-sm text-slate-500">No records submitted.</p>
                     <?php else: ?>
@@ -467,11 +544,16 @@ function qs_button(string $field, ?bool $current, bool $wantTrue): void
                             <tbody><?php foreach ($t['rows'] as $row): ?><tr><?php foreach ($row as $cell): ?><td class="border-b border-slate-200 px-3 py-2"><?= evaluator_e((string) $cell) ?></td><?php endforeach; ?></tr><?php endforeach; ?></tbody>
                         </table></div>
                     <?php endif; ?>
+                    </div>
                 </section>
             <?php endforeach; ?>
 
-            <section class="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h3 class="mb-4 text-lg font-black text-evaluator-indigoDark">Submitted Documents</h3>
+            <section class="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <?= evaluator_section_header('Submitted Documents', 'paperclip', null, empty($documents) ? '' : '<button type="button" id="download-all-docs" title="If your browser blocks some files, click the download icon near the address bar and choose Allow — all documents will then download together." class="inline-flex items-center gap-1.5 rounded-lg bg-white/15 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-white/25"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-4 w-4"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>Download All</button>') ?>
+                <div class="p-6">
+                <?php if (!empty($documents) && count($documents) > 1): ?>
+                    <p id="download-all-hint" class="mb-3 hidden rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700">If your browser blocked some of the files, click the download icon near the address bar and choose "Allow" — all documents will then download together.</p>
+                <?php endif; ?>
                 <?php if (empty($documents)): ?>
                     <p class="text-sm text-slate-500">No records submitted.</p>
                 <?php else: ?>
@@ -479,14 +561,95 @@ function qs_button(string $field, ?bool $current, bool $wantTrue): void
                         <thead><tr><th class="border-b-2 border-slate-300 px-3 py-2 text-left font-bold">Document Type</th><th class="border-b-2 border-slate-300 px-3 py-2 text-left font-bold">File</th></tr></thead>
                         <tbody><?php foreach ($documents as $doc): ?><tr>
                             <td class="border-b border-slate-200 px-3 py-2"><span class="pill bg-evaluator-indigoLight text-evaluator-indigo"><?= evaluator_e($doc->type) ?></span></td>
-                            <td class="border-b border-slate-200 px-3 py-2"><a href="<?= evaluator_url('document.php?path='.urlencode($doc->file_path)) ?>" target="_blank" rel="noopener" class="text-evaluator-indigo underline"><?= evaluator_e(basename($doc->file_path)) ?></a></td>
+                            <td class="border-b border-slate-200 px-3 py-2"><button type="button" class="doc-view-trigger text-evaluator-indigo underline" data-url="<?= evaluator_e(evaluator_url('document.php?path='.urlencode($doc->file_path))) ?>" data-name="<?= evaluator_e(basename($doc->file_path)) ?>"><?= evaluator_e(basename($doc->file_path)) ?></button></td>
                         </tr><?php endforeach; ?></tbody>
                     </table></div>
                 <?php endif; ?>
+                </div>
             </section>
         </main>
     </div>
 </div>
+
+<div id="doc-view-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-2 sm:p-4">
+    <div class="flex h-[97vh] w-full max-w-[98vw] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+        <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+            <h3 id="doc-view-modal-title" class="truncate text-lg font-black text-evaluator-indigoDark">Document</h3>
+            <div class="flex items-center gap-4">
+                <a id="doc-view-modal-newtab" href="#" target="_blank" rel="noopener" class="text-sm font-bold text-evaluator-indigo hover:underline">Open in new tab</a>
+                <button type="button" id="doc-view-modal-close" class="text-slate-400 transition hover:text-slate-700" aria-label="Close">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-6 w-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <iframe id="doc-view-modal-frame" class="h-full w-full flex-1" src="about:blank"></iframe>
+    </div>
+</div>
+
+<script>
+    (function () {
+        var modal = document.getElementById('doc-view-modal');
+        var closeBtn = document.getElementById('doc-view-modal-close');
+        var frame = document.getElementById('doc-view-modal-frame');
+        var titleEl = document.getElementById('doc-view-modal-title');
+        var newTabLink = document.getElementById('doc-view-modal-newtab');
+        if (modal) {
+            var openModal = function (url, name) {
+                titleEl.textContent = name || 'Document';
+                newTabLink.href = url;
+                frame.src = url;
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            };
+            var closeModal = function () {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                frame.src = 'about:blank';
+            };
+            document.querySelectorAll('.doc-view-trigger').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    openModal(btn.getAttribute('data-url'), btn.getAttribute('data-name'));
+                });
+            });
+            closeBtn.addEventListener('click', closeModal);
+            modal.addEventListener('click', function (e) {
+                if (e.target === modal) closeModal();
+            });
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeModal();
+            });
+        }
+    })();
+</script>
+
+<script>
+    (function () {
+        var btn = document.getElementById('download-all-docs');
+        if (!btn) return;
+
+        btn.addEventListener('click', function () {
+            var triggers = document.querySelectorAll('.doc-view-trigger');
+            var hint = document.getElementById('download-all-hint');
+            // Shown without blocking (no alert()) so it never interrupts the
+            // synchronous download loop below — an alert() pauses script
+            // execution and can cost the browser's "this came from a real
+            // click" activation window, which is exactly what makes the
+            // multi-file downloads get blocked in the first place.
+            if (hint) hint.classList.remove('hidden');
+
+            triggers.forEach(function (t) {
+                var a = document.createElement('a');
+                a.href = t.getAttribute('data-url');
+                a.download = t.getAttribute('data-name') || '';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            });
+        });
+    })();
+</script>
 
 <script>
 (function () {
@@ -542,7 +705,11 @@ function qs_button(string $field, ?bool $current, bool $wantTrue): void
         danger: { bg: '#fee2e2', fg: '#b91c1c', badge: '#b91c1c' },
         gray: { bg: '#f1f5f9', fg: '#475569', badge: '#475569' }
     };
-    var CURRENTLY_EXCLUDED = <?= $evaluation->result === EVAL_RESULT_EXCLUDED ? 'true' : 'false' ?>;
+    // Only a manual Exclude made with a complete checklist sticks across
+    // re-saves — matches eval_compute_result()'s PHP-side rule.
+    var WAS_MANUALLY_EXCLUDED = <?= $wasManuallyExcluded ? 'true' : 'false' ?>;
+    var NEVER_EVALUATED = <?= $neverEvaluated ? 'true' : 'false' ?>;
+    var MANDATORY_LABELS = <?= json_encode(eval_mandatory_requirements()) ?>;
 
     function qsBool(field) {
         var v = document.querySelector('[data-qs-hidden][data-field="' + field + '"]').value;
@@ -552,9 +719,18 @@ function qs_button(string $field, ?bool $current, bool $wantTrue): void
     }
 
     function recomputeResult() {
-        var m = countChecked('.mandatory-check');
-        var docComplete = m === mandatoryTotal;
         var e = qsBool('qs_education_met'), x = qsBool('qs_experience_met'), t = qsBool('qs_training_met'), l = qsBool('qs_eligibility_met');
+
+        var missing = [];
+        document.querySelectorAll('.mandatory-check').forEach(function (el) {
+            if (!el.checked) missing.push(MANDATORY_LABELS[el.value]);
+        });
+        var docComplete = missing.length === 0;
+        var otherChecked = countChecked('.other-check') > 0;
+        // A never-saved evaluation that the evaluator hasn't touched at all
+        // yet (nothing checked, no QS marked) has nothing to warn about —
+        // don't default a blank page straight to "Excluded".
+        var hasAnyProgress = missing.length < mandatoryTotal || otherChecked || e !== null || x !== null || t !== null || l !== null;
 
         var result, color, label, desc;
         var disqualified = [];
@@ -563,21 +739,29 @@ function qs_button(string $field, ?bool $current, bool $wantTrue): void
         if (t === false) disqualified.push('Hours of Training');
         if (l === false) disqualified.push('Eligibility');
 
-        if (!docComplete) {
+        if (!docComplete && NEVER_EVALUATED && !hasAnyProgress) {
             result = 'pending'; color = 'gray'; label = 'Pending Document Review';
             desc = 'The status defaults to Pending Document Review until mandatory requirements are complete. Applicants are marked Qualified when all qualification standards are marked Meet the QS. Applicants can be marked Excluded only when specifically using the Exclude button below.';
+            missing = [];
+        } else if (!docComplete) {
+            result = 'excluded'; color = 'danger'; label = 'Excluded';
+            desc = 'Will be automatically excluded if you save now — the Mandatory Requirements checklist below is still incomplete.';
         } else if (e === true && x === true && t === true && l === true) {
             result = 'qualified'; color = 'success'; label = 'Qualified';
             desc = 'Documents are complete and all qualification standards are marked Meet the QS.';
-        } else if (CURRENTLY_EXCLUDED) {
+            missing = [];
+        } else if (WAS_MANUALLY_EXCLUDED) {
             result = 'excluded'; color = 'danger'; label = 'Excluded';
-            desc = 'This applicant does Not Meet Qualification Standards.';
+            desc = 'This applicant was excluded by the evaluator.';
+            missing = [];
         } else if (e === false || x === false || t === false || l === false) {
             result = 'not_qualified'; color = 'danger'; label = 'Not Qualified';
             desc = disqualified.length ? 'Did not Meet the QS: ' + disqualified.join(', ') + '.' : 'At least one qualification standard is marked Did not Meet the QS.';
+            missing = [];
         } else {
             result = 'pending'; color = 'gray'; label = 'Pending Document Review';
             desc = 'The status defaults to Pending Document Review until mandatory requirements are complete. Applicants are marked Qualified when all qualification standards are marked Meet the QS. Applicants can be marked Excluded only when specifically using the Exclude button below.';
+            missing = [];
         }
 
         var s = RESULT_STYLES[color];
@@ -587,6 +771,27 @@ function qs_button(string $field, ?bool $current, bool $wantTrue): void
         document.getElementById('result-badge-label').style.background = s.badge;
         document.getElementById('result-badge-label').textContent = label.toUpperCase();
         document.getElementById('result-badge-desc').textContent = desc;
+
+        var missingBox = document.getElementById('result-missing-box');
+        if (missing.length) {
+            if (!missingBox) {
+                missingBox = document.createElement('div');
+                missingBox.id = 'result-missing-box';
+                missingBox.className = 'mb-4 rounded-lg border border-rose-200 bg-rose-50 p-4';
+                missingBox.innerHTML = '<p class="mb-2 text-xs font-bold uppercase tracking-wide text-rose-700">Missing Mandatory Requirements</p><ul class="list-inside list-disc space-y-1 text-sm text-rose-700"></ul>';
+                box.insertAdjacentElement('afterend', missingBox);
+            }
+            var list = missingBox.querySelector('ul');
+            list.innerHTML = '';
+            missing.forEach(function (label) {
+                var li = document.createElement('li');
+                li.textContent = label;
+                list.appendChild(li);
+            });
+            missingBox.style.display = '';
+        } else if (missingBox) {
+            missingBox.style.display = 'none';
+        }
     }
 })();
 </script>

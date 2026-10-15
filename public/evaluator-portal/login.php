@@ -6,7 +6,7 @@ const MAX_ATTEMPTS = 5;
 const LOCKOUT_SECONDS = 60;
 
 if (evaluator_user() !== null) {
-    header('Location: '.evaluator_url('applications.php'));
+    header('Location: '.evaluator_url('dashboard.php'));
     exit;
 }
 
@@ -131,7 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 eval_throttle_clear($throttleKey);
                 evaluator_login((int) $user->id);
 
-                $redirect = $_GET['redirect'] ?? evaluator_url('applications.php');
+                $redirect = $_GET['redirect'] ?? evaluator_url('dashboard.php');
                 header('Location: '.$redirect);
                 exit;
             }

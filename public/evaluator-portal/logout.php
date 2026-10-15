@@ -8,5 +8,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 evaluator_logout();
 
-header('Location: '.evaluator_url('login.php'));
+header('Location: /');
 exit;

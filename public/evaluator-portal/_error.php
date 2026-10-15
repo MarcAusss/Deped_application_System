@@ -25,7 +25,7 @@ http_response_code(500);
 <body>
   <div class="card">
     <h1>Something Went Wrong</h1>
-    <p>We hit an unexpected problem on our end. Please try again in a moment. If this keeps happening, check storage/logs/laravel.log for details.</p>
+    <p>We hit an unexpected problem on our end. Please try again in a moment. If this keeps happening, please contact the system administrator.</p>
     <a href="/">Back to Home</a>
   </div>
 </body>

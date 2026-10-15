@@ -196,16 +196,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!v_present($email)) { $errors->add('email', 'The email field is required.'); }
     elseif (!v_email($email)) { $errors->add('email', 'The email field must be a valid email address.'); }
 
-    if ($birthDate !== '' && (!v_date($birthDate) || !v_date_before_or_equal_today($birthDate))) {
+    if (!v_present($phone)) { $errors->add('phone_number', 'The phone number field is required.'); }
+
+    if (!v_present($address)) { $errors->add('address', 'The address field is required.'); }
+
+    if (!v_present($birthDate)) {
+        $errors->add('birth_date', 'The birth date field is required.');
+    } elseif (!v_date($birthDate) || !v_date_before_or_equal_today($birthDate)) {
         $errors->add('birth_date', 'The birth date field must be a date before or equal to today.');
     }
 
+    if (!v_present($sex)) { $errors->add('sex', 'The sex field is required.'); }
+
+    if (!v_present($civilStatus)) { $errors->add('civil_status', 'The civil status field is required.'); }
+
     if (!v_present($religion)) { $errors->add('religion', 'The religion field is required.'); }
+
+    // Disability and Ethnic Group are intentionally left optional — every
+    // other Personal Information field above is required.
 
     $educationRows = $_POST['education'] ?? [];
     $experienceRows = $_POST['experience'] ?? [];
     $trainingRows = $_POST['training'] ?? [];
     $eligibilityRows = $_POST['eligibility'] ?? [];
+
+    if (empty($educationRows)) {
+        $errors->add('education', 'At least one Educational Background entry is required.');
+    }
+    foreach ($educationRows as $i => $row) {
+        $level = trim($row['level'] ?? '');
+        $levelSpecify = trim($row['level_specify'] ?? '');
+        $school = trim($row['school'] ?? '');
+        $degree = trim($row['degree'] ?? '');
+        $yearGraduated = trim($row['year_graduated'] ?? '');
+
+        if (!v_present($level)) { $errors->add("education.{$i}.level", 'The education level field is required.'); }
+        elseif ($level === "Other's" && !v_present($levelSpecify)) { $errors->add("education.{$i}.level_specify", 'Please specify the education level.'); }
+
+        if (!v_present($school)) { $errors->add("education.{$i}.school", 'The school field is required.'); }
+        if (!v_present($degree)) { $errors->add("education.{$i}.degree", 'The degree or course field is required.'); }
+        if (!v_present($yearGraduated)) { $errors->add("education.{$i}.year_graduated", 'The year graduated field is required.'); }
+    }
 
     foreach ($trainingRows as $i => $row) {
         foreach (['training_date', 'training_end_date'] as $dateField) {
@@ -213,6 +244,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($value !== '' && !v_date_format_ym($value)) {
                 $errors->add("training.{$i}.{$dateField}", 'The training date must be a valid month/year not in the future.');
             }
+        }
+    }
+
+    foreach ($eligibilityRows as $i => $row) {
+        $neverExpires = !empty($row['never_expires']);
+        $validUntil = trim($row['valid_until'] ?? '');
+
+        if (!$neverExpires && $validUntil !== '' && v_date($validUntil) && $validUntil < date('Y-m-d')) {
+            $errors->add("eligibility.{$i}.valid_until", 'This eligibility/license has already expired. Please update the validity date or check "Never expires" before submitting.');
         }
     }
 
@@ -521,7 +561,7 @@ require __DIR__.'/_layout_head.php';
                 </div>
             <?php endif; ?>
 
-            <form method="POST" action="<?= portal_url('apply.php').'?'.($isEdit ? 'application='.$applicationId : 'job='.$jobId) ?>" enctype="multipart/form-data" class="space-y-8">
+            <form id="applyForm" method="POST" action="<?= portal_url('apply.php').'?'.($isEdit ? 'application='.$applicationId : 'job='.$jobId) ?>" enctype="multipart/form-data" class="space-y-8">
                 <?= portal_csrf_field() ?>
 
                 <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
@@ -541,30 +581,30 @@ require __DIR__.'/_layout_head.php';
                             <input type="email" name="email" value="<?= portal_e($val('email', $profile->email ?? '')) ?>" required class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
                         </div>
                         <div>
-                            <label class="mb-2 block text-sm font-bold text-slate-700">Phone Number</label>
-                            <input type="text" name="phone_number" value="<?= portal_e($val('phone_number', $profile->phone ?? '')) ?>" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
+                            <label class="mb-2 block text-sm font-bold text-slate-700">Phone Number <span class="text-red-600">*</span></label>
+                            <input type="text" name="phone_number" value="<?= portal_e($val('phone_number', $profile->phone ?? '')) ?>" required class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
                         </div>
                         <div>
-                            <label class="mb-2 block text-sm font-bold text-slate-700">Complete Address</label>
-                            <input type="text" name="address" value="<?= portal_e($val('address', $profile->address ?? '')) ?>" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
+                            <label class="mb-2 block text-sm font-bold text-slate-700">Complete Address <span class="text-red-600">*</span></label>
+                            <input type="text" name="address" value="<?= portal_e($val('address', $profile->address ?? '')) ?>" required class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
                         </div>
                         <div>
-                            <label class="mb-2 block text-sm font-bold text-slate-700">Birth Date</label>
-                            <input type="date" name="birth_date" value="<?= portal_e($val('birth_date', $profile->birth_date ?? '')) ?>" max="<?= date('Y-m-d') ?>" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
+                            <label class="mb-2 block text-sm font-bold text-slate-700">Birth Date <span class="text-red-600">*</span></label>
+                            <input type="date" name="birth_date" value="<?= portal_e($val('birth_date', $profile->birth_date ?? '')) ?>" max="<?= date('Y-m-d') ?>" required class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
                         </div>
                         <div>
-                            <label class="mb-2 block text-sm font-bold text-slate-700">Sex (at Birth)</label>
+                            <label class="mb-2 block text-sm font-bold text-slate-700">Sex (at Birth) <span class="text-red-600">*</span></label>
                             <?php $selectedSex = $val('sex', $profile->sex ?? ''); ?>
-                            <select name="sex" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
+                            <select name="sex" required class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
                                 <option value="">Select sex</option>
                                 <option value="Male" <?= $selectedSex === 'Male' ? 'selected' : '' ?>>Male</option>
                                 <option value="Female" <?= $selectedSex === 'Female' ? 'selected' : '' ?>>Female</option>
                             </select>
                         </div>
                         <div>
-                            <label class="mb-2 block text-sm font-bold text-slate-700">Civil Status</label>
+                            <label class="mb-2 block text-sm font-bold text-slate-700">Civil Status <span class="text-red-600">*</span></label>
                             <?php $selectedCivilStatus = $val('civil_status', $profile->civil_status ?? ''); ?>
-                            <select name="civil_status" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
+                            <select name="civil_status" required class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
                                 <option value="">Select civil status</option>
                                 <?php foreach (['Single', 'Married', 'Widowed', 'Legally Separated', 'Divorced', 'Annulled', 'Other'] as $cs): ?>
                                     <option value="<?= portal_e($cs) ?>" <?= $selectedCivilStatus === $cs ? 'selected' : '' ?>><?= portal_e($cs) ?></option>
@@ -599,16 +639,16 @@ require __DIR__.'/_layout_head.php';
                                     <button type="button" onclick="removeEntry(this)" class="text-sm font-bold text-red-600 hover:text-red-800">Remove</button>
                                 </div>
                                 <div class="grid gap-4 md:grid-cols-2">
-                                    <select name="education[<?= $i ?>][level]" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100" onchange="toggleEducationSpecify(this)">
+                                    <select name="education[<?= $i ?>][level]" required class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100" onchange="toggleEducationSpecify(this)">
                                         <option value="" disabled hidden>Education level</option>
                                         <?php foreach (["Bachelor's Degree", "Master's Degree", "Doctorate Degree", "Other's"] as $level): ?>
                                             <option value="<?= portal_e($level) ?>" <?= ($education['level'] ?? '') === $level ? 'selected' : '' ?>><?= portal_e($level) ?></option>
                                         <?php endforeach; ?>
                                     </select>
-                                    <input type="text" name="education[<?= $i ?>][level_specify]" data-role="education-specify" placeholder="Please specify" value="<?= portal_e($education['level_specify'] ?? '') ?>" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100 <?= ($education['level'] ?? '') === "Other's" ? '' : 'hidden' ?>">
-                                    <input type="text" name="education[<?= $i ?>][school]" placeholder="School" value="<?= portal_e($education['school'] ?? '') ?>" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
-                                    <input type="text" name="education[<?= $i ?>][degree]" placeholder="Degree or course" value="<?= portal_e($education['degree'] ?? '') ?>" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
-                                    <input type="text" name="education[<?= $i ?>][year_graduated]" placeholder="Year graduated" value="<?= portal_e($education['year_graduated'] ?? '') ?>" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
+                                    <input type="text" name="education[<?= $i ?>][level_specify]" data-role="education-specify" placeholder="Please specify" value="<?= portal_e($education['level_specify'] ?? '') ?>" <?= ($education['level'] ?? '') === "Other's" ? 'required' : '' ?> class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100 <?= ($education['level'] ?? '') === "Other's" ? '' : 'hidden' ?>">
+                                    <input type="text" name="education[<?= $i ?>][school]" placeholder="School" value="<?= portal_e($education['school'] ?? '') ?>" required class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
+                                    <input type="text" name="education[<?= $i ?>][degree]" placeholder="Degree or course" value="<?= portal_e($education['degree'] ?? '') ?>" required class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
+                                    <input type="text" name="education[<?= $i ?>][year_graduated]" placeholder="Year graduated" value="<?= portal_e($education['year_graduated'] ?? '') ?>" required class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
                                 </div>
                             </div>
                         <?php endforeach; ?>
@@ -751,13 +791,21 @@ require __DIR__.'/_layout_head.php';
 
     const inputClass = 'w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100';
 
-    function removeEntry(button) { button.closest('.dynamic-entry').remove(); }
+    function removeEntry(button) {
+        const entry = button.closest('.dynamic-entry');
+        const wrapper = entry.parentElement;
+        if (wrapper.id === 'educationWrapper' && wrapper.querySelectorAll('.dynamic-entry').length <= 1) {
+            alert('At least one Educational Background entry is required.');
+            return;
+        }
+        entry.remove();
+    }
 
     function toggleEducationSpecify(selectEl) {
         const entry = selectEl.closest('.dynamic-entry');
         const specifyInput = entry.querySelector('[data-role="education-specify"]');
-        if (selectEl.value === "Other's") { specifyInput.classList.remove('hidden'); }
-        else { specifyInput.classList.add('hidden'); specifyInput.value = ''; }
+        if (selectEl.value === "Other's") { specifyInput.classList.remove('hidden'); specifyInput.required = true; }
+        else { specifyInput.classList.add('hidden'); specifyInput.required = false; specifyInput.value = ''; }
     }
 
     function addEducation() {
@@ -769,7 +817,7 @@ require __DIR__.'/_layout_head.php';
                     <button type="button" onclick="removeEntry(this)" class="text-sm font-bold text-red-600 hover:text-red-800">Remove</button>
                 </div>
                 <div class="grid gap-4 md:grid-cols-2">
-                    <select name="education[${educationIndex}][level]" class="${inputClass}" onchange="toggleEducationSpecify(this)">
+                    <select name="education[${educationIndex}][level]" required class="${inputClass}" onchange="toggleEducationSpecify(this)">
                         <option value="" disabled selected hidden>Education level</option>
                         <option value="Bachelor's Degree">Bachelor's Degree</option>
                         <option value="Master's Degree">Master's Degree</option>
@@ -777,9 +825,9 @@ require __DIR__.'/_layout_head.php';
                         <option value="Other's">Other's</option>
                     </select>
                     <input type="text" name="education[${educationIndex}][level_specify]" data-role="education-specify" placeholder="Please specify" class="${inputClass} hidden">
-                    <input type="text" name="education[${educationIndex}][school]" placeholder="School" class="${inputClass}">
-                    <input type="text" name="education[${educationIndex}][degree]" placeholder="Degree or course" class="${inputClass}">
-                    <input type="text" name="education[${educationIndex}][year_graduated]" placeholder="Year graduated" class="${inputClass}">
+                    <input type="text" name="education[${educationIndex}][school]" placeholder="School" required class="${inputClass}">
+                    <input type="text" name="education[${educationIndex}][degree]" placeholder="Degree or course" required class="${inputClass}">
+                    <input type="text" name="education[${educationIndex}][year_graduated]" placeholder="Year graduated" required class="${inputClass}">
                 </div>
             </div>
         `);
@@ -886,6 +934,31 @@ require __DIR__.'/_layout_head.php';
         if (experienceIndex === 0) addExperience();
         if (trainingIndex === 0) addTraining();
         if (eligibilityIndex === 0) addEligibility();
+    });
+
+    // An expired eligibility/license (not marked "Never expires") blocks
+    // submission entirely — matches the server-side check in apply.php, but
+    // catches it immediately instead of making the applicant wait for a
+    // round-trip.
+    document.getElementById('applyForm').addEventListener('submit', function (e) {
+        const today = new Date().toISOString().slice(0, 10);
+        let expired = false;
+
+        document.querySelectorAll('#eligibilityWrapper .dynamic-entry').forEach(function (entry) {
+            const neverExpires = entry.querySelector('input[name*="[never_expires]"]');
+            if (neverExpires && neverExpires.checked) return;
+
+            const validUntil = entry.querySelector('input[name*="[valid_until]"]');
+            if (validUntil && validUntil.value && validUntil.value < today) {
+                expired = true;
+                validUntil.classList.add('border-red-500');
+            }
+        });
+
+        if (expired) {
+            e.preventDefault();
+            alert('One of your eligibility/license entries has already expired. Please update its Valid Until date or check "Never expires" before submitting.');
+        }
     });
 </script>
 

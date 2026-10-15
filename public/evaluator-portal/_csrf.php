@@ -28,7 +28,7 @@ function csrf_verify(): void
 
     if (!hash_equals($_SESSION['csrf_token'] ?? '', $submitted)) {
         http_response_code(403);
-        echo 'Your session has expired. Please go back and try again.';
+        require __DIR__.'/_csrf_expired.php';
         exit;
     }
 }

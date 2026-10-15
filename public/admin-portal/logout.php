@@ -8,5 +8,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 admin_logout();
 
-header('Location: '.admin_url('login.php'));
+header('Location: /');
 exit;

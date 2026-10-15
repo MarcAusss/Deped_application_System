@@ -10,7 +10,7 @@ $pageTitle = $pageTitle ?? 'DepEd Recruitment | Administration';
     <title><?= admin_e($pageTitle) ?></title>
 
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.1/chart.umd.min.js"></script>
 
     <script>
         tailwind.config = {
@@ -31,6 +31,17 @@ $pageTitle = $pageTitle ?? 'DepEd Recruitment | Administration';
 
     <style>
         .pill { display: inline-flex; align-items: center; border-radius: 9999px; padding: .25rem .75rem; font-size: .75rem; font-weight: 700; text-transform: uppercase; }
+
+        /*
+         * Keeps laptops and desktops looking like the 1920px (100%) reference
+         * layout: since every size here is in rem, scaling the root font size
+         * by viewport width scales the whole page proportionally instead of
+         * just reflowing/cramping on narrower screens. Phones/tablets
+         * (< 1024px) are left untouched.
+         */
+        @media (min-width: 1024px) {
+            html { font-size: clamp(11.2px, calc(100vw / 120), 16px); }
+        }
     </style>
 </head>
 <body class="flex min-h-screen flex-col bg-slate-50 text-slate-800">

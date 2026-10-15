@@ -63,7 +63,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         )->execute([$name, $email, password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]), $role, $isApproved ? 1 : 0, $userId]);
 
         flash_set('success', 'User updated.');
+
+        if (($_POST['ajax'] ?? '') === '1') {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'redirect' => admin_url('users.php')]);
+            exit;
+        }
+
         header('Location: '.admin_url('users.php'));
+        exit;
+    }
+
+    if (($_POST['ajax'] ?? '') === '1') {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'errors' => $errors->all()]);
         exit;
     }
 
