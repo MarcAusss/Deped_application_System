@@ -42,7 +42,12 @@ $firstName = explode(' ', $user->name)[0];
 
 $statusMeta = [
     'pending' => ['badge' => 'bg-slate-100 text-slate-600 ring-slate-200', 'step' => 2, 'tone' => 'neutral', 'terminal' => false, 'next' => 'Your application is currently under review by our evaluators. You will be updated here once the initial evaluation is complete.'],
-    'evaluated' => ['badge' => 'bg-blue-50 text-blue-700 ring-blue-200', 'step' => 3, 'tone' => 'positive', 'terminal' => false, 'next' => 'Your application has been evaluated and meets the qualification standards. It is now awaiting the final hiring decision.'],
+    // Deliberately neutral wording — 'evaluated' covers BOTH QS outcomes
+    // (Meet the QS and Did Not Meet the QS; see eval_compute_result()'s
+    // status mapping), and the real result stays hidden from the applicant
+    // until the admin's final Qualified/Disqualified decision. Don't imply
+    // either outcome here.
+    'evaluated' => ['badge' => 'bg-blue-50 text-blue-700 ring-blue-200', 'step' => 3, 'tone' => 'positive', 'terminal' => false, 'next' => 'Your application has been evaluated. It is now awaiting the final hiring decision.'],
     'excluded' => ['badge' => 'bg-red-50 text-red-700 ring-red-200', 'step' => 3, 'tone' => 'negative', 'terminal' => false, 'next' => 'Your application has been evaluated. It is now awaiting the final decision.'],
     'qualified' => ['badge' => 'bg-green-50 text-green-700 ring-green-200', 'step' => 3, 'tone' => 'positive', 'terminal' => true, 'next' => 'Congratulations! Your application has been marked Qualified. Please wait to be contacted regarding the next steps.'],
     'disqualified' => ['badge' => 'bg-red-50 text-red-700 ring-red-200', 'step' => 3, 'tone' => 'negative', 'terminal' => true, 'next' => 'Your application was not selected for this position. Thank you for taking the time to apply.'],
@@ -197,8 +202,20 @@ require __DIR__.'/_layout_head.php';
                             <h3 class="text-lg font-black text-government-dark"><?= portal_e($app->job_title ?? 'Job position no longer available') ?></h3>
                             <p class="mt-1 text-sm text-slate-500">Applied on <?= portal_e(date('F d, Y', strtotime($app->created_at))) ?></p>
                         </div>
+                        <?php
+                            if ($isFinalDecision) {
+                                $topBadgeClass = $meta['badge'];
+                                $topBadgeLabel = ucfirst($app->status);
+                            } elseif ($app->status === 'pending') {
+                                $topBadgeClass = 'bg-slate-100 text-slate-600 ring-slate-200';
+                                $topBadgeLabel = 'Pending';
+                            } else {
+                                $topBadgeClass = 'bg-blue-50 text-government-navy ring-government-navy/20';
+                                $topBadgeLabel = 'Evaluated';
+                            }
+                        ?>
                         <div class="flex items-center gap-3">
-                            <span class="inline-flex w-fit items-center rounded-full px-4 py-1.5 text-xs font-bold uppercase ring-1 <?= $isFinalDecision ? $meta['badge'] : 'bg-slate-100 text-slate-600 ring-slate-200' ?>"><?= $isFinalDecision ? portal_e(ucfirst($app->status)) : 'Pending' ?></span>
+                            <span class="inline-flex w-fit items-center rounded-full px-4 py-1.5 text-xs font-bold uppercase ring-1 <?= $topBadgeClass ?>"><?= portal_e($topBadgeLabel) ?></span>
                             <?php if ($canEdit): ?>
                                 <a href="<?= portal_url('apply.php?application='.$app->id) ?>" title="Once the application period has ended, you can no longer edit or update your application." class="inline-flex w-fit items-center gap-1.5 rounded-full border border-government-navy px-4 py-1.5 text-xs font-bold text-government-navy transition hover:bg-government-navy hover:text-white">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-3.5 w-3.5">

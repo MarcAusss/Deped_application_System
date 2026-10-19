@@ -255,11 +255,11 @@ require __DIR__.'/_layout_head.php';
 
                     <div class="cmd-hero__brief-grid">
                         <div class="cmd-hero__brief-item">
-                            <strong class="cmd-hero__brief-value"><?= number_format($pendingCount) ?></strong>
+                            <strong class="cmd-hero__brief-value" data-stat="pending"><?= number_format($pendingCount) ?></strong>
                             <span class="cmd-hero__brief-name">Awaiting evaluation</span>
                         </div>
                         <div class="cmd-hero__brief-item">
-                            <strong class="cmd-hero__brief-value"><?= number_format($approvalCount) ?></strong>
+                            <strong class="cmd-hero__brief-value" data-stat="approval"><?= number_format($approvalCount) ?></strong>
                             <span class="cmd-hero__brief-name">For final action</span>
                         </div>
                         <div class="cmd-hero__brief-item">
@@ -277,20 +277,20 @@ require __DIR__.'/_layout_head.php';
                 <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
                     <?php
                     $tiles = [
-                        ['Evaluators', $evaluatorCount, 'Registered accounts', 'indigo', '<path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />'],
-                        ['Total Applicants', $totalApplicants, 'All submissions', 'teal', '<path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />'],
-                        ['Awaiting Evaluation', $pendingCount, 'In evaluator queue', 'slate', '<path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />'],
-                        ['For Final Action', $approvalCount, 'Evaluation complete', 'amber', '<path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 4.556-3.04 8.252-7.071 9.606a.75.75 0 0 1-.858 0C9.04 20.252 6 16.556 6 12V5.457a.75.75 0 0 1 .515-.712 48.9 48.9 0 0 1 10.97 0 .75.75 0 0 1 .515.712V12Z" />'],
-                        ['Qualified', $qualifiedCount, 'Final decisions', 'emerald', '<path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />'],
-                        ['Disqualified', $disqualifiedCount, 'In Archive', 'rose', '<path stroke-linecap="round" stroke-linejoin="round" d="M15 9l-6 6m0-6 6 6m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />'],
+                        ['Evaluators', $evaluatorCount, 'Registered accounts', 'indigo', '<path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />', null],
+                        ['Total Applicants', $totalApplicants, 'All submissions', 'teal', '<path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />', null],
+                        ['Awaiting Evaluation', $pendingCount, 'In evaluator queue', 'slate', '<path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />', 'pending'],
+                        ['For Final Action', $approvalCount, 'Evaluation complete', 'amber', '<path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 4.556-3.04 8.252-7.071 9.606a.75.75 0 0 1-.858 0C9.04 20.252 6 16.556 6 12V5.457a.75.75 0 0 1 .515-.712 48.9 48.9 0 0 1 10.97 0 .75.75 0 0 1 .515.712V12Z" />', 'approval'],
+                        ['Qualified', $qualifiedCount, 'Final decisions', 'emerald', '<path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />', null],
+                        ['Disqualified', $disqualifiedCount, 'In Archive', 'rose', '<path stroke-linecap="round" stroke-linejoin="round" d="M15 9l-6 6m0-6 6 6m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />', null],
                     ];
-                    foreach ($tiles as [$label, $value, $desc, $tone, $iconPath]): ?>
+                    foreach ($tiles as [$label, $value, $desc, $tone, $iconPath, $statKey]): ?>
                         <div class="stat-card stat-card--<?= $tone ?>">
                             <span class="stat-card__icon">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><?= $iconPath ?></svg>
                             </span>
                             <p class="stat-card__label"><?= admin_e($label) ?></p>
-                            <p class="stat-card__value"><?= number_format($value) ?></p>
+                            <p class="stat-card__value"<?= $statKey ? ' data-stat="'.$statKey.'"' : '' ?>><?= number_format($value) ?></p>
                             <p class="stat-card__desc"><?= admin_e($desc) ?></p>
                         </div>
                     <?php endforeach; ?>
@@ -384,7 +384,7 @@ require __DIR__.'/_layout_head.php';
 </div>
 
 <div id="view-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4 sm:p-6">
-    <div class="flex h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+    <div class="flex h-[85vh] max-h-[calc(100vh-4rem)] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
         <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
             <h3 class="text-lg font-black text-admin-indigoDark">Application Details</h3>
             <button type="button" id="view-modal-close" class="text-slate-400 transition hover:text-slate-700" aria-label="Close">
@@ -485,6 +485,32 @@ require __DIR__.'/_layout_head.php';
                 row.classList.toggle('hidden', term !== '' && row.dataset.search.indexOf(term) === -1);
             });
         });
+    })();
+
+    // Keep "Awaiting evaluation" / "For final action" fresh in both the
+    // System overview hero AND the Recruitment portfolio tiles while this
+    // tab stays open — both read from the same [data-stat] markers, so a
+    // single poll updates every occurrence at once, in both sections.
+    (function () {
+        var targets = document.querySelectorAll('[data-stat]');
+        if (!targets.length) return;
+
+        function refreshStats() {
+            fetch('<?= admin_url('dashboard-stats.php') ?>', { credentials: 'same-origin' })
+                .then(function (res) { return res.ok ? res.json() : null; })
+                .then(function (data) {
+                    if (!data) return;
+                    document.querySelectorAll('[data-stat="pending"]').forEach(function (el) {
+                        el.textContent = data.pending.toLocaleString();
+                    });
+                    document.querySelectorAll('[data-stat="approval"]').forEach(function (el) {
+                        el.textContent = data.approval.toLocaleString();
+                    });
+                })
+                .catch(function () {});
+        }
+
+        setInterval(refreshStats, 30000);
     })();
 </script>
 

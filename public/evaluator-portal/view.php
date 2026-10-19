@@ -55,6 +55,10 @@ $experiences = $fetchAll('applicant_experiences');
 $trainings = $fetchAll('applicant_trainings');
 $eligibilities = $fetchAll('applicant_eligibilities');
 $documents = $fetchAll('application_documents');
+$documentsByType = [];
+foreach ($documents as $doc) {
+    $documentsByType[$doc->type] = $doc;
+}
 
 $mandatorySelected = $evaluation ? (json_decode($evaluation->documentary_mandatory ?? '[]', true) ?: []) : [];
 $otherSelected = $evaluation ? (json_decode($evaluation->documentary_other ?? '[]', true) ?: []) : [];
@@ -266,22 +270,32 @@ require __DIR__.'/_layout_head.php';
             <?php endforeach; ?>
 
             <section class="mb-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <?= evaluator_section_header('Submitted Documents', 'paperclip', null, empty($documents) ? '' : '<button type="button" id="download-all-docs" title="If your browser blocks some files, click the download icon near the address bar and choose Allow — all documents will then download together." class="inline-flex items-center gap-1.5 rounded-lg bg-white/15 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-white/25"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-4 w-4"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>Download All</button>') ?>
+                <?= evaluator_section_header('Submitted Documents', 'paperclip', null, count($documents) < 2 ? '' : '<button type="button" id="download-all-docs" title="If your browser blocks some files, click the download icon near the address bar and choose Allow — all documents will then download together." class="inline-flex items-center gap-1.5 rounded-lg bg-white/15 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-white/25"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-4 w-4"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>Download All</button>') ?>
                 <div class="p-6">
-                <?php if (!empty($documents) && count($documents) > 1): ?>
+                <?php if (count($documents) > 1): ?>
                     <p id="download-all-hint" class="mb-3 hidden rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700">If your browser blocked some of the files, click the download icon near the address bar and choose "Allow" — all documents will then download together.</p>
                 <?php endif; ?>
-                <?php if (empty($documents)): ?>
-                    <p class="text-sm text-slate-500">No records submitted.</p>
-                <?php else: ?>
                     <div class="overflow-x-auto"><table class="w-full text-sm">
                         <thead><tr><th class="border-b-2 border-slate-300 px-3 py-2 text-left font-bold">Document Type</th><th class="border-b-2 border-slate-300 px-3 py-2 text-left font-bold">File</th></tr></thead>
-                        <tbody><?php foreach ($documents as $doc): ?><tr>
+                        <tbody>
+                        <?php foreach (DOCUMENT_FIELDS as $field => $label): $doc = $documentsByType[$field] ?? null; ?>
+                        <tr>
+                            <td class="border-b border-slate-200 px-3 py-2"><span class="pill bg-evaluator-indigoLight text-evaluator-indigo"><?= evaluator_e($label) ?></span></td>
+                            <?php if ($doc): ?>
+                            <td class="border-b border-slate-200 px-3 py-2"><button type="button" class="doc-view-trigger text-evaluator-indigo underline" data-url="<?= evaluator_e(evaluator_url('document.php?path='.urlencode($doc->file_path))) ?>" data-name="<?= evaluator_e(basename($doc->file_path)) ?>"><?= evaluator_e(basename($doc->file_path)) ?></button></td>
+                            <?php else: ?>
+                            <td class="border-b border-slate-200 px-3 py-2 text-slate-400 italic">No <?= evaluator_e($label) ?> attached</td>
+                            <?php endif; ?>
+                        </tr>
+                        <?php endforeach; ?>
+                        <?php foreach ($documents as $doc): if (array_key_exists($doc->type, DOCUMENT_FIELDS)) { continue; } ?>
+                        <tr>
                             <td class="border-b border-slate-200 px-3 py-2"><span class="pill bg-evaluator-indigoLight text-evaluator-indigo"><?= evaluator_e($doc->type) ?></span></td>
                             <td class="border-b border-slate-200 px-3 py-2"><button type="button" class="doc-view-trigger text-evaluator-indigo underline" data-url="<?= evaluator_e(evaluator_url('document.php?path='.urlencode($doc->file_path))) ?>" data-name="<?= evaluator_e(basename($doc->file_path)) ?>"><?= evaluator_e(basename($doc->file_path)) ?></button></td>
-                        </tr><?php endforeach; ?></tbody>
+                        </tr>
+                        <?php endforeach; ?>
+                        </tbody>
                     </table></div>
-                <?php endif; ?>
                 </div>
             </section>
         </main>

@@ -52,6 +52,10 @@ $experiences = $fetchAll('applicant_experiences');
 $trainings = $fetchAll('applicant_trainings');
 $eligibilities = $fetchAll('applicant_eligibilities');
 $documents = $fetchAll('application_documents');
+$documentsByType = [];
+foreach ($documents as $doc) {
+    $documentsByType[$doc->type] = $doc;
+}
 
 $mandatorySelected = $evaluation ? (json_decode($evaluation->documentary_mandatory ?? '[]', true) ?: []) : [];
 $otherSelected = $evaluation ? (json_decode($evaluation->documentary_other ?? '[]', true) ?: []) : [];
@@ -507,8 +511,8 @@ require __DIR__.'/_layout_head.php';
                                             <div class="sm:col-span-2"><label class="mb-1 block text-xs font-bold text-slate-600">Training / Seminar Title</label><input type="text" name="title" value="<?= admin_e($t->title) ?>" required class="w-full rounded border border-slate-300 px-2 py-1.5 text-sm"></div>
                                             <div><label class="mb-1 block text-xs font-bold text-slate-600">Number of Hours</label><input type="number" name="hours" value="<?= admin_e((string) $t->hours) ?>" min="1" class="w-full rounded border border-slate-300 px-2 py-1.5 text-sm"></div>
                                             <div></div>
-                                            <div><label class="mb-1 block text-xs font-bold text-slate-600">Start of Training</label><input type="month" name="training_date" value="<?= $t->training_date ? date('Y-m', strtotime($t->training_date)) : '' ?>" max="<?= date('Y-m') ?>" class="w-full rounded border border-slate-300 px-2 py-1.5 text-sm"></div>
-                                            <div><label class="mb-1 block text-xs font-bold text-slate-600">End of Training</label><input type="month" name="training_end_date" value="<?= $t->training_end_date ? date('Y-m', strtotime($t->training_end_date)) : '' ?>" max="<?= date('Y-m') ?>" class="w-full rounded border border-slate-300 px-2 py-1.5 text-sm"></div>
+                                            <div><label class="mb-1 block text-xs font-bold text-slate-600">Start of Training</label><input type="date" name="training_date" value="<?= $t->training_date ? date('Y-m-d', strtotime($t->training_date)) : '' ?>" max="<?= date('Y-m-d') ?>" class="w-full rounded border border-slate-300 px-2 py-1.5 text-sm"></div>
+                                            <div><label class="mb-1 block text-xs font-bold text-slate-600">End of Training</label><input type="date" name="training_end_date" value="<?= $t->training_end_date ? date('Y-m-d', strtotime($t->training_end_date)) : '' ?>" max="<?= date('Y-m-d') ?>" class="w-full rounded border border-slate-300 px-2 py-1.5 text-sm"></div>
                                             <div class="sm:col-span-2"><button type="submit" class="rounded-lg bg-admin-indigo px-4 py-1.5 text-sm font-bold text-white hover:bg-admin-indigoDark">Save</button></div>
                                         </form>
                                     </details>
@@ -535,8 +539,8 @@ require __DIR__.'/_layout_head.php';
                         <div class="sm:col-span-2"><label class="mb-1 block text-xs font-bold text-slate-600">Training / Seminar Title</label><input type="text" name="title" required class="w-full rounded border border-slate-300 px-2 py-1.5 text-sm"></div>
                         <div><label class="mb-1 block text-xs font-bold text-slate-600">Number of Hours</label><input type="number" name="hours" min="1" class="w-full rounded border border-slate-300 px-2 py-1.5 text-sm"></div>
                         <div></div>
-                        <div><label class="mb-1 block text-xs font-bold text-slate-600">Start of Training</label><input type="month" name="training_date" max="<?= date('Y-m') ?>" class="w-full rounded border border-slate-300 px-2 py-1.5 text-sm"></div>
-                        <div><label class="mb-1 block text-xs font-bold text-slate-600">End of Training</label><input type="month" name="training_end_date" max="<?= date('Y-m') ?>" class="w-full rounded border border-slate-300 px-2 py-1.5 text-sm"></div>
+                        <div><label class="mb-1 block text-xs font-bold text-slate-600">Start of Training</label><input type="date" name="training_date" max="<?= date('Y-m-d') ?>" class="w-full rounded border border-slate-300 px-2 py-1.5 text-sm"></div>
+                        <div><label class="mb-1 block text-xs font-bold text-slate-600">End of Training</label><input type="date" name="training_end_date" max="<?= date('Y-m-d') ?>" class="w-full rounded border border-slate-300 px-2 py-1.5 text-sm"></div>
                         <div class="sm:col-span-2"><button type="submit" class="rounded-lg bg-admin-indigo px-4 py-1.5 text-sm font-bold text-white hover:bg-admin-indigoDark">Add</button></div>
                     </form>
                 </details>
@@ -631,14 +635,11 @@ require __DIR__.'/_layout_head.php';
 
             <!-- Submitted Documents -->
             <section class="mb-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <?= admin_section_header('Submitted Documents', 'paperclip', null, empty($documents) ? '' : '<button type="button" id="download-all-docs" title="If your browser blocks some files, click the download icon near the address bar and choose Allow — all documents will then download together." class="inline-flex items-center gap-1.5 rounded-lg bg-white/15 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-white/25"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-4 w-4"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>Download All</button>') ?>
+                <?= admin_section_header('Submitted Documents', 'paperclip', null, count($documents) < 2 ? '' : '<button type="button" id="download-all-docs" title="If your browser blocks some files, click the download icon near the address bar and choose Allow — all documents will then download together." class="inline-flex items-center gap-1.5 rounded-lg bg-white/15 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-white/25"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-4 w-4"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>Download All</button>') ?>
                 <div class="p-6">
-                <?php if (!empty($documents) && count($documents) > 1): ?>
+                <?php if (count($documents) > 1): ?>
                     <p id="download-all-hint" class="mb-3 hidden rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700">If your browser blocked some of the files, click the download icon near the address bar and choose "Allow" — all documents will then download together.</p>
                 <?php endif; ?>
-                <?php if (empty($documents)): ?>
-                    <p class="mb-4 text-sm text-slate-500">No records submitted.</p>
-                <?php else: ?>
                     <div class="mb-4 overflow-x-auto"><table class="w-full text-sm">
                         <thead><tr>
                             <th class="border-b-2 border-slate-300 px-3 py-2 text-left font-bold">Document Type</th>
@@ -646,7 +647,29 @@ require __DIR__.'/_layout_head.php';
                             <?php if (!$isFinalized): ?><th class="border-b-2 border-slate-300 px-3 py-2 text-center font-bold">Actions</th><?php endif; ?>
                         </tr></thead>
                         <tbody>
-                        <?php foreach ($documents as $doc): ?>
+                        <?php foreach (DOCUMENT_FIELDS as $field => $label): $doc = $documentsByType[$field] ?? null; ?>
+                            <tr>
+                                <td class="border-b border-slate-200 px-3 py-2"><span class="pill bg-admin-indigoLight text-admin-indigo"><?= admin_e($label) ?></span></td>
+                                <?php if ($doc): ?>
+                                <td class="border-b border-slate-200 px-3 py-2"><button type="button" class="doc-view-trigger text-admin-indigo underline" data-url="<?= admin_e(admin_url('document.php?path='.urlencode($doc->file_path))) ?>" data-name="<?= admin_e(basename($doc->file_path)) ?>"><?= admin_e(basename($doc->file_path)) ?></button></td>
+                                <?php if (!$isFinalized): ?>
+                                <td class="border-b border-slate-200 px-3 py-2 text-center">
+                                    <form method="POST" action="<?= admin_url('application-documents.php') ?>" class="inline" data-confirm="Delete this document?">
+                                        <?= admin_csrf_field() ?>
+                                        <input type="hidden" name="action" value="delete">
+                                        <input type="hidden" name="id" value="<?= $doc->id ?>">
+                                        <input type="hidden" name="application_id" value="<?= $applicationId ?>">
+                                        <button type="submit" class="font-bold text-rose-600 hover:underline">Delete</button>
+                                    </form>
+                                </td>
+                                <?php endif; ?>
+                                <?php else: ?>
+                                <td class="border-b border-slate-200 px-3 py-2 text-slate-400 italic">No <?= admin_e($label) ?> attached</td>
+                                <?php if (!$isFinalized): ?><td class="border-b border-slate-200 px-3 py-2"></td><?php endif; ?>
+                                <?php endif; ?>
+                            </tr>
+                        <?php endforeach; ?>
+                        <?php foreach ($documents as $doc): if (array_key_exists($doc->type, DOCUMENT_FIELDS)) { continue; } ?>
                             <tr>
                                 <td class="border-b border-slate-200 px-3 py-2"><span class="pill bg-admin-indigoLight text-admin-indigo"><?= admin_e($doc->type) ?></span></td>
                                 <td class="border-b border-slate-200 px-3 py-2"><button type="button" class="doc-view-trigger text-admin-indigo underline" data-url="<?= admin_e(admin_url('document.php?path='.urlencode($doc->file_path))) ?>" data-name="<?= admin_e(basename($doc->file_path)) ?>"><?= admin_e(basename($doc->file_path)) ?></button></td>
@@ -665,7 +688,6 @@ require __DIR__.'/_layout_head.php';
                         <?php endforeach; ?>
                         </tbody>
                     </table></div>
-                <?php endif; ?>
                 <?php if (!$isFinalized): ?>
                 <details><summary class="cursor-pointer font-bold text-admin-indigo hover:underline">+ Add New</summary>
                     <form method="POST" action="<?= admin_url('application-documents.php') ?>" enctype="multipart/form-data" class="mt-3 grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4 sm:grid-cols-2">

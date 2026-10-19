@@ -5,7 +5,12 @@ if (!defined('PORTAL_BOOTED')) {
     exit;
 }
 
-http_response_code(500);
+// Only default to 500 if the caller hasn't already set a more specific
+// status code — this page is also used for deliberate access-denied
+// cases, which aren't server errors and shouldn't be reported as one.
+if (http_response_code() === 200) {
+    http_response_code(500);
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">

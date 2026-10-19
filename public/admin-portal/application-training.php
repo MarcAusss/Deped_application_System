@@ -40,23 +40,20 @@ if ($title === '') {
     exit;
 }
 
-// Mirrors TrainingRelationManager's month-picker dehydration: "Y-m" -> "Y-m-01".
-$normalizeMonth = function (string $value): ?string {
-    if ($value === '') {
-        return null;
-    }
-    if (!preg_match('/^\d{4}-\d{2}$/', $value)) {
+// Full day/month/year, matching the applicant-facing apply.php date pickers.
+$normalizeDate = function (string $value): ?string {
+    if ($value === '' || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
         return null;
     }
 
-    return $value.'-01';
+    return $value;
 };
 
 $data = [
     'title' => $title,
     'hours' => $hours !== '' ? (int) $hours : null,
-    'training_date' => $normalizeMonth($trainingDate),
-    'training_end_date' => $normalizeMonth($trainingEndDate),
+    'training_date' => $normalizeDate($trainingDate),
+    'training_end_date' => $normalizeDate($trainingEndDate),
 ];
 
 if ($action === 'create') {

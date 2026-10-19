@@ -185,7 +185,7 @@ require __DIR__.'/_layout_head.php';
 </div>
 
 <div id="view-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4 sm:p-6">
-    <div class="flex h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+    <div class="flex h-[85vh] max-h-[calc(100vh-4rem)] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
         <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
             <h3 class="text-lg font-black text-admin-indigoDark">Application Details</h3>
             <button type="button" id="view-modal-close" class="text-slate-400 transition hover:text-slate-700" aria-label="Close">

@@ -24,8 +24,11 @@ $user = portal_user();
 
 // Ownership check: the /files/{path} Laravel route this mirrors has none at
 // all — this closes that gap rather than reproducing it. The file must
-// belong to a document row whose application belongs to the logged-in
-// applicant.
+// either belong to a document row whose application belongs to the logged-in
+// applicant, OR be a job posting's own attachment/CSC publication — those
+// are public to any logged-in applicant browsing or applying to that job,
+// not ownership-restricted (mirrors admin-portal/document.php's same
+// two-case check).
 $stmt = portal_pdo()->prepare(
     'SELECT ad.id
      FROM application_documents ad
@@ -34,8 +37,23 @@ $stmt = portal_pdo()->prepare(
      LIMIT 1'
 );
 $stmt->execute([$path, $user->id]);
+$known = (bool) $stmt->fetch();
 
-if (!$stmt->fetch()) {
+if (!$known) {
+    $stmt = portal_pdo()->query('SELECT attachment_paths, csc_publication_paths FROM job_positions');
+    foreach ($stmt->fetchAll() as $row) {
+        $attachments = array_merge(
+            json_decode($row->attachment_paths ?? '[]', true) ?: [],
+            json_decode($row->csc_publication_paths ?? '[]', true) ?: []
+        );
+        if (in_array($path, $attachments, true)) {
+            $known = true;
+            break;
+        }
+    }
+}
+
+if (!$known) {
     http_response_code(404);
     exit;
 }

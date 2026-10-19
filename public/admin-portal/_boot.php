@@ -105,6 +105,7 @@ function portal_env(string $key, mixed $default = null): mixed
 // Reuse Phase 1's fully generic, stateless primitives directly.
 require PORTAL_ROOT.'/public/portal/_db.php';
 require PORTAL_ROOT.'/public/portal/_validate.php';
+require PORTAL_ROOT.'/public/portal/_documents.php';
 
 // Reuse Phase 2's stateless port of EvaluationChecklist/IerApplicationFormatter
 // directly — every eval_*() function operates on plain PDO row arrays with

@@ -5,19 +5,7 @@ require __DIR__.'/_boot.php';
 portal_require_login();
 $user = portal_user();
 
-const DOCUMENT_FIELDS = [
-    'letter_of_intent' => 'Letter of Intent',
-    'pds' => 'Personal Data Sheet (PDS)',
-    'tor_diploma' => 'TOR / Diploma',
-    'prc_license' => 'PRC License',
-    'eligibility_file' => 'Eligibility Document',
-    'training_certificates' => 'Training Certificates',
-    'employment_records' => 'Employment Records',
-    'latest_appointment' => 'Latest Appointment',
-    'performance_rating' => 'Performance Rating',
-    'cav' => 'CAV',
-    'movs' => 'Other MOVs/Documents',
-];
+require __DIR__.'/_documents.php';
 
 function job_deadline_passed(?string $until, ?string $untilTime): bool
 {
@@ -241,17 +229,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     foreach ($trainingRows as $i => $row) {
         foreach (['training_date', 'training_end_date'] as $dateField) {
             $value = $row[$dateField] ?? '';
-            if ($value !== '' && !v_date_format_ym($value)) {
-                $errors->add("training.{$i}.{$dateField}", 'The training date must be a valid month/year not in the future.');
+            if ($value !== '' && (!v_date($value) || !v_date_before_or_equal_today($value))) {
+                $errors->add("training.{$i}.{$dateField}", 'The training date must be a valid date not in the future.');
             }
         }
     }
 
+    if (empty($eligibilityRows)) {
+        $errors->add('eligibility', 'At least one Eligibility and Licenses entry is required.');
+    }
     foreach ($eligibilityRows as $i => $row) {
+        $licenseName = trim($row['license_name'] ?? '');
+        $licenseSpecify = trim($row['license_specify'] ?? '');
+        $dateIssued = trim($row['date_issued'] ?? '');
         $neverExpires = !empty($row['never_expires']);
         $validUntil = trim($row['valid_until'] ?? '');
 
-        if (!$neverExpires && $validUntil !== '' && v_date($validUntil) && $validUntil < date('Y-m-d')) {
+        if (!v_present($licenseName)) { $errors->add("eligibility.{$i}.license_name", 'The eligibility/license name field is required.'); }
+        elseif (in_array($licenseName, ['RA1080', "Other's"], true) && !v_present($licenseSpecify)) { $errors->add("eligibility.{$i}.license_specify", 'Please specify the eligibility/license name.'); }
+
+        if (!v_present($dateIssued)) { $errors->add("eligibility.{$i}.date_issued", 'The date issued field is required.'); }
+
+        if (!$neverExpires && !v_present($validUntil)) {
+            $errors->add("eligibility.{$i}.valid_until", 'The valid until field is required, unless marked "Never expires".');
+        } elseif (!$neverExpires && $validUntil !== '' && v_date($validUntil) && $validUntil < date('Y-m-d')) {
             $errors->add("eligibility.{$i}.valid_until", 'This eligibility/license has already expired. Please update the validity date or check "Never expires" before submitting.');
         }
     }
@@ -373,8 +374,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'application_id' => $applicationRowId,
                     'title' => $row['title'] ?? '',
                     'hours' => ($row['hours'] ?? '') !== '' ? (int) $row['hours'] : null,
-                    'training_date' => !empty($row['training_date']) ? $row['training_date'].'-01' : null,
-                    'training_end_date' => !empty($row['training_end_date']) ? $row['training_end_date'].'-01' : null,
+                    'training_date' => !empty($row['training_date']) ? $row['training_date'] : null,
+                    'training_end_date' => !empty($row['training_end_date']) ? $row['training_end_date'] : null,
                     'created_at' => $now, 'updated_at' => $now,
                 ]);
             }
@@ -476,12 +477,7 @@ $val = fn (string $field, $fallback = '') => portal_old($field, $fallback ?? '')
 
 $educationSource = old_array('education') ?? array_map(fn ($e) => (array) $e, $existingData['educations'] ?? []);
 $experienceSource = old_array('experience') ?? array_map(fn ($e) => (array) $e, $existingData['experiences'] ?? []);
-$trainingSource = old_array('training') ?? array_map(function ($t) {
-    $t = (array) $t;
-    if (!empty($t['training_date'])) { $t['training_date'] = substr($t['training_date'], 0, 7); }
-    if (!empty($t['training_end_date'])) { $t['training_end_date'] = substr($t['training_end_date'], 0, 7); }
-    return $t;
-}, $existingData['trainings'] ?? []);
+$trainingSource = old_array('training') ?? array_map(fn ($t) => (array) $t, $existingData['trainings'] ?? []);
 $eligibilitySource = old_array('eligibility') ?? array_map(fn ($e) => (array) $e, $existingData['eligibilities'] ?? []);
 
 $existingDocuments = [];
@@ -635,7 +631,7 @@ require __DIR__.'/_layout_head.php';
                         <?php foreach ($educationSource as $i => $education): $education = (array) $education; ?>
                             <div class="dynamic-entry rounded-xl border border-slate-200 bg-slate-50 p-5">
                                 <div class="mb-4 flex items-center justify-between">
-                                    <h4 class="font-black text-government-dark">Education Entry</h4>
+                                    <h4 class="font-black text-government-dark">Education Entry <span class="text-sm font-bold text-red-600">(Don't use acronyms)</span></h4>
                                     <button type="button" onclick="removeEntry(this)" class="text-sm font-bold text-red-600 hover:text-red-800">Remove</button>
                                 </div>
                                 <div class="grid gap-4 md:grid-cols-2">
@@ -664,7 +660,7 @@ require __DIR__.'/_layout_head.php';
                         <?php foreach ($experienceSource as $i => $experience): $experience = (array) $experience; ?>
                             <div class="dynamic-entry rounded-xl border border-slate-200 bg-slate-50 p-5">
                                 <div class="mb-4 flex items-center justify-between">
-                                    <h4 class="font-black text-government-dark">Experience Entry</h4>
+                                    <h4 class="font-black text-government-dark">Experience Entry <span class="text-sm font-bold text-red-600">(Don't use acronyms)</span></h4>
                                     <button type="button" onclick="removeEntry(this)" class="text-sm font-bold text-red-600 hover:text-red-800">Remove</button>
                                 </div>
                                 <div class="grid gap-4 md:grid-cols-2">
@@ -688,7 +684,7 @@ require __DIR__.'/_layout_head.php';
                         <?php foreach ($trainingSource as $i => $training): $training = (array) $training; ?>
                             <div class="dynamic-entry rounded-xl border border-slate-200 bg-slate-50 p-5">
                                 <div class="mb-4 flex items-center justify-between">
-                                    <h4 class="font-black text-government-dark">Training Entry</h4>
+                                    <h4 class="font-black text-government-dark">Training Entry <span class="text-sm font-bold text-red-600">(Don't use acronyms)</span></h4>
                                     <button type="button" onclick="removeEntry(this)" class="text-sm font-bold text-red-600 hover:text-red-800">Remove</button>
                                 </div>
                                 <div class="grid gap-4 md:grid-cols-2">
@@ -696,10 +692,10 @@ require __DIR__.'/_layout_head.php';
                                     <input type="number" min="0" step="1" name="training[<?= $i ?>][hours]" placeholder="Number of hours" value="<?= portal_e((string) ($training['hours'] ?? '')) ?>" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
                                     <div class="md:col-span-2">
                                         <label class="mb-2 block text-sm font-bold text-government-dark">Start of Training</label>
-                                        <input type="month" name="training[<?= $i ?>][training_date]" value="<?= portal_e($training['training_date'] ?? '') ?>" max="<?= date('Y-m') ?>" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
+                                        <input type="date" name="training[<?= $i ?>][training_date]" value="<?= portal_e($training['training_date'] ?? '') ?>" max="<?= date('Y-m-d') ?>" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
                                         <label class="mb-2 mt-3 block text-sm font-bold text-government-dark">End of Training</label>
-                                        <input type="month" name="training[<?= $i ?>][training_end_date]" value="<?= portal_e($training['training_end_date'] ?? '') ?>" max="<?= date('Y-m') ?>" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
-                                        <p class="mt-2 text-xs text-slate-500">Select the month and year when the training or seminar started and ended.</p>
+                                        <input type="date" name="training[<?= $i ?>][training_end_date]" value="<?= portal_e($training['training_end_date'] ?? '') ?>" max="<?= date('Y-m-d') ?>" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
+                                        <p class="mt-2 text-xs text-slate-500">Select the exact date (day, month and year) when the training or seminar started and ended.</p>
                                     </div>
                                 </div>
                             </div>
@@ -716,25 +712,25 @@ require __DIR__.'/_layout_head.php';
                         <?php foreach ($eligibilitySource as $i => $eligibility): $eligibility = (array) $eligibility; $neverExpires = !empty($eligibility['never_expires']) && $eligibility['never_expires'] != '0'; ?>
                             <div class="dynamic-entry rounded-xl border border-slate-200 bg-slate-50 p-5">
                                 <div class="mb-4 flex items-center justify-between">
-                                    <h4 class="font-black text-government-dark">Eligibility Entry</h4>
-                                    <button type="button" onclick="removeEntry(this)" class="text-sm font-bold text-red-600 hover:text-red-800">Remove</button>
+                                    <h4 class="font-black text-government-dark">Eligibility Entry <span class="text-sm font-bold text-red-600">(Don't use acronyms)</span></h4>
+                                    <button type="button" onclick="removeEligibility(this)" class="text-sm font-bold text-red-600 hover:text-red-800">Remove</button>
                                 </div>
                                 <div class="grid gap-4 md:grid-cols-2">
-                                    <select name="eligibility[<?= $i ?>][license_name]" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100" onchange="toggleEligibilitySpecify(this)">
+                                    <select name="eligibility[<?= $i ?>][license_name]" required class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100" onchange="toggleEligibilitySpecify(this)">
                                         <option value="" disabled hidden>Eligibility or license name</option>
                                         <?php foreach (['CS Sub-Professional', 'CSC Professional', 'RA1080', "Other's"] as $ln): ?>
                                             <option value="<?= portal_e($ln) ?>" <?= ($eligibility['license_name'] ?? '') === $ln ? 'selected' : '' ?>><?= portal_e($ln) ?></option>
                                         <?php endforeach; ?>
                                     </select>
-                                    <input type="text" name="eligibility[<?= $i ?>][license_specify]" data-role="eligibility-specify" placeholder="Please specify" value="<?= portal_e($eligibility['license_specify'] ?? '') ?>" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100 <?= in_array($eligibility['license_name'] ?? '', ['RA1080', "Other's"], true) ? '' : 'hidden' ?>">
+                                    <input type="text" name="eligibility[<?= $i ?>][license_specify]" data-role="eligibility-specify" placeholder="Please specify" value="<?= portal_e($eligibility['license_specify'] ?? '') ?>" <?= in_array($eligibility['license_name'] ?? '', ['RA1080', "Other's"], true) ? 'required' : '' ?> class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100 <?= in_array($eligibility['license_name'] ?? '', ['RA1080', "Other's"], true) ? '' : 'hidden' ?>">
                                     <input type="text" name="eligibility[<?= $i ?>][rating]" placeholder="Rating" value="<?= portal_e($eligibility['rating'] ?? '') ?>" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
                                     <div>
                                         <label class="mb-2 block text-sm font-bold text-government-dark">Date Issued</label>
-                                        <input type="date" name="eligibility[<?= $i ?>][date_issued]" value="<?= portal_e($eligibility['date_issued'] ?? '') ?>" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
+                                        <input type="date" name="eligibility[<?= $i ?>][date_issued]" value="<?= portal_e($eligibility['date_issued'] ?? '') ?>" required class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
                                     </div>
                                     <div data-role="valid-until-wrapper" class="<?= $neverExpires ? 'hidden' : '' ?>">
                                         <label class="mb-2 block text-sm font-bold text-government-dark">Valid Until</label>
-                                        <input type="date" name="eligibility[<?= $i ?>][valid_until]" value="<?= portal_e($eligibility['valid_until'] ?? '') ?>" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
+                                        <input type="date" name="eligibility[<?= $i ?>][valid_until]" value="<?= portal_e($eligibility['valid_until'] ?? '') ?>" <?= $neverExpires ? '' : 'required' ?> class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
                                     </div>
                                     <label class="mt-1 ml-auto flex w-fit items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 md:col-span-2">
                                         <input type="checkbox" name="eligibility[<?= $i ?>][never_expires]" value="1" <?= $neverExpires ? 'checked' : '' ?> class="h-4 w-4 rounded border-slate-300 text-government-navy" onchange="toggleNeverExpires(this)">
@@ -754,15 +750,26 @@ require __DIR__.'/_layout_head.php';
                     </div>
                     <div class="grid gap-5 md:grid-cols-2">
                         <?php foreach (DOCUMENT_FIELDS as $field => $label): $existingDoc = $existingDocuments[$field] ?? null; ?>
+                            <?php if ($field === 'psst_ncois'): ?>
+                                <div class="md:col-span-2 rounded-xl border border-amber-200 bg-amber-50 px-5 py-3 text-center">
+                                    <p class="text-sm font-bold text-amber-800">For Master Teacher</p>
+                                    <p class="mt-1 text-xs text-amber-700">Attach your PSST NCOIs and PSST COIs below if you are applying for a Master Teacher position.</p>
+                                </div>
+                            <?php endif; ?>
                             <div class="rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 p-5">
                                 <label for="<?= $field ?>" class="mb-3 block font-bold text-government-dark"><?= portal_e($label) ?></label>
                                 <?php if ($existingDoc): ?>
-                                    <p class="mb-3 text-sm text-slate-600">Current file: <a href="<?= portal_url('document.php?path='.urlencode($existingDoc->file_path)) ?>" target="_blank" rel="noopener" class="font-bold text-government-blue hover:underline">View current file</a></p>
+                                    <p class="mb-3 text-sm text-slate-600">Current file: <a href="<?= portal_url('document.php?path='.urlencode($existingDoc->file_path)) ?>#zoom=100" target="_blank" rel="noopener" class="font-bold text-government-blue hover:underline">View current file</a></p>
                                 <?php endif; ?>
-                                <input type="file" id="<?= $field ?>" name="<?= $field ?>" accept=".pdf,application/pdf" class="block w-full text-sm text-slate-600 file:mr-4 file:rounded-lg file:border-0 file:bg-government-navy file:px-4 file:py-2.5 file:font-bold file:text-white hover:file:bg-government-blue">
+                                <div class="flex min-w-0 items-center gap-3">
+                                    <button type="button" onclick="document.getElementById('<?= $field ?>').click()" class="shrink-0 rounded-lg bg-government-navy px-4 py-2.5 text-sm font-bold text-white transition hover:bg-government-blue">Choose File</button>
+                                    <input type="file" id="<?= $field ?>" name="<?= $field ?>" accept=".pdf,application/pdf" onchange="handleDocFileSelect(this)" class="hidden">
+                                    <span id="<?= $field ?>-selected-preview" class="hidden min-w-0 flex-1 text-sm"><button type="button" class="doc-selected-preview-trigger block w-full truncate text-left font-bold text-government-blue underline" data-field="<?= $field ?>"></button></span>
+                                </div>
                                 <?php if ($existingDoc): ?><p class="mt-2 text-xs text-slate-500">Leave blank to keep the currently uploaded file.</p><?php endif; ?>
                                 <?php if ($errors->has($field)): ?><p class="mt-2 text-sm font-medium text-red-600"><?= portal_e($errors->first($field)) ?></p><?php endif; ?>
                             </div>
+                            <?php if ($field === 'movs'): ?><div class="hidden md:block" aria-hidden="true"></div><?php endif; ?>
                         <?php endforeach; ?>
                     </div>
                 </section>
@@ -783,6 +790,82 @@ require __DIR__.'/_layout_head.php';
     </div>
 </div>
 
+<div id="doc-select-preview-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-2 sm:p-4">
+    <div class="flex h-[97vh] w-full max-w-[98vw] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+        <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+            <h3 id="doc-select-preview-modal-title" class="truncate text-lg font-black text-government-dark">Selected File</h3>
+            <button type="button" id="doc-select-preview-modal-close" class="text-slate-400 transition hover:text-slate-700" aria-label="Close">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-6 w-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <iframe id="doc-select-preview-modal-frame" class="h-full w-full flex-1" src="about:blank"></iframe>
+    </div>
+</div>
+
+<script>
+    (function () {
+        const modal = document.getElementById('doc-select-preview-modal');
+        const titleEl = document.getElementById('doc-select-preview-modal-title');
+        const closeBtn = document.getElementById('doc-select-preview-modal-close');
+        const frame = document.getElementById('doc-select-preview-modal-frame');
+        const fileObjectUrls = {};
+
+        function openPreview(name, url) {
+            titleEl.textContent = name;
+            frame.src = url + '#zoom=100';
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closePreview() {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            frame.src = 'about:blank';
+        }
+
+        window.handleDocFileSelect = function (input) {
+            const wrap = document.getElementById(input.id + '-selected-preview');
+            if (!wrap) return;
+
+            if (fileObjectUrls[input.id]) {
+                URL.revokeObjectURL(fileObjectUrls[input.id]);
+                delete fileObjectUrls[input.id];
+            }
+
+            const file = input.files && input.files[0];
+            if (!file) {
+                wrap.classList.add('hidden');
+                return;
+            }
+
+            const url = URL.createObjectURL(file);
+            fileObjectUrls[input.id] = url;
+            wrap.classList.remove('hidden');
+            wrap.dataset.previewUrl = url;
+            const trigger = wrap.querySelector('.doc-selected-preview-trigger');
+            if (trigger) {
+                trigger.textContent = file.name;
+                trigger.title = file.name;
+            }
+            wrap.dataset.previewName = file.name;
+        };
+
+        document.addEventListener('click', function (e) {
+            const trigger = e.target.closest('.doc-selected-preview-trigger');
+            if (!trigger) return;
+            const wrap = trigger.closest('span');
+            if (!wrap || !wrap.dataset.previewUrl) return;
+            openPreview(wrap.dataset.previewName, wrap.dataset.previewUrl);
+        });
+
+        closeBtn.addEventListener('click', closePreview);
+        modal.addEventListener('click', function (e) { if (e.target === modal) closePreview(); });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !modal.classList.contains('hidden')) closePreview(); });
+    })();
+</script>
+
 <script>
     let educationIndex = <?= count($educationSource) ?>;
     let experienceIndex = <?= count($experienceSource) ?>;
@@ -795,7 +878,7 @@ require __DIR__.'/_layout_head.php';
         const entry = button.closest('.dynamic-entry');
         const wrapper = entry.parentElement;
         if (wrapper.id === 'educationWrapper' && wrapper.querySelectorAll('.dynamic-entry').length <= 1) {
-            alert('At least one Educational Background entry is required.');
+            showAlert('At least one Educational Background entry is required.');
             return;
         }
         entry.remove();
@@ -813,7 +896,7 @@ require __DIR__.'/_layout_head.php';
         wrapper.insertAdjacentHTML('beforeend', `
             <div class="dynamic-entry rounded-xl border border-slate-200 bg-slate-50 p-5">
                 <div class="mb-4 flex items-center justify-between">
-                    <h4 class="font-black text-government-dark">Education Entry</h4>
+                    <h4 class="font-black text-government-dark">Education Entry <span class="text-sm font-bold text-red-600">(Don't use acronyms)</span></h4>
                     <button type="button" onclick="removeEntry(this)" class="text-sm font-bold text-red-600 hover:text-red-800">Remove</button>
                 </div>
                 <div class="grid gap-4 md:grid-cols-2">
@@ -839,7 +922,7 @@ require __DIR__.'/_layout_head.php';
         wrapper.insertAdjacentHTML('beforeend', `
             <div class="dynamic-entry rounded-xl border border-slate-200 bg-slate-50 p-5">
                 <div class="mb-4 flex items-center justify-between">
-                    <h4 class="font-black text-government-dark">Experience Entry</h4>
+                    <h4 class="font-black text-government-dark">Experience Entry <span class="text-sm font-bold text-red-600">(Don't use acronyms)</span></h4>
                     <button type="button" onclick="removeEntry(this)" class="text-sm font-bold text-red-600 hover:text-red-800">Remove</button>
                 </div>
                 <div class="grid gap-4 md:grid-cols-2">
@@ -859,7 +942,7 @@ require __DIR__.'/_layout_head.php';
         wrapper.insertAdjacentHTML('beforeend', `
             <div class="dynamic-entry rounded-xl border border-slate-200 bg-slate-50 p-5">
                 <div class="mb-4 flex items-center justify-between">
-                    <h4 class="font-black text-government-dark">Training Entry</h4>
+                    <h4 class="font-black text-government-dark">Training Entry <span class="text-sm font-bold text-red-600">(Don't use acronyms)</span></h4>
                     <button type="button" onclick="removeEntry(this)" class="text-sm font-bold text-red-600 hover:text-red-800">Remove</button>
                 </div>
                 <div class="grid gap-4 md:grid-cols-2">
@@ -867,10 +950,10 @@ require __DIR__.'/_layout_head.php';
                     <input type="number" min="0" step="1" name="training[${trainingIndex}][hours]" placeholder="Number of hours" class="${inputClass}">
                     <div class="md:col-span-2">
                         <label class="mb-2 block text-sm font-bold text-government-dark">Start of Training</label>
-                        <input type="month" name="training[${trainingIndex}][training_date]" max="<?= date('Y-m') ?>" class="${inputClass}">
+                        <input type="date" name="training[${trainingIndex}][training_date]" max="<?= date('Y-m-d') ?>" class="${inputClass}">
                         <label class="mb-2 mt-3 block text-sm font-bold text-government-dark">End of Training</label>
-                        <input type="month" name="training[${trainingIndex}][training_end_date]" max="<?= date('Y-m') ?>" class="${inputClass}">
-                        <p class="mt-2 text-xs text-slate-500">Select the month and year when the training or seminar started and ended.</p>
+                        <input type="date" name="training[${trainingIndex}][training_end_date]" max="<?= date('Y-m-d') ?>" class="${inputClass}">
+                        <p class="mt-2 text-xs text-slate-500">Select the exact date (day, month and year) when the training or seminar started and ended.</p>
                     </div>
                 </div>
             </div>
@@ -881,16 +964,25 @@ require __DIR__.'/_layout_head.php';
     function toggleEligibilitySpecify(selectEl) {
         const entry = selectEl.closest('.dynamic-entry');
         const specifyInput = entry.querySelector('[data-role="eligibility-specify"]');
-        if (selectEl.value === 'RA1080' || selectEl.value === "Other's") { specifyInput.classList.remove('hidden'); }
-        else { specifyInput.classList.add('hidden'); specifyInput.value = ''; }
+        if (selectEl.value === 'RA1080' || selectEl.value === "Other's") { specifyInput.classList.remove('hidden'); specifyInput.required = true; }
+        else { specifyInput.classList.add('hidden'); specifyInput.required = false; specifyInput.value = ''; }
     }
 
     function toggleNeverExpires(checkboxEl) {
         const entry = checkboxEl.closest('.dynamic-entry');
         const wrapper = entry.querySelector('[data-role="valid-until-wrapper"]');
         const input = wrapper.querySelector('input');
-        if (checkboxEl.checked) { wrapper.classList.add('hidden'); input.value = ''; }
-        else { wrapper.classList.remove('hidden'); }
+        if (checkboxEl.checked) { wrapper.classList.add('hidden'); input.required = false; input.value = ''; }
+        else { wrapper.classList.remove('hidden'); input.required = true; }
+    }
+
+    function removeEligibility(button) {
+        const wrapper = document.getElementById('eligibilityWrapper');
+        if (wrapper.querySelectorAll('.dynamic-entry').length <= 1) {
+            showAlert('At least one Eligibility and Licenses entry is required.');
+            return;
+        }
+        removeEntry(button);
     }
 
     function addEligibility() {
@@ -898,11 +990,11 @@ require __DIR__.'/_layout_head.php';
         wrapper.insertAdjacentHTML('beforeend', `
             <div class="dynamic-entry rounded-xl border border-slate-200 bg-slate-50 p-5">
                 <div class="mb-4 flex items-center justify-between">
-                    <h4 class="font-black text-government-dark">Eligibility Entry</h4>
-                    <button type="button" onclick="removeEntry(this)" class="text-sm font-bold text-red-600 hover:text-red-800">Remove</button>
+                    <h4 class="font-black text-government-dark">Eligibility Entry <span class="text-sm font-bold text-red-600">(Don't use acronyms)</span></h4>
+                    <button type="button" onclick="removeEligibility(this)" class="text-sm font-bold text-red-600 hover:text-red-800">Remove</button>
                 </div>
                 <div class="grid gap-4 md:grid-cols-2">
-                    <select name="eligibility[${eligibilityIndex}][license_name]" class="${inputClass}" onchange="toggleEligibilitySpecify(this)">
+                    <select name="eligibility[${eligibilityIndex}][license_name]" required class="${inputClass}" onchange="toggleEligibilitySpecify(this)">
                         <option value="" disabled selected hidden>Eligibility or license name</option>
                         <option value="CS Sub-Professional">CS Sub-Professional</option>
                         <option value="CSC Professional">CSC Professional</option>
@@ -913,11 +1005,11 @@ require __DIR__.'/_layout_head.php';
                     <input type="text" name="eligibility[${eligibilityIndex}][rating]" placeholder="Rating" class="${inputClass}">
                     <div>
                         <label class="mb-2 block text-sm font-bold text-government-dark">Date Issued</label>
-                        <input type="date" name="eligibility[${eligibilityIndex}][date_issued]" class="${inputClass}">
+                        <input type="date" name="eligibility[${eligibilityIndex}][date_issued]" required class="${inputClass}">
                     </div>
                     <div data-role="valid-until-wrapper">
                         <label class="mb-2 block text-sm font-bold text-government-dark">Valid Until</label>
-                        <input type="date" name="eligibility[${eligibilityIndex}][valid_until]" class="${inputClass}">
+                        <input type="date" name="eligibility[${eligibilityIndex}][valid_until]" required class="${inputClass}">
                     </div>
                     <label class="mt-1 ml-auto flex w-fit items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 md:col-span-2">
                         <input type="checkbox" name="eligibility[${eligibilityIndex}][never_expires]" value="1" class="h-4 w-4 rounded border-slate-300 text-government-navy" onchange="toggleNeverExpires(this)">
@@ -957,9 +1049,160 @@ require __DIR__.'/_layout_head.php';
 
         if (expired) {
             e.preventDefault();
-            alert('One of your eligibility/license entries has already expired. Please update its Valid Until date or check "Never expires" before submitting.');
+            showAlert('One of your eligibility/license entries has already expired. Please update its Valid Until date or check "Never expires" before submitting.');
         }
     });
+</script>
+
+<script>
+    // Autosaves every typed field and chosen document to the browser so a
+    // refresh, accidental tab close, or a failed submission never forces the
+    // applicant to redo the form. Text/select/date/checkbox values go to
+    // localStorage; chosen PDFs (File objects can't be serialized to JSON)
+    // go to IndexedDB. Cleared on a real successful submit — see the
+    // flash-banner handler in _layout_footer.php.
+    (function () {
+        'use strict';
+
+        const draftKey = 'depedcares_apply_draft_<?= $isEdit ? 'app'.$applicationId : 'job'.$jobId ?>';
+        const DOC_FIELDS = <?= json_encode(array_keys(DOCUMENT_FIELDS)) ?>;
+        const form = document.getElementById('applyForm');
+
+        function openDraftDB() {
+            return new Promise(function (resolve, reject) {
+                const req = indexedDB.open('depedcares_apply_drafts', 1);
+                req.onupgradeneeded = function () {
+                    req.result.createObjectStore('files', { keyPath: 'key' });
+                };
+                req.onsuccess = function () { resolve(req.result); };
+                req.onerror = function () { reject(req.error); };
+            });
+        }
+
+        function saveDraftFile(field, file) {
+            openDraftDB().then(function (db) {
+                db.transaction('files', 'readwrite').objectStore('files')
+                    .put({ key: draftKey + '::' + field, name: file.name, type: file.type, blob: file });
+            }).catch(function () {});
+        }
+
+        function deleteDraftFile(field) {
+            openDraftDB().then(function (db) {
+                db.transaction('files', 'readwrite').objectStore('files').delete(draftKey + '::' + field);
+            }).catch(function () {});
+        }
+
+        function loadDraftFile(field) {
+            return openDraftDB().then(function (db) {
+                return new Promise(function (resolve) {
+                    const req = db.transaction('files', 'readonly').objectStore('files').get(draftKey + '::' + field);
+                    req.onsuccess = function () { resolve(req.result || null); };
+                    req.onerror = function () { resolve(null); };
+                });
+            }).catch(function () { return null; });
+        }
+
+        function serializeFormDraft() {
+            const data = {};
+            Array.from(form.elements).forEach(function (el) {
+                if (!el.name || el.type === 'file' || el.disabled) return;
+                if (el.type === 'checkbox' || el.type === 'radio') {
+                    if (el.checked) data[el.name] = el.value || '1';
+                    return;
+                }
+                data[el.name] = el.value;
+            });
+            return data;
+        }
+
+        let saveTimer = null;
+        function scheduleDraftSave() {
+            clearTimeout(saveTimer);
+            saveTimer = setTimeout(function () {
+                try { localStorage.setItem(draftKey, JSON.stringify(serializeFormDraft())); } catch (e) {}
+            }, 400);
+        }
+
+        form.addEventListener('input', scheduleDraftSave);
+        form.addEventListener('change', scheduleDraftSave);
+
+        // Every document field already calls handleDocFileSelect(this) on
+        // choose — wrap it so a chosen file is also persisted to IndexedDB
+        // (or removed from it, if the selection was cleared), on top of
+        // whatever it already does (the local preview-modal wiring).
+        const originalHandleDocFileSelect = window.handleDocFileSelect;
+        window.handleDocFileSelect = function (input) {
+            if (typeof originalHandleDocFileSelect === 'function') originalHandleDocFileSelect(input);
+            if (DOC_FIELDS.indexOf(input.name) === -1) return;
+            const file = input.files && input.files[0];
+            if (file) saveDraftFile(input.name, file);
+            else deleteDraftFile(input.name);
+        };
+
+        function restoreDraftFields() {
+            let raw;
+            try { raw = localStorage.getItem(draftKey); } catch (e) { raw = null; }
+            if (!raw) return false;
+            let data;
+            try { data = JSON.parse(raw); } catch (e) { return false; }
+
+            function maxIndex(prefix) {
+                let max = -1;
+                const re = new RegExp('^' + prefix + '\\[(\\d+)\\]');
+                Object.keys(data).forEach(function (name) {
+                    const m = name.match(re);
+                    if (m) { const n = parseInt(m[1], 10); if (n > max) max = n; }
+                });
+                return max;
+            }
+
+            [
+                ['education', 'educationWrapper', addEducation],
+                ['experience', 'experienceWrapper', addExperience],
+                ['training', 'trainingWrapper', addTraining],
+                ['eligibility', 'eligibilityWrapper', addEligibility],
+            ].forEach(function (section) {
+                const prefix = section[0], wrapperId = section[1], addFn = section[2];
+                const wrapper = document.getElementById(wrapperId);
+                wrapper.innerHTML = '';
+                if (prefix === 'education') educationIndex = 0;
+                if (prefix === 'experience') experienceIndex = 0;
+                if (prefix === 'training') trainingIndex = 0;
+                if (prefix === 'eligibility') eligibilityIndex = 0;
+                const count = maxIndex(prefix) + 1;
+                for (let i = 0; i < Math.max(count, 1); i++) addFn();
+            });
+
+            Object.keys(data).forEach(function (name) {
+                const el = form.querySelector('[name="' + name.replace(/"/g, '\\"') + '"]');
+                if (!el) return;
+                if (el.type === 'checkbox' || el.type === 'radio') el.checked = true;
+                else el.value = data[name];
+                el.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+
+            return true;
+        }
+
+        function restoreDraftFiles() {
+            DOC_FIELDS.forEach(function (field) {
+                loadDraftFile(field).then(function (rec) {
+                    if (!rec) return;
+                    const input = document.getElementById(field);
+                    if (!input) return;
+                    const file = new File([rec.blob], rec.name, { type: rec.type });
+                    const dt = new DataTransfer();
+                    dt.items.add(file);
+                    input.files = dt.files;
+                    handleDocFileSelect(input);
+                });
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            if (restoreDraftFields()) restoreDraftFiles();
+        });
+    })();
 </script>
 
 <?php require __DIR__.'/_layout_footer.php'; ?>
