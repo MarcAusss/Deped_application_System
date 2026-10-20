@@ -20,34 +20,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $application = $stmt->fetch();
 
     if ($application) {
-        $stmt = $pdo->prepare('SELECT * FROM application_evaluations WHERE application_id = ?');
-        $stmt->execute([$id]);
-        $evaluation = $stmt->fetch();
-
-        $newStatus = 'pending';
-
-        if ($evaluation) {
-            $mandatorySelected = json_decode($evaluation->documentary_mandatory ?? '[]', true) ?: [];
-
-            $result = eval_compute_result(
-                $mandatorySelected,
-                eval_bool($evaluation->qs_education_met),
-                eval_bool($evaluation->qs_experience_met),
-                eval_bool($evaluation->qs_training_met),
-                eval_bool($evaluation->qs_eligibility_met),
-                $evaluation->result === EVAL_RESULT_EXCLUDED
-            );
-
-            $newStatus = match ($result) {
-                EVAL_RESULT_QUALIFIED, EVAL_RESULT_NOT_QUALIFIED => 'evaluated',
-                EVAL_RESULT_EXCLUDED => 'excluded',
-                default => 'pending',
-            };
-        }
-
-        $pdo->prepare('UPDATE applications SET status = ?, updated_at = NOW() WHERE id = ?')->execute([$newStatus, $id]);
+        // Restoring sends the application back to Evaluated, full stop — it
+        // does not touch application_evaluations at all, so whatever the
+        // evaluator actually checked/answered/wrote in their evaluation
+        // stays exactly as they left it.
+        $pdo->prepare("UPDATE applications SET status = 'evaluated', updated_at = NOW() WHERE id = ?")->execute([$id]);
         $pdo->prepare('INSERT INTO application_status_logs (application_id, status, changed_by, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())')
-            ->execute([$id, $newStatus, $admin->id]);
+            ->execute([$id, 'evaluated', $admin->id]);
 
         flash_set('success', 'Application restored from archive.');
     }

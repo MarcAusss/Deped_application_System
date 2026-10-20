@@ -192,6 +192,17 @@ require __DIR__.'/_layout_head.php';
                     } elseif ($app->eval_result === 'excluded') {
                         $missingMandatory = missing_mandatory_requirements($app);
                     }
+
+                    // The admin can qualify an application the evaluator had
+                    // excluded — the Mandatory Requirements box below still
+                    // honestly shows what was originally missing, so without
+                    // this the congratulatory message reads as a flat
+                    // contradiction right next to it. This explains why both
+                    // are true at once.
+                    $nextText = $meta['next'];
+                    if ($app->status === 'qualified' && $app->eval_result === 'excluded') {
+                        $nextText = 'Your application has been reconsidered and marked Qualified by the administration. Please wait to be contacted regarding the next steps.';
+                    }
                 ?>
                 <article class="mb-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -266,7 +277,17 @@ require __DIR__.'/_layout_head.php';
                         <?php endforeach; ?>
                     </div>
 
-                    <?php if ($isFinalDecision && $app->eval_result): ?>
+                    <?php
+                        // "Did Not Meet The Mandatory Requirements" is specifically about a
+                        // missing document type — if all of them were actually submitted
+                        // (checked complete) and the evaluator excluded for some other
+                        // reason instead (e.g. an unsigned or un-notarized document), this
+                        // box would otherwise show a flatly false "missing" claim. The real
+                        // reason is already covered by Evaluator's Remarks below, so this
+                        // box is skipped entirely in that case rather than show it empty.
+                        $showMandatoryBox = $app->eval_result !== 'excluded' || $missingMandatory;
+                    ?>
+                    <?php if ($isFinalDecision && $app->eval_result && $showMandatoryBox): ?>
                         <div class="mt-5 rounded-xl border border-slate-200 bg-white p-4">
                             <div class="flex flex-wrap items-center justify-between gap-2">
                                 <p class="text-xs font-bold uppercase tracking-wide text-slate-500"><?= $app->eval_result === 'excluded' ? 'Mandatory Requirements' : 'Qualification Standards' ?></p>
@@ -293,7 +314,7 @@ require __DIR__.'/_layout_head.php';
 
                     <div class="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
                         <p class="text-xs font-bold uppercase tracking-wide text-slate-500">What's next</p>
-                        <p class="mt-1 text-sm text-slate-700"><?= portal_e($meta['next']) ?></p>
+                        <p class="mt-1 text-sm text-slate-700"><?= portal_e($nextText) ?></p>
                         <?php if ($canEdit): ?>
                             <p class="mt-2 flex items-start gap-1.5 rounded-lg bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-700 ring-1 ring-amber-200">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mt-0.5 h-3.5 w-3.5 shrink-0">
