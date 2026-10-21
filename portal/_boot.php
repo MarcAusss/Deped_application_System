@@ -16,7 +16,7 @@ if (!defined('PORTAL_BOOTED')) {
     exit;
 }
 
-define('PORTAL_ROOT', dirname(__DIR__, 2));
+define('PORTAL_ROOT', dirname(__DIR__));
 
 // Matches config/app.php's former 'timezone' => 'Asia/Manila' — without this,
 // PHP defaults to UTC and every date()/time()/strtotime() call (greetings,

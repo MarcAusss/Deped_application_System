@@ -15,7 +15,7 @@ if (!defined('PORTAL_BOOTED')) {
     exit;
 }
 
-define('PORTAL_ROOT', dirname(__DIR__, 2));
+define('PORTAL_ROOT', dirname(__DIR__));
 
 // Matches config/app.php's former 'timezone' => 'Asia/Manila' — without this,
 // PHP defaults to UTC and every date()/time()/strtotime() call (greetings,
@@ -103,15 +103,15 @@ function portal_env(string $key, mixed $default = null): mixed
 }
 
 // Reuse Phase 1's fully generic, stateless primitives directly.
-require PORTAL_ROOT.'/public/portal/_db.php';
-require PORTAL_ROOT.'/public/portal/_validate.php';
-require PORTAL_ROOT.'/public/portal/_documents.php';
+require PORTAL_ROOT.'/portal/_db.php';
+require PORTAL_ROOT.'/portal/_validate.php';
+require PORTAL_ROOT.'/portal/_documents.php';
 
 // Reuse Phase 2's stateless port of EvaluationChecklist/IerApplicationFormatter
 // directly — every eval_*() function operates on plain PDO row arrays with
 // no session coupling, so it's safe to share across portals (each request
 // only ever boots one portal's chain, so there's no redeclare risk).
-require PORTAL_ROOT.'/public/evaluator-portal/_evaluation.php';
+require PORTAL_ROOT.'/evaluator-portal/_evaluation.php';
 
 // Own copies of the session-coupled helpers, for full independence.
 require __DIR__.'/_csrf.php';

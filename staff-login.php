@@ -12,7 +12,7 @@
  * hands off to that portal's existing dashboard.
  */
 
-define('PORTAL_ROOT', __DIR__.'/..');
+define('PORTAL_ROOT', __DIR__);
 
 require PORTAL_ROOT.'/vendor/autoload.php';
 
@@ -47,8 +47,8 @@ ini_set('display_errors', $portalDebug ? '1' : '0');
 date_default_timezone_set('Asia/Manila');
 
 define('PORTAL_BOOTED', true);
-require PORTAL_ROOT.'/public/portal/_db.php';
-require PORTAL_ROOT.'/public/portal/_validate.php';
+require PORTAL_ROOT.'/portal/_db.php';
+require PORTAL_ROOT.'/portal/_validate.php';
 
 // A session scoped to this page only — holds the CSRF token, throttle
 // state, and flashed errors during the login attempt itself. Once a role is

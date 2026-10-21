@@ -83,11 +83,11 @@ try {
             $fetchAll('applicant_eligibilities')
         );
         $remarks = $evaluation->remarks ?? null;
+        $isExcluded = $evaluation && $evaluation->result === EVAL_RESULT_EXCLUDED;
 
         if ($action === 'qualify') {
-            send_qualified($profile->email, $profile->full_name, $job->title, $controlNumber, $qsRows, $remarks);
+            send_qualified($profile->email, $profile->full_name, $job->title, $controlNumber, $qsRows, $remarks, $isExcluded);
         } else {
-            $isExcluded = $evaluation && $evaluation->result === EVAL_RESULT_EXCLUDED;
             $missingMandatory = [];
 
             if ($isExcluded) {

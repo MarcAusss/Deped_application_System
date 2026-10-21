@@ -15,7 +15,7 @@ if (!defined('PORTAL_BOOTED')) {
     exit;
 }
 
-define('PORTAL_ROOT', dirname(__DIR__, 2));
+define('PORTAL_ROOT', dirname(__DIR__));
 
 // Matches config/app.php's former 'timezone' => 'Asia/Manila' — without this,
 // PHP defaults to UTC and every date()/time()/strtotime() call (greetings,
@@ -105,9 +105,9 @@ function portal_env(string $key, mixed $default = null): mixed
 }
 
 // Reuse Phase 1's fully generic, stateless primitives directly.
-require PORTAL_ROOT.'/public/portal/_db.php';
-require PORTAL_ROOT.'/public/portal/_validate.php';
-require PORTAL_ROOT.'/public/portal/_documents.php';
+require PORTAL_ROOT.'/portal/_db.php';
+require PORTAL_ROOT.'/portal/_validate.php';
+require PORTAL_ROOT.'/portal/_documents.php';
 
 // Own copies of the session-coupled helpers, for full independence.
 require __DIR__.'/_csrf.php';

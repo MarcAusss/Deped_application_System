@@ -11,7 +11,7 @@ if (!defined('PORTAL_BOOTED')) {
  * which admin-portal/_boot.php already aliases to admin_env(), so no admin-
  * specific copy of the SMTP setup is needed.
  */
-require PORTAL_ROOT.'/public/portal/_mailer.php';
+require PORTAL_ROOT.'/portal/_mailer.php';
 
 /**
  * Builds the four QS comparison rows shared by both the Qualified and
@@ -82,7 +82,7 @@ function admin_qs_rows_html(array $qsRows, bool $isExcluded = false): string
  * Qualified-decision email — matches
  * resources/views/emails/application-qualified.blade.php.
  */
-function send_qualified(string $toEmail, string $fullName, string $jobTitle, ?string $controlNumber, array $qsRows, ?string $remarks): bool
+function send_qualified(string $toEmail, string $fullName, string $jobTitle, ?string $controlNumber, array $qsRows, ?string $remarks, bool $isExcluded = false): bool
 {
     $fromAddress = portal_env('MAIL_FROM_ADDRESS', 'hello@example.com');
     $subject = 'Qualified - '.$jobTitle;
@@ -100,6 +100,15 @@ function send_qualified(string $toEmail, string $fullName, string $jobTitle, ?st
             .'<p style="margin:0;font-size:14px;line-height:1.6;color:#1e293b;">'.admin_e($remarks).'</p>'
             .'</td></tr></table>';
     }
+
+    // Matches the applicant dashboard's own wording for this same situation —
+    // the evaluator excluded the applicant (e.g. an unsigned/un-notarized
+    // document) but the admin reconsidered and qualified them anyway. The QS
+    // table above still shows the evaluator's findings, so without this the
+    // generic "wait to be contacted" line would read as a contradiction.
+    $nextStepsLine = $isExcluded
+        ? 'Your application has been reconsidered and marked Qualified by the administration. Please wait to be contacted regarding the next steps in the hiring process.'
+        : 'Please wait to be contacted by our office regarding the next steps in the hiring process.';
 
     $body = <<<HTML
         <div style="font-family:Arial,Helvetica,sans-serif;color:#1e293b;max-width:640px;">
@@ -121,7 +130,7 @@ function send_qualified(string $toEmail, string $fullName, string $jobTitle, ?st
                     {$qsRowsHtml}
                 </table>
                 {$remarksHtml}
-                <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">Please wait to be contacted by our office regarding the next steps in the hiring process.</p>
+                <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">{$nextStepsLine}</p>
                 <p style="margin:0 0 4px;font-size:15px;line-height:1.6;">Very truly yours,</p>
                 <p style="margin:0;font-size:15px;font-weight:bold;line-height:1.4;">MARIANNE B. BUSTAMANTE</p>
                 <p style="margin:0;font-size:13px;line-height:1.4;">ADMINISTRATIVE OFFICER IV, HRMO</p>
