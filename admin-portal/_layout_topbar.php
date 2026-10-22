@@ -5,7 +5,7 @@ $__user = admin_user();
 <div class="sticky top-0 z-30 border-b border-slate-200 bg-white">
     <div class="flex min-h-16 items-center justify-between px-4 py-2 sm:px-6 lg:px-8">
         <div class="flex items-center gap-3 lg:hidden">
-            <img src="/images/Department_of_Education_(DepEd).svg.webp" alt="Department of Education" class="h-9 w-9 shrink-0 object-contain">
+            <img src="<?= asset_url('images/Department_of_Education_(DepEd).svg.webp') ?>" alt="Department of Education" class="h-9 w-9 shrink-0 object-contain">
             <p class="text-sm font-black uppercase tracking-wide text-admin-indigoDark">Administration</p>
         </div>
 
@@ -16,7 +16,7 @@ $__user = admin_user();
                 </svg>
             </button>
 
-            <img src="/images/Department_of_Education_(DepEd).svg.webp" alt="Department of Education" class="h-9 w-9 shrink-0 object-contain">
+            <img src="<?= asset_url('images/Department_of_Education_(DepEd).svg.webp') ?>" alt="Department of Education" class="h-9 w-9 shrink-0 object-contain">
 
             <div class="min-w-0">
                 <p class="truncate text-[11px] font-bold uppercase tracking-wide text-slate-500">Department of Education</p>

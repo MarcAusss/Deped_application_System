@@ -17,6 +17,9 @@ if (!defined('PORTAL_BOOTED')) {
 
 define('PORTAL_ROOT', dirname(__DIR__));
 
+require PORTAL_ROOT.'/_base_path.php';
+define('BASE_PATH', app_base_path(1));
+
 // Matches config/app.php's former 'timezone' => 'Asia/Manila' — without this,
 // PHP defaults to UTC and every date()/time()/strtotime() call (greetings,
 // deadline checks, displayed dates) is 8 hours off from real local time.
@@ -172,7 +175,12 @@ function evaluator_require_login(): void
 
 function evaluator_url(string $path): string
 {
-    return '/evaluator-portal/'.ltrim($path, '/');
+    return BASE_PATH.'/evaluator-portal/'.ltrim($path, '/');
+}
+
+function asset_url(string $path): string
+{
+    return BASE_PATH.'/'.ltrim($path, '/');
 }
 
 function evaluator_e(?string $value): string

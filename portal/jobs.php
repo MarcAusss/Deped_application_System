@@ -38,7 +38,7 @@ require __DIR__.'/_layout_head.php';
                 Welcome! Every great career starts with a single step — explore our open positions and apply today.
             </p>
         </div>
-        <img src="/images/depedalbay.png" alt="DepEd Division of Albay" class="hidden h-64 w-64 shrink-0 -translate-x-12 object-contain lg:block">
+        <img src="<?= asset_url('images/depedalbay.png') ?>" alt="DepEd Division of Albay" class="hidden h-64 w-64 shrink-0 -translate-x-12 object-contain lg:block">
     </div>
 </section>
 

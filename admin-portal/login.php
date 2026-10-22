@@ -224,12 +224,12 @@ $pageTitle = 'Administrator Login | DepEd Recruitment';
     <div class="login-card w-full max-w-7xl rounded-[2.2rem] overflow-hidden grid grid-cols-1 lg:grid-cols-[3fr_2fr]">
 
         <div class="relative hidden lg:block min-h-[43.75rem]">
-            <img src="/images/SDO-ALBAY.webp" class="absolute inset-0 w-full h-full object-cover object-[42%_center]" alt="Background Image">
+            <img src="<?= asset_url('images/SDO-ALBAY.webp') ?>" class="absolute inset-0 w-full h-full object-cover object-[42%_center]" alt="Background Image">
             <div class="absolute inset-0 bg-white/70"></div>
 
             <div class="relative z-10 flex flex-col items-center justify-start h-full px-10 pt-60 text-center">
                 <div class="w-32 h-32 rounded-full bg-white shadow-2xl flex items-center justify-center border border-white">
-                    <img src="/images/depedalbay.png" alt="Logo" class="w-30 h-30 object-contain">
+                    <img src="<?= asset_url('images/depedalbay.png') ?>" alt="Logo" class="w-30 h-30 object-contain">
                 </div>
 
                 <h1 class="text-4xl font-black text-gray-800 mt-8">
@@ -247,7 +247,7 @@ $pageTitle = 'Administrator Login | DepEd Recruitment';
 
                 <div class="lg:hidden flex justify-center mb-8">
                     <div class="w-24 h-24 rounded-full bg-indigo-100 flex items-center justify-center shadow-lg">
-                        <img src="/images/depedalbay.png" class="w-14 h-14 object-contain" alt="Logo">
+                        <img src="<?= asset_url('images/depedalbay.png') ?>" class="w-14 h-14 object-contain" alt="Logo">
                     </div>
                 </div>
 

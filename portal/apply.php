@@ -496,7 +496,7 @@ require __DIR__.'/_layout_head.php';
 
 <section class="relative overflow-hidden bg-gradient-to-r from-government-dark to-government-blue text-white">
     <div class="mx-auto flex max-w-5xl flex-col items-center justify-center gap-2 px-4 py-12 sm:flex-row sm:px-6 lg:px-8">
-        <img src="/images/depedalbay.png" alt="DepEd Division of Albay" class="h-[8.75rem] w-[8.75rem] shrink-0 object-contain">
+        <img src="<?= asset_url('images/depedalbay.png') ?>" alt="DepEd Division of Albay" class="h-[8.75rem] w-[8.75rem] shrink-0 object-contain">
         <div class="text-justify">
             <p class="text-base font-bold uppercase tracking-widest text-white">Welcome!</p>
             <h2 class="mt-1 font-black">

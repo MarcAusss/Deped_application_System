@@ -196,12 +196,12 @@ $pageTitle = 'Applicant Login | DepEd Recruitment Portal';
         <div class="auth-card grid w-full grid-cols-1 overflow-hidden rounded-3xl bg-white lg:grid-cols-[2.3fr_2.7fr]">
 
             <div class="relative hidden min-h-[640px] flex-col overflow-hidden lg:flex">
-                <img src="/images/mayon.jpg" class="absolute left-1/2 top-0 h-full w-[260%] -translate-x-1/2 object-cover object-[center_15%]" alt="SDO Albay">
+                <img src="<?= asset_url('images/mayon.jpg') ?>" class="absolute left-1/2 top-0 h-full w-[260%] -translate-x-1/2 object-cover object-[center_15%]" alt="SDO Albay">
                 <div class="absolute inset-0 bg-gradient-to-b from-government-dark via-government-dark/85 to-government-dark"></div>
 
                 <div class="relative z-10 flex h-full flex-col items-center px-8 pb-8 pt-14 text-center text-white">
                     <div class="flex h-32 w-32 items-center justify-center overflow-hidden rounded-full border-3 border-white/10 bg-white shadow-lg">
-                        <img src="/images/depedalbay.png" alt="DepEd Logo" class="h-40 w-40 shrink-0 translate-y-1 object-contain">
+                        <img src="<?= asset_url('images/depedalbay.png') ?>" alt="DepEd Logo" class="h-40 w-40 shrink-0 translate-y-1 object-contain">
                     </div>
 
                     <p class="mt-5 text-base font-bold uppercase tracking-widest text-blue-200">Welcome!</p>
@@ -225,7 +225,7 @@ $pageTitle = 'Applicant Login | DepEd Recruitment Portal';
                 <div class="w-full">
                     <div class="mb-8 flex justify-center lg:hidden">
                         <div class="flex h-20 w-20 items-center justify-center rounded-full bg-government-light shadow">
-                            <img src="/images/depedalbay.png" class="h-12 w-12 object-contain" alt="Logo">
+                            <img src="<?= asset_url('images/depedalbay.png') ?>" class="h-12 w-12 object-contain" alt="Logo">
                         </div>
                     </div>
 

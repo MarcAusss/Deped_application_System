@@ -24,7 +24,7 @@ if (!defined('PORTAL_BOOTED')) {
   <div class="card">
     <h1>Session Expired</h1>
     <p>Your session has expired or this page was open for a while. Please try again — you may need to sign in again first.</p>
-    <a href="/evaluator-portal/login.php">Back to Login</a>
+    <a href="<?= evaluator_url('login.php') ?>">Back to Login</a>
   </div>
 </body>
 </html>
