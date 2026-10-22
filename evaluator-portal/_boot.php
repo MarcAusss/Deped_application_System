@@ -167,8 +167,8 @@ function evaluator_logout(): void
 function evaluator_require_login(): void
 {
     if (evaluator_user() === null) {
-        $redirect = urlencode($_SERVER['REQUEST_URI'] ?? '/evaluator-portal/applications.php');
-        header('Location: /evaluator-portal/login.php?redirect='.$redirect);
+        $redirect = urlencode($_SERVER['REQUEST_URI'] ?? evaluator_url('applications.php'));
+        header('Location: '.evaluator_url('login.php').'?redirect='.$redirect);
         exit;
     }
 }

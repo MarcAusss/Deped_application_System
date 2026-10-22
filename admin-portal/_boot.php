@@ -173,8 +173,8 @@ function admin_logout(): void
 function admin_require_login(): void
 {
     if (admin_user() === null) {
-        $redirect = urlencode($_SERVER['REQUEST_URI'] ?? '/admin-portal/dashboard.php');
-        header('Location: /admin-portal/login.php?redirect='.$redirect);
+        $redirect = urlencode($_SERVER['REQUEST_URI'] ?? admin_url('dashboard.php'));
+        header('Location: '.admin_url('login.php').'?redirect='.$redirect);
         exit;
     }
 }

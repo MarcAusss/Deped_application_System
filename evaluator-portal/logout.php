@@ -8,5 +8,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 evaluator_logout();
 
-header('Location: /');
+header('Location: '.BASE_PATH.'/');
 exit;

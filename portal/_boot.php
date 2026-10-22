@@ -149,8 +149,8 @@ function portal_logout(): void
 function portal_require_login(): void
 {
     if (portal_user() === null) {
-        $redirect = urlencode($_SERVER['REQUEST_URI'] ?? '/portal/dashboard.php');
-        header('Location: /portal/login.php?redirect='.$redirect);
+        $redirect = urlencode($_SERVER['REQUEST_URI'] ?? portal_url('dashboard.php'));
+        header('Location: '.portal_url('login.php').'?redirect='.$redirect);
         exit;
     }
 }

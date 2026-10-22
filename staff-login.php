@@ -235,11 +235,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($role === 'admin') {
                     staff_start_portal_session('depedcares_admin_sess');
                     $_SESSION['admin_user_id'] = $user->id;
-                    $redirect = $_GET['redirect'] ?? '/admin-portal/dashboard.php';
+                    $redirect = $_GET['redirect'] ?? asset_url('admin-portal/dashboard.php');
                 } else {
                     staff_start_portal_session('depedcares_evaluator_sess');
                     $_SESSION['evaluator_user_id'] = $user->id;
-                    $redirect = $_GET['redirect'] ?? '/evaluator-portal/dashboard.php';
+                    $redirect = $_GET['redirect'] ?? asset_url('evaluator-portal/dashboard.php');
                 }
 
                 header('Location: '.$redirect);
@@ -252,7 +252,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $_SESSION['_errors'] = $errors->all();
     $_SESSION['_lockout_seconds'] = $lockoutSeconds;
     $_SESSION['_login_warning'] = $loginWarning;
-    header('Location: /staff-login.php'.(isset($_GET['redirect']) ? '?redirect='.urlencode($_GET['redirect']) : ''));
+    header('Location: '.asset_url('staff-login.php').(isset($_GET['redirect']) ? '?redirect='.urlencode($_GET['redirect']) : ''));
     exit;
 }
 
