@@ -19,8 +19,8 @@ if ($jobFilter !== '' && ctype_digit((string) $jobFilter)) {
     $params['job'] = $jobFilter;
 }
 
-$sql = 'SELECT a.id, a.status, a.created_at,
-               jp.title AS job_title,
+$sql = 'SELECT a.id, a.jp_number, a.posting_date, a.status, a.created_at,
+               jp.title AS job_title, jp.evaluated_by, jp.is_open, jp.until, jp.until_time,
                cn.control_number,
                p.full_name, p.email,
                e.result
@@ -61,7 +61,7 @@ require __DIR__.'/_layout_head.php';
             <div class="mb-6 border-b border-slate-200 pb-6">
                 <p class="text-sm font-bold uppercase tracking-widest text-admin-indigo">Administration</p>
                 <h2 class="mt-2 text-3xl font-black text-admin-indigoDark">Applications</h2>
-                <p class="mt-2 text-slate-600">Review evaluator decisions and finalize hiring outcomes.</p>
+                <p class="mt-2 text-slate-600">Review evaluator decisions, evaluate postings assigned to admins, and finalize hiring outcomes.</p>
             </div>
 
             <form method="GET" class="mb-6 flex flex-wrap items-end gap-3">
@@ -109,6 +109,8 @@ require __DIR__.'/_layout_head.php';
                 </div>
             </form>
 
+            <?php $ierScope = 'applications'; $ierStatus = $statusFilter; $ierJob = $jobFilter; $ierCount = count($applications); require __DIR__.'/_ier_export_bar.php'; ?>
+
             <?php if (empty($applications)): ?>
                 <div class="rounded-2xl border border-slate-200 bg-white p-10 text-center text-slate-500 shadow-sm">No applications found.</div>
             <?php endif; ?>
@@ -116,13 +118,19 @@ require __DIR__.'/_layout_head.php';
             <?php foreach ($positionGroups as $positionTitle => $rows): ?>
                 <details class="position-group group mb-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm" open>
                     <summary class="flex cursor-pointer select-none items-center justify-between gap-3 bg-slate-50 px-4 py-3">
-                        <span class="font-black text-admin-indigoDark"><?= admin_e($positionTitle) ?></span>
+                        <span class="flex flex-wrap items-center gap-2">
+                            <span class="flex flex-wrap items-center gap-2"><span class="font-black text-admin-indigoDark"><?= admin_e($rows[0]->job_title ?? 'Unassigned Position') ?></span><span class="pill bg-white text-slate-600 ring-1 ring-slate-200"><?= admin_e(eval_posting_round_label($rows)) ?></span></span>
+                            <?php if (($rows[0]->evaluated_by ?? '') === 'admin'): ?>
+                                <span class="pill bg-amber-100 text-amber-800">Evaluated by Admin</span>
+                            <?php endif; ?>
+                        </span>
                         <span class="pill bg-slate-200 text-slate-700"><?= count($rows) ?> application(s)</span>
                     </summary>
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-slate-200 text-sm">
                             <thead class="bg-slate-50">
                                 <tr>
+                                    <th class="w-10 px-4 py-3"><span class="sr-only">Select for IER export</span></th>
                                     <th class="px-4 py-3 text-left font-bold text-slate-600">Control #</th>
                                     <th class="px-4 py-3 text-left font-bold text-slate-600">Applicant Name</th>
                                     <th class="px-4 py-3 text-left font-bold text-slate-600">Email</th>
@@ -132,8 +140,16 @@ require __DIR__.'/_layout_head.php';
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100">
-                                <?php foreach ($rows as $app): $canDecide = in_array($app->status, ['evaluated', 'excluded'], true); ?>
+                                <?php foreach ($rows as $app):
+                                    $canDecide = in_array($app->status, ['evaluated', 'excluded'], true);
+                                    $adminEvaluates = $app->evaluated_by === 'admin';
+                                    // Same gate as application-evaluate.php: a pending application
+                                    // can only be evaluated once its posting has closed.
+                                    $canEvaluate = $adminEvaluates && ($canDecide
+                                        || !$app->is_open || admin_job_deadline_passed($app->until, $app->until_time));
+                                ?>
                                     <tr class="app-row hover:bg-slate-50" data-search="<?= admin_e(mb_strtolower($app->control_number.' '.$app->full_name.' '.$app->email)) ?>">
+                                        <td class="px-4 py-3"><input type="checkbox" name="ids[]" value="<?= $app->id ?>" form="ier-selected-form" class="ier-row-check h-4 w-4 accent-admin-indigo" aria-label="Select <?= admin_e($app->full_name ?? 'application') ?> for IER export"></td>
                                         <td class="px-4 py-3 font-mono text-xs"><?= admin_e($app->control_number ?: 'Not assigned') ?></td>
                                         <td class="px-4 py-3 font-bold text-slate-800"><?= admin_e($app->full_name ?? '—') ?></td>
                                         <td class="px-4 py-3 text-slate-600"><?= admin_e($app->email ?? '—') ?></td>
@@ -149,6 +165,14 @@ require __DIR__.'/_layout_head.php';
                                         <td class="px-4 py-3 text-center">
                                             <div class="flex items-center justify-center gap-2">
                                                 <button type="button" class="view-trigger font-bold text-slate-600 hover:text-admin-indigo" data-id="<?= $app->id ?>">View</button>
+
+                                                <?php if ($adminEvaluates): ?>
+                                                    <?php if ($canEvaluate): ?>
+                                                        <a href="<?= admin_url('application-evaluate.php?id='.$app->id) ?>" class="font-bold text-admin-indigo hover:underline">Evaluate</a>
+                                                    <?php else: ?>
+                                                        <span title="Evaluation opens once this posting's application period has ended." class="cursor-not-allowed font-bold text-slate-300">Evaluate</span>
+                                                    <?php endif; ?>
+                                                <?php endif; ?>
 
                                                 <form method="POST" action="<?= admin_url('application-status.php') ?>" data-confirm="Are you sure you want to mark this application Qualified? This finalizes the hiring decision.">
                                                     <?= admin_csrf_field() ?>

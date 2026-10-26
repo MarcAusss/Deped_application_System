@@ -52,6 +52,8 @@ $existingCsc = $isEdit ? (json_decode($position->csc_publication_paths ?? '[]', 
         <?php if ($errors->has('until_time')): ?><p class="mt-1 text-xs text-red-600"><?= admin_e($errors->first('until_time')) ?></p><?php endif; ?>
     </div>
 
+    <?php $evaluatedByValue = $old('evaluated_by', $position->evaluated_by ?? 'evaluator'); $evaluatedByIdPrefix = 'form-evaluated-by'; require __DIR__.'/_evaluated_by_field.php'; ?>
+
     <div>
         <label class="mb-1 block text-sm font-bold text-slate-700">Salary Grade</label>
         <input type="text" name="salary_grade" placeholder="e.g. 11" value="<?= admin_e($old('salary_grade', $position->salary_grade ?? '')) ?>" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">

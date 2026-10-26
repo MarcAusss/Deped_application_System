@@ -476,3 +476,48 @@ function eval_ier_remarks(?object $evaluation, string $applicationStatus): strin
 
     return implode("\n", $parts);
 }
+
+/**
+ * Groups a flat, already-sorted list of application rows (each must have
+ * ->job_title and ->jp_number, the posting's JP number saved on the
+ * application) into one bucket per posting. Re-opening a posting keeps its
+ * JP number, so its applications stay in one table; posting the same
+ * position again under a new JP number starts a new table. Sorted by
+ * position title, then newest JP number first. Row order within a bucket is
+ * preserved. Shared by the admin and evaluator list pages.
+ *
+ * @param array<int, object> $applications
+ * @return array<string, array<int, object>> keyed by "title\x1Fjp_number"
+ */
+function eval_group_by_posting_round(array $applications): array
+{
+    $groups = [];
+
+    foreach ($applications as $app) {
+        $groups[($app->job_title ?? 'Unassigned Position')."\x1F".($app->jp_number ?? '')][] = $app;
+    }
+
+    uksort($groups, function (string $a, string $b): int {
+        [$titleA, $jpA] = explode("\x1F", $a, 2);
+        [$titleB, $jpB] = explode("\x1F", $b, 2);
+
+        return strnatcasecmp($titleA, $titleB) ?: strnatcasecmp($jpB, $jpA);
+    });
+
+    return $groups;
+}
+
+/**
+ * Heading label for one eval_group_by_posting_round() bucket, e.g.
+ * "JP-0004 · Posted Jul 27, 2026" (the earliest posting date in the bucket).
+ *
+ * @param array<int, object> $rows
+ */
+function eval_posting_round_label(array $rows): string
+{
+    $jpNumber = $rows[0]->jp_number ?? null;
+    $dates = array_filter(array_map(fn ($r) => $r->posting_date ?? null, $rows));
+    $posted = $dates ? 'Posted '.date('M d, Y', strtotime(min($dates))) : null;
+
+    return implode(' · ', array_filter([$jpNumber ?: 'No JP number', $posted]));
+}

@@ -34,7 +34,7 @@ require __DIR__.'/_layout_head.php';
                 <span class="text-5xl sm:text-5xl">SDO ALBAY CARES</span><br>
                 <span class="text-2xl sm:text-3xl">(Career Application &<br>Recruitment for Education Services)</span>
             </h2>
-            <p class="mt-5 max-w-2xl text-lg leading-8 text-blue-100">
+            <p class="mt-5 max-w-2xl text-lg leading-8 text-white/80">
                 Welcome! Every great career starts with a single step — explore our open positions and apply today.
             </p>
         </div>
@@ -61,7 +61,7 @@ require __DIR__.'/_layout_head.php';
                     <h2 class="mt-2 text-3xl font-black text-government-dark">Available Job Positions</h2>
                     <p class="mt-2 text-slate-600">Select a position to proceed to the online application form.</p>
                 </div>
-                <div class="rounded-xl border border-blue-100 bg-government-light px-5 py-3">
+                <div class="rounded-xl border border-green-100 bg-government-light px-5 py-3">
                     <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Open Positions</p>
                     <p class="text-2xl font-black text-government-navy"><?= count($jobs) ?></p>
                 </div>
@@ -79,7 +79,7 @@ require __DIR__.'/_layout_head.php';
                             <div class="p-6 sm:p-8">
                                 <div class="mb-5 flex flex-wrap gap-3">
                                     <span class="rounded-full bg-green-50 px-3 py-1.5 text-xs font-bold uppercase text-green-700 ring-1 ring-green-200">Open for Application</span>
-                                    <span class="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-bold text-government-blue ring-1 ring-blue-200">Government Position</span>
+                                    <span class="rounded-full bg-green-50 px-3 py-1.5 text-xs font-bold text-government-blue ring-1 ring-green-200">Government Position</span>
                                 </div>
 
                                 <h3 class="text-2xl font-black text-government-dark sm:text-3xl"><?= portal_e($job->title) ?></h3>

@@ -88,11 +88,11 @@ $pageTitle = 'Applicant Registration | DepEd Recruitment Portal';
                 extend: {
                     colors: {
                         government: {
-                            navy: '#123B6D',
-                            blue: '#1D4E89',
-                            light: '#EAF2F8',
+                            navy: '#1E6B42',
+                            blue: '#278253',
+                            light: '#EAF4EE',
                             gold: '#D4A017',
-                            dark: '#0B2545',
+                            dark: '#16402B',
                         }
                     }
                 }
@@ -103,11 +103,15 @@ $pageTitle = 'Applicant Registration | DepEd Recruitment Portal';
     <style>
         .auth-card { box-shadow: 0 10px 30px rgba(0,0,0,.06), 0 25px 60px rgba(0,0,0,.08); }
         .auth-input { width: 100%; border: 1px solid #e2e8f0; background: #fff; border-radius: 12px; padding: .85rem 1rem .85rem 2.75rem; outline: none; transition: .2s ease; color: #0f172a; }
-        .auth-input:focus { border-color: #123B6D; box-shadow: 0 0 0 4px rgba(18,59,109,.12); }
+        .auth-input:focus { border-color: #1E6B42; box-shadow: 0 0 0 4px rgba(30,107,66,.14); }
         .auth-icon { position: absolute; left: .9rem; top: 50%; transform: translateY(-50%); color: #94a3b8; }
         .auth-toggle { position: absolute; right: .9rem; top: 50%; transform: translateY(-50%); color: #94a3b8; cursor: pointer; }
-        .auth-btn { background: #123B6D; transition: .2s ease; }
-        .auth-btn:hover { background: #1D4E89; }
+        .auth-btn { background: #1E6B42; transition: .2s ease; }
+        .auth-btn:hover { background: #278253; }
+    </style>
+    <style>
+        /* Edge adds its own eye button to password fields; these pages have their own show-password toggle. */
+        input[type="password"]::-ms-reveal, input[type="password"]::-ms-clear { display: none; }
     </style>
 </head>
 <body class="min-h-screen bg-slate-50">
@@ -117,18 +121,25 @@ $pageTitle = 'Applicant Registration | DepEd Recruitment Portal';
 
             <div class="relative hidden min-h-[700px] flex-col overflow-hidden lg:flex">
                 <img src="<?= asset_url('images/mayon.jpg') ?>" class="absolute left-1/2 top-0 h-full w-[260%] -translate-x-1/2 object-cover object-[center_15%]" alt="SDO Albay">
-                <div class="absolute inset-0 bg-gradient-to-b from-government-dark via-government-dark/85 to-government-dark"></div>
+                <div class="absolute inset-0 bg-gradient-to-b from-government-dark/90 via-government-dark/70 to-government-dark/90"></div>
 
-                <div class="relative z-10 flex h-full flex-col items-center px-8 pb-8 pt-10 text-center text-white">
-                    <div class="flex h-28 w-28 items-center justify-center overflow-hidden rounded-full border-3 border-white/10 bg-white shadow-lg">
-                        <img src="<?= asset_url('images/depedalbay.png') ?>" alt="DepEd Logo" class="h-36 w-36 shrink-0 translate-y-1 object-contain">
+                <div class="absolute left-4 top-4 z-20 flex items-center gap-2">
+                    <div class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-white shadow-md ring-2 ring-white/20">
+                        <img src="<?= asset_url('images/depedalbay.png') ?>" alt="DepEd SDO Albay" class="h-14 w-14 shrink-0 translate-y-0.5 object-contain">
                     </div>
+                    <div class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-white shadow-md ring-2 ring-white/20">
+                        <img src="<?= asset_url('images/Department_of_Education_(DepEd).svg.webp') ?>" alt="Department of Education" class="h-9 w-9 object-contain">
+                    </div>
+                </div>
 
-                    <p class="mt-5 text-xs font-bold uppercase tracking-widest text-blue-200">Department of Education</p>
+                <div class="relative z-10 flex h-full flex-col items-center px-8 pb-8 pt-14 text-center text-white">
+                    <img src="<?= asset_url('images/cares-logo.svg') ?>" alt="SDO Albay CARES logo" class="h-32 w-32 drop-shadow-xl">
+
+                    <p class="mt-5 text-xs font-bold uppercase tracking-widest text-white/70">Department of Education</p>
                     <h1 class="mt-1 text-2xl font-black leading-tight">SCHOOL DIVISION OFFICE<br>OF ALBAY</h1>
                     <div class="mt-4 h-1 w-14 rounded-full bg-government-gold"></div>
 
-                    <div class="mt-4 flex items-center justify-center gap-2 text-sm text-blue-100">
+                    <div class="mt-4 flex items-center justify-center gap-2 text-sm text-white/80">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-4 w-4 shrink-0">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
                             <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
@@ -145,7 +156,7 @@ $pageTitle = 'Applicant Registration | DepEd Recruitment Portal';
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
                                 </svg>
                             </div>
-                            <div><p class="font-bold text-white">Secure</p><p class="text-sm text-blue-100">Your information is protected.</p></div>
+                            <div><p class="font-bold text-white">Secure</p><p class="text-sm text-white/80">Your information is protected.</p></div>
                         </div>
 
                         <div class="flex flex-col items-center gap-2">
@@ -154,7 +165,7 @@ $pageTitle = 'Applicant Registration | DepEd Recruitment Portal';
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25ZM6.75 12h.008v.008H6.75V12Zm0 3h.008v.008H6.75V15Zm0 3h.008v.008H6.75V18Z" />
                                 </svg>
                             </div>
-                            <div><p class="font-bold text-white">Easy</p><p class="text-sm text-blue-100">Simple steps to get started.</p></div>
+                            <div><p class="font-bold text-white">Easy</p><p class="text-sm text-white/80">Simple steps to get started.</p></div>
                         </div>
 
                         <div class="flex flex-col items-center gap-2">
@@ -163,7 +174,7 @@ $pageTitle = 'Applicant Registration | DepEd Recruitment Portal';
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
                                 </svg>
                             </div>
-                            <div><p class="font-bold text-white">Accessible</p><p class="text-sm text-blue-100">Apply anytime, anywhere.</p></div>
+                            <div><p class="font-bold text-white">Accessible</p><p class="text-sm text-white/80">Apply anytime, anywhere.</p></div>
                         </div>
                     </div>
                 </div>
@@ -171,9 +182,13 @@ $pageTitle = 'Applicant Registration | DepEd Recruitment Portal';
 
             <div class="flex items-center bg-white px-8 py-12 sm:px-14">
                 <div class="w-full">
-                    <div class="mb-8 flex justify-center lg:hidden">
-                        <div class="flex h-20 w-20 items-center justify-center rounded-full bg-government-light shadow">
-                            <img src="<?= asset_url('images/depedalbay.png') ?>" class="h-12 w-12 object-contain" alt="Logo">
+                    <div class="mb-8 flex items-center justify-center gap-3 lg:hidden">
+                        <div class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-white shadow ring-1 ring-slate-200">
+                            <img src="<?= asset_url('images/depedalbay.png') ?>" alt="DepEd SDO Albay" class="h-14 w-14 shrink-0 translate-y-0.5 object-contain">
+                        </div>
+                        <img src="<?= asset_url('images/cares-logo.svg') ?>" alt="SDO Albay CARES logo" class="h-24 w-24 drop-shadow-md">
+                        <div class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-white shadow ring-1 ring-slate-200">
+                            <img src="<?= asset_url('images/Department_of_Education_(DepEd).svg.webp') ?>" alt="Department of Education" class="h-9 w-9 object-contain">
                         </div>
                     </div>
 

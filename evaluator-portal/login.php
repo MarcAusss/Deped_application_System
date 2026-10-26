@@ -187,8 +187,8 @@ $pageTitle = 'Evaluator Login | DepEd Recruitment Portal';
         }
 
         .auth-input:focus {
-            border-color: #123B6D;
-            box-shadow: 0 0 0 4px rgba(18, 59, 109, 0.12);
+            border-color: #1E6B42;
+            box-shadow: 0 0 0 4px rgba(30, 107, 66, 0.12);
         }
 
         .auth-icon {
@@ -209,13 +209,17 @@ $pageTitle = 'Evaluator Login | DepEd Recruitment Portal';
         }
 
         .auth-btn {
-            background: #123B6D;
+            background: #1E6B42;
             transition: .2s ease;
         }
 
         .auth-btn:hover {
-            background: #1D4E89;
+            background: #278253;
         }
+    </style>
+    <style>
+        /* Edge adds its own eye button to password fields; these pages have their own show-password toggle. */
+        input[type="password"]::-ms-reveal, input[type="password"]::-ms-clear { display: none; }
     </style>
 </head>
 
@@ -246,14 +250,14 @@ $pageTitle = 'Evaluator Login | DepEd Recruitment Portal';
             <div class="w-full">
 
                 <div class="lg:hidden flex justify-center mb-8">
-                    <div class="w-24 h-24 rounded-full bg-indigo-100 flex items-center justify-center shadow-lg">
+                    <div class="w-24 h-24 rounded-full bg-green-100 flex items-center justify-center shadow-lg">
                         <img src="<?= asset_url('images/depedalbay.png') ?>" class="w-14 h-14 object-contain" alt="Logo">
                     </div>
                 </div>
 
                 <div class="mb-10">
-                    <h2 class="text-4xl font-black text-[#123B6D]">Evaluation Desk</h2>
-                    <p class="mt-3 text-lg text-[#1D4E89]">Sign in to review applicant qualifications.</p>
+                    <h2 class="text-4xl font-black text-[#1E6B42]">Evaluation Desk</h2>
+                    <p class="mt-3 text-lg text-[#278253]">Sign in to review applicant qualifications.</p>
                 </div>
 
                 <?php if (flash_get('status')): ?>

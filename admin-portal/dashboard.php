@@ -86,11 +86,11 @@ require __DIR__.'/_layout_head.php';
         display: grid;
         grid-template-columns: minmax(0, 1.65fr) minmax(17rem, 0.72fr);
         overflow: hidden;
-        border: 1px solid #312e81;
+        border: 1px solid #16402B;
         border-radius: 1.15rem;
         background:
             radial-gradient(circle at 72% -15%, rgba(45, 212, 191, 0.27), transparent 35%),
-            linear-gradient(118deg, #211d55 0%, #3730a3 64%, #0f766e 128%);
+            linear-gradient(118deg, #16402B 0%, #1E6B42 64%, #2E7D6B 128%);
         color: #ffffff;
         box-shadow: 0 18px 45px rgba(30, 27, 75, 0.17);
     }
@@ -109,7 +109,7 @@ require __DIR__.'/_layout_head.php';
     .cmd-hero__main { padding: clamp(1.55rem, 3vw, 2.45rem); }
     .cmd-hero__eyebrow {
         display: flex; flex-wrap: wrap; align-items: center; gap: .65rem; margin-bottom: 1.1rem;
-        color: #c7d2fe; font-size: .68rem; font-weight: 800; letter-spacing: .13em; text-transform: uppercase;
+        color: #CFE3D6; font-size: .68rem; font-weight: 800; letter-spacing: .13em; text-transform: uppercase;
     }
     .cmd-hero__live {
         display: inline-flex; align-items: center; gap: .42rem;
@@ -130,7 +130,7 @@ require __DIR__.'/_layout_head.php';
         transition: transform 150ms ease, background-color 150ms ease, border-color 150ms ease;
     }
     .cmd-hero__action:hover { border-color: rgba(255, 255, 255, .45); background: rgba(255, 255, 255, .1); transform: translateY(-1px); }
-    .cmd-hero__action--primary { border-color: #fff; background: #fff; color: #312e81; }
+    .cmd-hero__action--primary { border-color: #fff; background: #fff; color: #16402B; }
     .cmd-hero__action--primary:hover { border-color: #e0e7ff; background: #e0e7ff; }
     .cmd-hero__action svg { width: 1rem; height: 1rem; }
     .cmd-hero__brief {
@@ -144,7 +144,7 @@ require __DIR__.'/_layout_head.php';
     .cmd-hero__brief-item { min-width: 0; padding: 1rem .75rem 0 0; }
     .cmd-hero__brief-item + .cmd-hero__brief-item { border-left: 1px solid rgba(255, 255, 255, .13); padding-left: .75rem; }
     .cmd-hero__brief-value { display: block; color: #fff; font-size: 1.45rem; font-weight: 780; letter-spacing: -.035em; }
-    .cmd-hero__brief-name { display: block; margin-top: .22rem; color: #c7d2fe; font-size: .62rem; font-weight: 650; line-height: 1.35; }
+    .cmd-hero__brief-name { display: block; margin-top: .22rem; color: #CFE3D6; font-size: .62rem; font-weight: 650; line-height: 1.35; }
 
     @media (max-width: 1024px) {
         .cmd-hero { grid-template-columns: 1fr; }
@@ -166,7 +166,7 @@ require __DIR__.'/_layout_head.php';
     }
     .portfolio-section::before {
         position: absolute; left: 1.25rem; top: 1.35rem; bottom: 1.35rem; width: 4px; border-radius: 999px;
-        background: linear-gradient(180deg, #4f46e5, #0f766e); content: '';
+        background: linear-gradient(180deg, #1E6B42, #2E7D6B); content: '';
     }
     .portfolio-section__heading { color: #101828; font-size: 1rem; font-weight: 780; letter-spacing: -.018em; }
     .portfolio-section__description { margin-top: .15rem; color: #7a8496; font-size: .76rem; }
@@ -180,9 +180,9 @@ require __DIR__.'/_layout_head.php';
     .stat-card__value { margin-top: .4rem; color: #101828; font-size: 1.75rem; font-weight: 800; letter-spacing: -.02em; }
     .stat-card__desc { margin-top: .25rem; color: #7a8496; font-size: .74rem; }
 
-    .stat-card--indigo { background: linear-gradient(145deg, #fff 58%, #eef2ff 130%); }
-    .stat-card--indigo::before { background: #4f46e5; }
-    .stat-card--indigo .stat-card__icon { background: #eef2ff; color: #4338ca; }
+    .stat-card--indigo { background: linear-gradient(145deg, #fff 58%, #EAF4EE 130%); }
+    .stat-card--indigo::before { background: #1E6B42; }
+    .stat-card--indigo .stat-card__icon { background: #EAF4EE; color: #1E6B42; }
 
     .stat-card--teal { background: linear-gradient(145deg, #fff 58%, #ecfdf5 130%); }
     .stat-card--teal::before { background: #0f766e; }
@@ -205,9 +205,9 @@ require __DIR__.'/_layout_head.php';
     .stat-card--rose .stat-card__icon { background: #fff1f2; color: #be123c; }
 
     .chart-card { display: flex; flex-direction: column; overflow: hidden; border: 1px solid #dfe3ea; border-radius: .9rem; background: #fff; box-shadow: 0 8px 24px rgba(16, 24, 40, .05); }
-    .chart-card__header { border-bottom: 1px solid #1e3a8a; background: #1e3a8a; padding: 1.1rem 1.25rem; }
+    .chart-card__header { border-bottom: 1px solid #16402B; background: #16402B; padding: 1.1rem 1.25rem; }
     .chart-card__heading { color: #fff; font-size: 1rem; font-weight: 760; letter-spacing: -.012em; }
-    .chart-card__description { margin-top: .15rem; color: #c7d2fe; font-size: .76rem; }
+    .chart-card__description { margin-top: .15rem; color: #CFE3D6; font-size: .76rem; }
     .chart-card__body { flex: 1; padding: 1.5rem 1.25rem 1.25rem; }
 </style>
 

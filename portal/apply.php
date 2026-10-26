@@ -305,6 +305,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 $applicationRowId = portal_insert('applications', [
                     'job_position_id' => $job->id,
+                    // The posting applied to: re-opening keeps its JP number (same
+                    // table in the staff lists); a new posting gets a new one.
+                    'jp_number' => $job->jp_number,
+                    'posting_date' => $job->posted_at ? substr((string) $job->posted_at, 0, 10) : date('Y-m-d'),
                     'applicant_id' => $user->id,
                     'status' => 'pending',
                     'created_at' => date('Y-m-d H:i:s'),
@@ -503,7 +507,7 @@ require __DIR__.'/_layout_head.php';
                 <span class="text-2xl sm:text-3xl">SDO ALBAY CARES</span><br>
                 <span class="text-lg sm:text-xl">(Career Application & <br>Recruitment for Education Services)</span>
             </h2>
-            <p class="mt-1 text-lg text-blue-100">Applying for: <span class="font-black text-white"><?= portal_e($job->title) ?></span></p>
+            <p class="mt-1 text-lg text-white/80">Applying for: <span class="font-black text-white"><?= portal_e($job->title) ?></span></p>
         </div>
     </div>
 
@@ -523,7 +527,7 @@ require __DIR__.'/_layout_head.php';
                     </a>
                 <?php endforeach; ?>
             </div>
-            <p class="whitespace-nowrap text-xs text-blue-100">Important: Review the D.M. Notice and CSC Publication of Vacancy for full qualifications, requirements, and deadlines.</p>
+            <p class="whitespace-nowrap text-xs text-white/80">Important: Review the D.M. Notice and CSC Publication of Vacancy for full qualifications, requirements, and deadlines.</p>
         </div>
     <?php endif; ?>
 
@@ -570,28 +574,28 @@ require __DIR__.'/_layout_head.php';
                     <div class="grid gap-6 md:grid-cols-2">
                         <div>
                             <label class="mb-2 block text-sm font-bold text-slate-700">Full Name <span class="text-red-600">*</span></label>
-                            <input type="text" name="full_name" value="<?= portal_e($val('full_name', $profile->full_name ?? '')) ?>" placeholder="Last Name|First Name|Middle Name|Name Extension" required class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
+                            <input type="text" name="full_name" value="<?= portal_e($val('full_name', $profile->full_name ?? '')) ?>" placeholder="Last Name|First Name|Middle Name|Name Extension" required class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-green-100">
                         </div>
                         <div>
                             <label class="mb-2 block text-sm font-bold text-slate-700">Email Address <span class="text-red-600">*</span></label>
-                            <input type="email" name="email" value="<?= portal_e($val('email', $profile->email ?? '')) ?>" required class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
+                            <input type="email" name="email" value="<?= portal_e($val('email', $profile->email ?? '')) ?>" required class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-green-100">
                         </div>
                         <div>
                             <label class="mb-2 block text-sm font-bold text-slate-700">Phone Number <span class="text-red-600">*</span></label>
-                            <input type="text" name="phone_number" value="<?= portal_e($val('phone_number', $profile->phone ?? '')) ?>" required class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
+                            <input type="text" name="phone_number" value="<?= portal_e($val('phone_number', $profile->phone ?? '')) ?>" required class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-green-100">
                         </div>
                         <div>
                             <label class="mb-2 block text-sm font-bold text-slate-700">Complete Address <span class="text-red-600">*</span></label>
-                            <input type="text" name="address" value="<?= portal_e($val('address', $profile->address ?? '')) ?>" required class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
+                            <input type="text" name="address" value="<?= portal_e($val('address', $profile->address ?? '')) ?>" required class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-green-100">
                         </div>
                         <div>
                             <label class="mb-2 block text-sm font-bold text-slate-700">Birth Date <span class="text-red-600">*</span></label>
-                            <input type="date" name="birth_date" value="<?= portal_e($val('birth_date', $profile->birth_date ?? '')) ?>" max="<?= date('Y-m-d') ?>" required class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
+                            <input type="date" name="birth_date" value="<?= portal_e($val('birth_date', $profile->birth_date ?? '')) ?>" max="<?= date('Y-m-d') ?>" required class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-green-100">
                         </div>
                         <div>
                             <label class="mb-2 block text-sm font-bold text-slate-700">Sex (at Birth) <span class="text-red-600">*</span></label>
                             <?php $selectedSex = $val('sex', $profile->sex ?? ''); ?>
-                            <select name="sex" required class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
+                            <select name="sex" required class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-green-100">
                                 <option value="">Select sex</option>
                                 <option value="Male" <?= $selectedSex === 'Male' ? 'selected' : '' ?>>Male</option>
                                 <option value="Female" <?= $selectedSex === 'Female' ? 'selected' : '' ?>>Female</option>
@@ -600,7 +604,7 @@ require __DIR__.'/_layout_head.php';
                         <div>
                             <label class="mb-2 block text-sm font-bold text-slate-700">Civil Status <span class="text-red-600">*</span></label>
                             <?php $selectedCivilStatus = $val('civil_status', $profile->civil_status ?? ''); ?>
-                            <select name="civil_status" required class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
+                            <select name="civil_status" required class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-green-100">
                                 <option value="">Select civil status</option>
                                 <?php foreach (['Single', 'Married', 'Widowed', 'Legally Separated', 'Divorced', 'Annulled', 'Other'] as $cs): ?>
                                     <option value="<?= portal_e($cs) ?>" <?= $selectedCivilStatus === $cs ? 'selected' : '' ?>><?= portal_e($cs) ?></option>
@@ -609,15 +613,15 @@ require __DIR__.'/_layout_head.php';
                         </div>
                         <div>
                             <label class="mb-2 block text-sm font-bold text-slate-700">Religion <span class="text-red-600">*</span></label>
-                            <input type="text" name="religion" value="<?= portal_e($val('religion', $profile->religion ?? '')) ?>" required class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
+                            <input type="text" name="religion" value="<?= portal_e($val('religion', $profile->religion ?? '')) ?>" required class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-green-100">
                         </div>
                         <div>
                             <label class="mb-2 block text-sm font-bold text-slate-700">Disability</label>
-                            <input type="text" name="disability" value="<?= portal_e($val('disability', $profile->disability ?? '')) ?>" placeholder="Optional" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
+                            <input type="text" name="disability" value="<?= portal_e($val('disability', $profile->disability ?? '')) ?>" placeholder="Optional" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-green-100">
                         </div>
                         <div>
                             <label class="mb-2 block text-sm font-bold text-slate-700">Ethnic Group</label>
-                            <input type="text" name="ethnic_group" value="<?= portal_e($val('ethnic_group', $profile->ethnic_group ?? '')) ?>" placeholder="Optional" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
+                            <input type="text" name="ethnic_group" value="<?= portal_e($val('ethnic_group', $profile->ethnic_group ?? '')) ?>" placeholder="Optional" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-green-100">
                         </div>
                     </div>
                 </section>
@@ -635,16 +639,16 @@ require __DIR__.'/_layout_head.php';
                                     <button type="button" onclick="removeEntry(this)" class="text-sm font-bold text-red-600 hover:text-red-800">Remove</button>
                                 </div>
                                 <div class="grid gap-4 md:grid-cols-2">
-                                    <select name="education[<?= $i ?>][level]" required class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100" onchange="toggleEducationSpecify(this)">
+                                    <select name="education[<?= $i ?>][level]" required class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-green-100" onchange="toggleEducationSpecify(this)">
                                         <option value="" disabled hidden>Education level</option>
                                         <?php foreach (["Bachelor's Degree", "Master's Degree", "Doctorate Degree", "Other's"] as $level): ?>
                                             <option value="<?= portal_e($level) ?>" <?= ($education['level'] ?? '') === $level ? 'selected' : '' ?>><?= portal_e($level) ?></option>
                                         <?php endforeach; ?>
                                     </select>
-                                    <input type="text" name="education[<?= $i ?>][level_specify]" data-role="education-specify" placeholder="Please specify" value="<?= portal_e($education['level_specify'] ?? '') ?>" <?= ($education['level'] ?? '') === "Other's" ? 'required' : '' ?> class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100 <?= ($education['level'] ?? '') === "Other's" ? '' : 'hidden' ?>">
-                                    <input type="text" name="education[<?= $i ?>][school]" placeholder="School" value="<?= portal_e($education['school'] ?? '') ?>" required class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
-                                    <input type="text" name="education[<?= $i ?>][degree]" placeholder="Degree or course" value="<?= portal_e($education['degree'] ?? '') ?>" required class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
-                                    <input type="text" name="education[<?= $i ?>][year_graduated]" placeholder="Year graduated" value="<?= portal_e($education['year_graduated'] ?? '') ?>" required class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
+                                    <input type="text" name="education[<?= $i ?>][level_specify]" data-role="education-specify" placeholder="Please specify" value="<?= portal_e($education['level_specify'] ?? '') ?>" <?= ($education['level'] ?? '') === "Other's" ? 'required' : '' ?> class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-green-100 <?= ($education['level'] ?? '') === "Other's" ? '' : 'hidden' ?>">
+                                    <input type="text" name="education[<?= $i ?>][school]" placeholder="School" value="<?= portal_e($education['school'] ?? '') ?>" required class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-green-100">
+                                    <input type="text" name="education[<?= $i ?>][degree]" placeholder="Degree or course" value="<?= portal_e($education['degree'] ?? '') ?>" required class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-green-100">
+                                    <input type="text" name="education[<?= $i ?>][year_graduated]" placeholder="Year graduated" value="<?= portal_e($education['year_graduated'] ?? '') ?>" required class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-green-100">
                                 </div>
                             </div>
                         <?php endforeach; ?>
@@ -664,11 +668,11 @@ require __DIR__.'/_layout_head.php';
                                     <button type="button" onclick="removeEntry(this)" class="text-sm font-bold text-red-600 hover:text-red-800">Remove</button>
                                 </div>
                                 <div class="grid gap-4 md:grid-cols-2">
-                                    <input type="text" name="experience[<?= $i ?>][title]" placeholder="Position title" value="<?= portal_e($experience['title'] ?? '') ?>" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
-                                    <input type="text" name="experience[<?= $i ?>][company]" placeholder="Company or agency" value="<?= portal_e($experience['company'] ?? '') ?>" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
-                                    <input type="text" name="experience[<?= $i ?>][first_day]" placeholder="First Day of Service (Month and Year)" value="<?= portal_e($experience['first_day'] ?? '') ?>" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
-                                    <input type="text" name="experience[<?= $i ?>][last_day]" placeholder="Last Day of Service (Month and Year)" value="<?= portal_e($experience['last_day'] ?? '') ?>" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
-                                    <textarea name="experience[<?= $i ?>][details]" placeholder="Responsibilities or details" rows="3" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100"><?= portal_e($experience['details'] ?? '') ?></textarea>
+                                    <input type="text" name="experience[<?= $i ?>][title]" placeholder="Position title" value="<?= portal_e($experience['title'] ?? '') ?>" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-green-100">
+                                    <input type="text" name="experience[<?= $i ?>][company]" placeholder="Company or agency" value="<?= portal_e($experience['company'] ?? '') ?>" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-green-100">
+                                    <input type="text" name="experience[<?= $i ?>][first_day]" placeholder="First Day of Service (Month and Year)" value="<?= portal_e($experience['first_day'] ?? '') ?>" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-green-100">
+                                    <input type="text" name="experience[<?= $i ?>][last_day]" placeholder="Last Day of Service (Month and Year)" value="<?= portal_e($experience['last_day'] ?? '') ?>" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-green-100">
+                                    <textarea name="experience[<?= $i ?>][details]" placeholder="Responsibilities or details" rows="3" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-green-100"><?= portal_e($experience['details'] ?? '') ?></textarea>
                                 </div>
                             </div>
                         <?php endforeach; ?>
@@ -688,13 +692,13 @@ require __DIR__.'/_layout_head.php';
                                     <button type="button" onclick="removeEntry(this)" class="text-sm font-bold text-red-600 hover:text-red-800">Remove</button>
                                 </div>
                                 <div class="grid gap-4 md:grid-cols-2">
-                                    <input type="text" name="training[<?= $i ?>][title]" placeholder="Training or seminar title" value="<?= portal_e($training['title'] ?? '') ?>" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
-                                    <input type="number" min="0" step="1" name="training[<?= $i ?>][hours]" placeholder="Number of hours" value="<?= portal_e((string) ($training['hours'] ?? '')) ?>" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
+                                    <input type="text" name="training[<?= $i ?>][title]" placeholder="Training or seminar title" value="<?= portal_e($training['title'] ?? '') ?>" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-green-100">
+                                    <input type="number" min="0" step="1" name="training[<?= $i ?>][hours]" placeholder="Number of hours" value="<?= portal_e((string) ($training['hours'] ?? '')) ?>" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-green-100">
                                     <div class="md:col-span-2">
                                         <label class="mb-2 block text-sm font-bold text-government-dark">Start of Training</label>
-                                        <input type="date" name="training[<?= $i ?>][training_date]" value="<?= portal_e($training['training_date'] ?? '') ?>" max="<?= date('Y-m-d') ?>" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
+                                        <input type="date" name="training[<?= $i ?>][training_date]" value="<?= portal_e($training['training_date'] ?? '') ?>" max="<?= date('Y-m-d') ?>" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-green-100">
                                         <label class="mb-2 mt-3 block text-sm font-bold text-government-dark">End of Training</label>
-                                        <input type="date" name="training[<?= $i ?>][training_end_date]" value="<?= portal_e($training['training_end_date'] ?? '') ?>" max="<?= date('Y-m-d') ?>" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
+                                        <input type="date" name="training[<?= $i ?>][training_end_date]" value="<?= portal_e($training['training_end_date'] ?? '') ?>" max="<?= date('Y-m-d') ?>" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-green-100">
                                         <p class="mt-2 text-xs text-slate-500">Select the exact date (day, month and year) when the training or seminar started and ended.</p>
                                     </div>
                                 </div>
@@ -716,21 +720,21 @@ require __DIR__.'/_layout_head.php';
                                     <button type="button" onclick="removeEligibility(this)" class="text-sm font-bold text-red-600 hover:text-red-800">Remove</button>
                                 </div>
                                 <div class="grid gap-4 md:grid-cols-2">
-                                    <select name="eligibility[<?= $i ?>][license_name]" required class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100" onchange="toggleEligibilitySpecify(this)">
+                                    <select name="eligibility[<?= $i ?>][license_name]" required class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-green-100" onchange="toggleEligibilitySpecify(this)">
                                         <option value="" disabled hidden>Eligibility or license name</option>
                                         <?php foreach (['CS Sub-Professional', 'CSC Professional', 'RA1080', "Other's"] as $ln): ?>
                                             <option value="<?= portal_e($ln) ?>" <?= ($eligibility['license_name'] ?? '') === $ln ? 'selected' : '' ?>><?= portal_e($ln) ?></option>
                                         <?php endforeach; ?>
                                     </select>
-                                    <input type="text" name="eligibility[<?= $i ?>][license_specify]" data-role="eligibility-specify" placeholder="Please specify" value="<?= portal_e($eligibility['license_specify'] ?? '') ?>" <?= in_array($eligibility['license_name'] ?? '', ['RA1080', "Other's"], true) ? 'required' : '' ?> class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100 <?= in_array($eligibility['license_name'] ?? '', ['RA1080', "Other's"], true) ? '' : 'hidden' ?>">
-                                    <input type="text" name="eligibility[<?= $i ?>][rating]" placeholder="Rating" value="<?= portal_e($eligibility['rating'] ?? '') ?>" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
+                                    <input type="text" name="eligibility[<?= $i ?>][license_specify]" data-role="eligibility-specify" placeholder="Please specify" value="<?= portal_e($eligibility['license_specify'] ?? '') ?>" <?= in_array($eligibility['license_name'] ?? '', ['RA1080', "Other's"], true) ? 'required' : '' ?> class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-green-100 <?= in_array($eligibility['license_name'] ?? '', ['RA1080', "Other's"], true) ? '' : 'hidden' ?>">
+                                    <input type="text" name="eligibility[<?= $i ?>][rating]" placeholder="Rating" value="<?= portal_e($eligibility['rating'] ?? '') ?>" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-green-100">
                                     <div>
                                         <label class="mb-2 block text-sm font-bold text-government-dark">Date Issued</label>
-                                        <input type="date" name="eligibility[<?= $i ?>][date_issued]" value="<?= portal_e($eligibility['date_issued'] ?? '') ?>" required class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
+                                        <input type="date" name="eligibility[<?= $i ?>][date_issued]" value="<?= portal_e($eligibility['date_issued'] ?? '') ?>" required class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-green-100">
                                     </div>
                                     <div data-role="valid-until-wrapper" class="<?= $neverExpires ? 'hidden' : '' ?>">
                                         <label class="mb-2 block text-sm font-bold text-government-dark">Valid Until</label>
-                                        <input type="date" name="eligibility[<?= $i ?>][valid_until]" value="<?= portal_e($eligibility['valid_until'] ?? '') ?>" <?= $neverExpires ? '' : 'required' ?> class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100">
+                                        <input type="date" name="eligibility[<?= $i ?>][valid_until]" value="<?= portal_e($eligibility['valid_until'] ?? '') ?>" <?= $neverExpires ? '' : 'required' ?> class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-green-100">
                                     </div>
                                     <label class="mt-1 ml-auto flex w-fit items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 md:col-span-2">
                                         <input type="checkbox" name="eligibility[<?= $i ?>][never_expires]" value="1" <?= $neverExpires ? 'checked' : '' ?> class="h-4 w-4 rounded border-slate-300 text-government-navy" onchange="toggleNeverExpires(this)">
@@ -774,7 +778,7 @@ require __DIR__.'/_layout_head.php';
                     </div>
                 </section>
 
-                <section class="rounded-2xl border border-blue-100 bg-government-light p-6">
+                <section class="rounded-2xl border border-green-100 bg-government-light p-6">
                     <label class="flex items-start gap-3">
                         <input type="checkbox" required class="mt-1 h-5 w-5 rounded border-slate-300 text-government-navy focus:ring-government-blue">
                         <span class="text-sm leading-6 text-slate-700">I certify that the information provided in this application is true and complete. I understand that false information may result in disqualification.</span>
@@ -783,7 +787,7 @@ require __DIR__.'/_layout_head.php';
 
                 <div class="flex flex-col-reverse justify-end gap-3 sm:flex-row">
                     <a href="<?= $isEdit ? portal_url('dashboard.php') : portal_url('jobs.php') ?>" class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-6 py-3.5 font-bold text-slate-700 transition hover:bg-slate-100">Cancel</a>
-                    <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-government-navy px-8 py-3.5 font-bold text-white shadow-lg transition hover:bg-government-blue focus:ring-4 focus:ring-blue-200"><?= $isEdit ? 'Save Changes' : 'Submit Application' ?></button>
+                    <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-government-navy px-8 py-3.5 font-bold text-white shadow-lg transition hover:bg-government-blue focus:ring-4 focus:ring-green-200"><?= $isEdit ? 'Save Changes' : 'Submit Application' ?></button>
                 </div>
             </form>
         </main>
@@ -872,7 +876,7 @@ require __DIR__.'/_layout_head.php';
     let trainingIndex = <?= count($trainingSource) ?>;
     let eligibilityIndex = <?= count($eligibilitySource) ?>;
 
-    const inputClass = 'w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-blue-100';
+    const inputClass = 'w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-green-100';
 
     function removeEntry(button) {
         const entry = button.closest('.dynamic-entry');

@@ -226,25 +226,39 @@ function eval_application_period_ended(?object $job): bool
 }
 
 /**
- * Groups a flat, already-sorted list of application rows (each must have a
- * ->job_title property) into position buckets, sorted alphabetically by
- * position title — mirrors admin-portal's admin_group_by_position().
+ * True when the admin evaluates this posting's applications
+ * (job_positions.evaluated_by = 'admin') — evaluators must not see them.
+ */
+function eval_is_admin_evaluated(?object $job): bool
+{
+    return $job !== null && ($job->evaluated_by ?? 'evaluator') === 'admin';
+}
+
+/**
+ * SQL condition limiting an applications query to postings evaluators
+ * handle. $alias is the applications table alias (or its name) in the query.
+ */
+function eval_visible_applications_sql(string $alias = 'a'): string
+{
+    return "{$alias}.job_position_id NOT IN (SELECT id FROM job_positions WHERE evaluated_by = 'admin')";
+}
+
+/** SQL condition limiting a job_positions query to postings evaluators handle. */
+function eval_visible_positions_sql(string $alias = 'jp'): string
+{
+    return "{$alias}.evaluated_by <> 'admin'";
+}
+
+/**
+ * Groups application rows for the collapsible list tables — one table per
+ * posting round of each position (see eval_group_by_posting_round()).
  *
  * @param array<int, object> $applications
  * @return array<string, array<int, object>>
  */
 function eval_group_by_position(array $applications): array
 {
-    $groups = [];
-
-    foreach ($applications as $app) {
-        $title = $app->job_title ?? 'Unassigned Position';
-        $groups[$title][] = $app;
-    }
-
-    ksort($groups, SORT_NATURAL | SORT_FLAG_CASE);
-
-    return $groups;
+    return eval_group_by_posting_round($applications);
 }
 
 /**
@@ -278,7 +292,7 @@ function evaluator_section_icon(string $name): string
  */
 function evaluator_section_header(string $title, string $icon, ?string $subtitle = null, string $actionsHtml = ''): string
 {
-    $sub = $subtitle ? '<p class="mt-0.5 text-xs text-indigo-200">'.evaluator_e($subtitle).'</p>' : '';
+    $sub = $subtitle ? '<p class="mt-0.5 text-xs text-white/70">'.evaluator_e($subtitle).'</p>' : '';
     $actions = $actionsHtml ? '<div class="ml-auto flex-shrink-0">'.$actionsHtml.'</div>' : '';
 
     return '<div class="flex items-center gap-3 bg-evaluator-indigoDark px-6 py-4">'
@@ -300,7 +314,7 @@ function evaluator_requirement_box(string $label, bool $checked): string
         ? '<span class="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded bg-emerald-600 text-white"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="h-3 w-3"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg></span>'
         : '<span class="mt-0.5 h-5 w-5 flex-shrink-0 rounded border border-slate-300 bg-white"></span>';
     $boxClass = $checked ? 'border-emerald-300 bg-emerald-50' : 'border-slate-200';
-    $textClass = $checked ? 'font-bold text-indigo-700' : 'text-slate-500';
+    $textClass = $checked ? 'font-bold text-green-700' : 'text-slate-500';
 
     return '<div class="flex items-start gap-2 rounded-lg border '.$boxClass.' px-3 py-2.5 text-sm">'.$box.'<span class="'.$textClass.'">'.evaluator_e($label).'</span></div>';
 }

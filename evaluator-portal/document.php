@@ -24,7 +24,13 @@ if ($requested === false || !str_starts_with($requested, $documentsRoot)) {
 // check at all. Still requires the path to correspond to a real, tracked
 // document row (closes the "any arbitrary file under storage/app/public"
 // gap the original route left open).
-$stmt = portal_pdo()->prepare('SELECT id FROM application_documents WHERE file_path = ? LIMIT 1');
+// Documents from postings the admin evaluates are hidden from evaluators.
+$stmt = portal_pdo()->prepare(
+    'SELECT d.id FROM application_documents d
+     JOIN applications a ON a.id = d.application_id
+     WHERE d.file_path = ? AND '.eval_visible_applications_sql().'
+     LIMIT 1'
+);
 $stmt->execute([$path]);
 
 if (!$stmt->fetch()) {

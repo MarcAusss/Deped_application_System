@@ -57,13 +57,14 @@ require __DIR__.'/_layout_head.php';
                                 <th class="px-4 py-3 text-left font-bold text-slate-600">Title</th>
                                 <th class="px-4 py-3 text-left font-bold text-slate-600">Posted</th>
                                 <th class="px-4 py-3 text-left font-bold text-slate-600">Until</th>
+                                <th class="px-4 py-3 text-left font-bold text-slate-600">Evaluated By</th>
                                 <th class="px-4 py-3 text-left font-bold text-slate-600">References</th>
                                 <th class="px-4 py-3 text-center font-bold text-slate-600">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="job-postings-tbody" class="divide-y divide-slate-100">
                             <?php if (empty($postings)): ?>
-                                <tr><td colspan="6" class="px-4 py-10 text-center text-slate-500">No open postings.</td></tr>
+                                <tr><td colspan="7" class="px-4 py-10 text-center text-slate-500">No open postings.</td></tr>
                             <?php endif; ?>
                             <?php foreach ($postings as $p): $attachments = json_decode($p->attachment_paths ?? '[]', true) ?: []; ?>
                                 <tr class="job-posting-row hover:bg-slate-50" data-search="<?= admin_e(mb_strtolower($p->jp_number.' '.$p->title)) ?>">
@@ -71,6 +72,13 @@ require __DIR__.'/_layout_head.php';
                                     <td class="px-4 py-3 font-bold text-slate-800"><?= admin_e($p->title) ?></td>
                                     <td class="px-4 py-3 text-slate-600"><?= $p->posted_at ? admin_e(date('M d, Y', strtotime($p->posted_at))) : '—' ?></td>
                                     <td class="px-4 py-3 text-slate-600"><?= $p->until ? admin_e(date('M d, Y', strtotime($p->until))) : '—' ?></td>
+                                    <td class="px-4 py-3">
+                                        <?php if ($p->evaluated_by === 'admin'): ?>
+                                            <span class="pill bg-amber-100 text-amber-800">Admin</span>
+                                        <?php else: ?>
+                                            <span class="pill bg-admin-indigoLight text-admin-indigo">Evaluator</span>
+                                        <?php endif; ?>
+                                    </td>
                                     <td class="px-4 py-3">
                                         <?php if (empty($attachments)): ?>
                                             <span class="text-slate-400">—</span>
@@ -166,6 +174,10 @@ require __DIR__.'/_layout_head.php';
                 <input type="text" name="until_time" id="manage-field-until_time" placeholder="e.g. 5:00 PM, 12 midnight, or 12 noon" class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-base">
             </div>
 
+            <?php $postingModeId = 'manage-posting-mode'; require __DIR__.'/_posting_mode_field.php'; ?>
+
+            <?php $evaluatedByValue = 'evaluator'; $evaluatedByIdPrefix = 'manage-evaluated-by'; require __DIR__.'/_evaluated_by_field.php'; ?>
+
             <div class="sm:col-span-3">
                 <label class="mb-1.5 block text-sm font-bold text-slate-700">Salary Grade</label>
                 <input type="text" name="salary_grade" id="manage-field-salary_grade" placeholder="e.g. 11" class="w-full max-w-xs rounded-lg border border-slate-300 px-4 py-2.5 text-base">
@@ -220,6 +232,7 @@ require __DIR__.'/_layout_head.php';
             'slots' => (int) $p->slots,
             'description' => $p->description,
             'posted_at' => $p->posted_at ? substr((string) $p->posted_at, 0, 10) : date('Y-m-d'),
+            'jp_number' => $p->jp_number,
             'until' => $p->until ? substr((string) $p->until, 0, 10) : '',
             'until_time' => $p->until_time ? date('g:i A', strtotime($p->until_time)) : '',
             'salary_grade' => $p->salary_grade,
@@ -230,6 +243,7 @@ require __DIR__.'/_layout_head.php';
             'experience_requirement' => $p->experience_requirement,
             'min_experience_years' => $p->min_experience_years,
             'eligibility_requirement' => $p->eligibility_requirement,
+            'evaluated_by' => $p->evaluated_by,
         ];
     }, $allPositions)) ?>;
 
@@ -298,6 +312,13 @@ require __DIR__.'/_layout_head.php';
             fieldMap.forEach(function (field) {
                 var el = document.getElementById('manage-field-' + field);
                 if (el) el.value = position && position[field] !== null ? position[field] : '';
+            });
+
+            adminPostingMode('manage-posting-mode', position ? position.jp_number : null, document.getElementById('manage-field-posted_at'));
+
+            var evaluatedBy = position && position.evaluated_by === 'admin' ? 'admin' : 'evaluator';
+            form.querySelectorAll('.evaluated-by-input').forEach(function (radio) {
+                radio.checked = radio.value === evaluatedBy;
             });
 
             closePositionPanel();

@@ -270,7 +270,7 @@ require __DIR__.'/_layout_head.php';
 <style>
     .profile-tab-link { color: #475569; }
     .profile-tab-link:hover { background: #f1f5f9; }
-    .profile-tab-link.is-active { background: #123B6D; color: #ffffff; }
+    .profile-tab-link.is-active { background: #1E6B42; color: #ffffff; }
 </style>
 
 <script>

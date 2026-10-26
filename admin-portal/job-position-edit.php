@@ -46,6 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $experienceRequirement = trim($_POST['experience_requirement'] ?? '');
     $minExperienceYears = trim($_POST['min_experience_years'] ?? '');
     $eligibilityRequirement = trim($_POST['eligibility_requirement'] ?? '');
+    $evaluatedBy = admin_evaluated_by_input($_POST['evaluated_by'] ?? null, $position->evaluated_by ?? 'evaluator');
 
     if (!v_present($title)) {
         $errors->add('title', 'The title field is required.');
@@ -103,7 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 title = ?, abbreviation = ?, slots = ?, description = ?, posted_at = ?, `until` = ?, until_time = ?,
                 salary_grade = ?, monthly_salary = ?, education_requirement = ?, training_requirement = ?, min_training_hours = ?,
                 experience_requirement = ?, min_experience_years = ?, eligibility_requirement = ?,
-                attachment_paths = ?, csc_publication_paths = ?, updated_at = NOW()
+                attachment_paths = ?, csc_publication_paths = ?, evaluated_by = ?, updated_at = NOW()
              WHERE id = ?'
         )->execute([
             $title, $abbreviation ?: null, (int) $slots, $description,
@@ -112,7 +113,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $educationRequirement ?: null, $trainingRequirement ?: null, $minTrainingHours !== '' ? (int) $minTrainingHours : null,
             $experienceRequirement ?: null, $minExperienceYears !== '' ? $minExperienceYears : null,
             $eligibilityRequirement ?: null,
-            json_encode($attachmentPaths), json_encode($cscPaths),
+            json_encode($attachmentPaths), json_encode($cscPaths), $evaluatedBy,
             $positionId,
         ]);
 

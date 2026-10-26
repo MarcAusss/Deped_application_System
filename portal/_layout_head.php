@@ -17,16 +17,20 @@ $pageTitle = $pageTitle ?? 'DepEd Recruitment Portal';
                 extend: {
                     colors: {
                         government: {
-                            navy: '#123B6D',
-                            blue: '#1D4E89',
-                            light: '#EAF2F8',
+                            navy: '#1E6B42',
+                            blue: '#278253',
+                            light: '#EAF4EE',
                             gold: '#D4A017',
-                            dark: '#0B2545',
+                            dark: '#16402B',
                         }
                     }
                 }
             }
         }
     </script>
+    <style>
+        /* Edge adds its own eye button to password fields; these pages have their own show-password toggle. */
+        input[type="password"]::-ms-reveal, input[type="password"]::-ms-clear { display: none; }
+    </style>
 </head>
 <body class="flex min-h-screen flex-col bg-slate-50 text-slate-800">

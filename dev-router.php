@@ -10,7 +10,7 @@
 
 $path = urldecode(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
 
-if (preg_match('#^/(\.|vendor/|storage/|composer\.(json|lock)$)#', $path)) {
+if (preg_match('#^/(\.|vendor/|storage/|database/|composer\.(json|lock)$)#', $path) || str_ends_with($path, '.sql')) {
     http_response_code(403);
     echo 'Forbidden';
     return true;

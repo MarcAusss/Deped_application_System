@@ -209,7 +209,7 @@ function send_disqualified(string $toEmail, string $fullName, string $jobTitle, 
 
     $body = <<<HTML
         <div style="font-family:Arial,Helvetica,sans-serif;color:#1e293b;max-width:640px;">
-            <div style="background-color:#123B6D;padding:24px 32px;">
+            <div style="background-color:#1E6B42;padding:24px 32px;">
                 <p style="margin:0;color:#fff;font-size:12px;font-weight:bold;letter-spacing:.08em;text-transform:uppercase;">SDO Albay (CARES) &middot; Personnel Division</p>
                 <p style="margin:4px 0 0;color:#fff;font-size:18px;font-weight:bold;">Initial Evaluation Result</p>
             </div>
@@ -217,18 +217,18 @@ function send_disqualified(string $toEmail, string $fullName, string $jobTitle, 
                 <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">Dear {$safeName},</p>
                 <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">Please be informed of the results of the initial evaluation of your qualifications vis-&agrave;-vis the Civil Service Commission (CSC) approved Qualification Standards (QS) of the position applied for, <strong>{$safeTitle}</strong>, as follows:</p>
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin:0 0 20px;">
-                    <tr><td colspan="4" style="background-color:#1D4E89;color:#ffffff;font-size:11px;font-weight:bold;text-transform:uppercase;letter-spacing:0.04em;padding:10px 12px;border:1px solid #123B6D;">Position Applied for: {$safeTitle}{$controlLine}</td></tr>
+                    <tr><td colspan="4" style="background-color:#278253;color:#ffffff;font-size:11px;font-weight:bold;text-transform:uppercase;letter-spacing:0.04em;padding:10px 12px;border:1px solid #1E6B42;">Position Applied for: {$safeTitle}{$controlLine}</td></tr>
                     <tr>
-                        <td style="background-color:#EAF2F8;color:#1D4E89;font-size:10.5px;font-weight:bold;text-transform:uppercase;padding:8px 10px;border:1px solid #c7d2fe;">CSC-approved QS</td>
-                        <td style="background-color:#EAF2F8;color:#1D4E89;font-size:10.5px;font-weight:bold;text-transform:uppercase;padding:8px 10px;border:1px solid #c7d2fe;">Requirement</td>
-                        <td style="background-color:#EAF2F8;color:#1D4E89;font-size:10.5px;font-weight:bold;text-transform:uppercase;padding:8px 10px;border:1px solid #c7d2fe;">Your Qualifications</td>
-                        <td style="background-color:#EAF2F8;color:#1D4E89;font-size:10.5px;font-weight:bold;text-transform:uppercase;padding:8px 10px;border:1px solid #c7d2fe;">Remarks</td>
+                        <td style="background-color:#EAF4EE;color:#278253;font-size:10.5px;font-weight:bold;text-transform:uppercase;padding:8px 10px;border:1px solid #CFE3D6;">CSC-approved QS</td>
+                        <td style="background-color:#EAF4EE;color:#278253;font-size:10.5px;font-weight:bold;text-transform:uppercase;padding:8px 10px;border:1px solid #CFE3D6;">Requirement</td>
+                        <td style="background-color:#EAF4EE;color:#278253;font-size:10.5px;font-weight:bold;text-transform:uppercase;padding:8px 10px;border:1px solid #CFE3D6;">Your Qualifications</td>
+                        <td style="background-color:#EAF4EE;color:#278253;font-size:10.5px;font-weight:bold;text-transform:uppercase;padding:8px 10px;border:1px solid #CFE3D6;">Remarks</td>
                     </tr>
                     {$qsRowsHtml}
                 </table>
                 {$missingHtml}
                 {$remarksHtml}
-                <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">{$closingReason} <a href="https://cares.depedalbay.com" style="color:#1D4E89;">cares.depedalbay.com</a>.</p>
+                <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">{$closingReason} <a href="https://cares.depedalbay.com" style="color:#278253;">cares.depedalbay.com</a>.</p>
                 <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">Thank you for your interest in joining SDO Albay, and we wish you the best of luck in your future success.</p>
                 <p style="margin:0 0 4px;font-size:15px;line-height:1.6;">Very truly yours,</p>
                 <p style="margin:0;font-size:15px;font-weight:bold;line-height:1.4;">MARIANNE B. BUSTAMANTE</p>

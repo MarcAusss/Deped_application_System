@@ -8,7 +8,7 @@ function admin_nav_link_class(string $page, string $active): string
 
     return 'sidebar-link flex items-center gap-3 rounded-lg border px-3 py-2.5 text-sm font-bold transition '
         .($isActive
-            ? 'border-indigo-200 bg-indigo-50 text-indigo-800 shadow-[inset_3px_0_0_0_#4338CA]'
+            ? 'border-admin-indigo/20 bg-admin-indigoLight text-admin-indigoDark shadow-[inset_3px_0_0_0_#1E6B42]'
             : 'border-transparent text-slate-600 hover:border-slate-200 hover:bg-slate-50');
 }
 

@@ -5,7 +5,7 @@ $activePage = $activePage ?? '';
 function eval_nav_link_class(string $page, string $active): string
 {
     return 'sidebar-link flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-bold transition '
-        .($page === $active ? 'bg-evaluator-indigoLight text-evaluator-indigo' : 'text-indigo-100 hover:bg-white/5 hover:text-white');
+        .($page === $active ? 'bg-evaluator-indigoLight text-evaluator-indigo' : 'text-white/80 hover:bg-white/5 hover:text-white');
 }
 ?>
 <aside id="evaluator-sidebar" class="hidden w-64 shrink-0 flex-col bg-evaluator-indigoDark text-white transition-all duration-200 lg:sticky lg:top-16 lg:z-20 lg:flex lg:h-[calc(100vh-4rem)] lg:overflow-y-auto">

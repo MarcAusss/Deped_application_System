@@ -27,6 +27,13 @@ $stmt = portal_pdo()->prepare('SELECT * FROM job_positions WHERE id = ?');
 $stmt->execute([$application->job_position_id]);
 $job = $stmt->fetch();
 
+// Postings the admin evaluates are not visible to evaluator accounts.
+if (eval_is_admin_evaluated($job)) {
+    http_response_code(404);
+    require __DIR__.'/_error.php';
+    exit;
+}
+
 $stmt = portal_pdo()->prepare('SELECT * FROM applicant_profiles WHERE application_id = ?');
 $stmt->execute([$applicationId]);
 $profile = $stmt->fetch();
@@ -203,7 +210,7 @@ require __DIR__.'/_layout_head.php';
                     <div class="p-6">
                         <div class="mb-4 rounded-lg border-2 px-4 py-2" style="background:<?= $resultStyle['bg'] ?>;border-color:<?= $resultStyle['fg'] ?>;">
                             <span class="inline-block rounded-md px-2.5 py-1 text-sm font-bold text-white" style="background:<?= $resultStyle['badge'] ?>;"><?= evaluator_e(strtoupper(eval_result_label($result))) ?></span>
-                            <span class="ml-2 text-xs font-bold" style="color:#1e3a8a;"><?= evaluator_e(eval_result_description($result, $disqualifiedCategories, $missingMandatory)) ?></span>
+                            <span class="ml-2 text-xs font-bold" style="color:#334155;"><?= evaluator_e(eval_result_description($result, $disqualifiedCategories, $missingMandatory)) ?></span>
                         </div>
                         <?php if ($missingMandatory): ?>
                             <div class="mb-4 rounded-lg border border-rose-200 bg-rose-50 p-4">

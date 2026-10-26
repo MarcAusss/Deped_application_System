@@ -144,6 +144,10 @@ require __DIR__.'/_layout_head.php';
                 <input type="text" name="until_time" id="repost-field-until_time" placeholder="e.g. 5:00 PM, 12 midnight, or 12 noon" class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-base">
             </div>
 
+            <?php $postingModeId = 'repost-posting-mode'; require __DIR__.'/_posting_mode_field.php'; ?>
+
+            <?php $evaluatedByValue = 'evaluator'; $evaluatedByIdPrefix = 'repost-evaluated-by'; require __DIR__.'/_evaluated_by_field.php'; ?>
+
             <div class="sm:col-span-3">
                 <label class="mb-1.5 block text-sm font-bold text-slate-700">Salary Grade</label>
                 <input type="text" name="salary_grade" id="repost-field-salary_grade" placeholder="e.g. 11" class="w-full max-w-xs rounded-lg border border-slate-300 px-4 py-2.5 text-base">
@@ -226,6 +230,8 @@ require __DIR__.'/_layout_head.php';
             'slots' => (int) $p->slots,
             'description' => $p->description,
             'posted_at' => $p->posted_at ? substr((string) $p->posted_at, 0, 10) : date('Y-m-d'),
+            'jp_number' => $p->jp_number,
+            'evaluated_by' => $p->evaluated_by,
             'until' => $p->until ? substr((string) $p->until, 0, 10) : '',
             'until_time' => $p->until_time ? date('g:i A', strtotime($p->until_time)) : '',
             'salary_grade' => $p->salary_grade,
@@ -302,6 +308,13 @@ require __DIR__.'/_layout_head.php';
             fieldMap.forEach(function (field) {
                 var el = document.getElementById('repost-field-' + field);
                 if (el) el.value = position[field] !== null ? position[field] : '';
+            });
+
+            adminPostingMode('repost-posting-mode', position.jp_number, document.getElementById('repost-field-posted_at'));
+
+            var evaluatedBy = position.evaluated_by === 'admin' ? 'admin' : 'evaluator';
+            document.querySelectorAll('#repost-form .evaluated-by-input').forEach(function (radio) {
+                radio.checked = radio.value === evaluatedBy;
             });
 
             renderExistingFiles('repost-existing-attachments', 'remove_attachment_paths[]', position.attachment_paths || []);

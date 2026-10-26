@@ -11,6 +11,7 @@ $jobFilter = $_GET['job'] ?? '';
 // as evaluated ones — they belong on this list too, not just status =
 // 'evaluated'.
 $where = ["a.status IN ('evaluated', 'excluded')"];
+$where[] = eval_visible_applications_sql();
 $params = [];
 
 if ($jobFilter !== '' && ctype_digit((string) $jobFilter)) {
@@ -18,7 +19,7 @@ if ($jobFilter !== '' && ctype_digit((string) $jobFilter)) {
     $params['job'] = $jobFilter;
 }
 
-$sql = 'SELECT a.id, a.status, a.created_at,
+$sql = 'SELECT a.id, a.jp_number, a.posting_date, a.status, a.created_at,
                jp.title AS job_title, jp.is_open, jp.until, jp.until_time,
                cn.control_number,
                p.full_name, p.email,
@@ -35,7 +36,7 @@ $stmt = portal_pdo()->prepare($sql);
 $stmt->execute($params);
 $applications = $stmt->fetchAll();
 
-$jobs = portal_pdo()->query('SELECT id, title FROM job_positions ORDER BY title')->fetchAll();
+$jobs = portal_pdo()->query('SELECT jp.id, jp.title FROM job_positions jp WHERE '.eval_visible_positions_sql().' ORDER BY jp.title')->fetchAll();
 $positionGroups = eval_group_by_position($applications);
 
 $pageTitle = 'Evaluated | Evaluation Desk';
@@ -134,7 +135,7 @@ require __DIR__.'/_layout_head.php';
                 <?php foreach ($positionGroups as $positionTitle => $rows): ?>
                     <details class="position-group group mb-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm" open>
                         <summary class="flex cursor-pointer select-none items-center justify-between gap-3 bg-slate-50 px-4 py-3">
-                            <span class="font-black text-evaluator-indigoDark"><?= evaluator_e($positionTitle) ?></span>
+                            <span class="flex flex-wrap items-center gap-2"><span class="font-black text-evaluator-indigoDark"><?= evaluator_e($rows[0]->job_title ?? 'Unassigned Position') ?></span><span class="pill bg-white text-slate-600 ring-1 ring-slate-200"><?= evaluator_e(eval_posting_round_label($rows)) ?></span></span>
                             <span class="pill bg-slate-200 text-slate-700"><?= count($rows) ?> application(s)</span>
                         </summary>
 

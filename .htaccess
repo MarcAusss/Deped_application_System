@@ -23,4 +23,8 @@
     Require all denied
 </FilesMatch>
 
-RewriteRule ^(vendor|storage)(/|$) - [F,L]
+<FilesMatch "\.sql$">
+    Require all denied
+</FilesMatch>
+
+RewriteRule ^(vendor|storage|database)(/|$) - [F,L]

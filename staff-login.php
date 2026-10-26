@@ -299,8 +299,8 @@ $oldEmail = $oldInput['email'] ?? '';
         }
 
         .auth-input:focus {
-            border-color: #123B6D;
-            box-shadow: 0 0 0 4px rgba(18, 59, 109, 0.12);
+            border-color: #1E6B42;
+            box-shadow: 0 0 0 4px rgba(30, 107, 66, 0.12);
         }
 
         .auth-icon {
@@ -321,13 +321,17 @@ $oldEmail = $oldInput['email'] ?? '';
         }
 
         .auth-btn {
-            background: #123B6D;
+            background: #1E6B42;
             transition: .2s ease;
         }
 
         .auth-btn:hover {
-            background: #1D4E89;
+            background: #278253;
         }
+    </style>
+    <style>
+        /* Edge adds its own eye button to password fields; these pages have their own show-password toggle. */
+        input[type="password"]::-ms-reveal, input[type="password"]::-ms-clear { display: none; }
     </style>
 </head>
 
@@ -337,18 +341,25 @@ $oldEmail = $oldInput['email'] ?? '';
 
         <div class="relative hidden lg:block min-h-[43.75rem]">
             <img src="<?= asset_url('images/SDO-ALBAY.webp') ?>" class="absolute inset-0 w-full h-full object-cover object-[42%_center]" alt="Background Image">
-            <div class="absolute inset-0 bg-white/70"></div>
+            <div class="absolute inset-0 bg-[#1F5A3D]/65"></div>
+
+            <div class="absolute left-6 top-6 z-20 flex items-center gap-2">
+                <div class="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-white shadow-md ring-2 ring-white/20">
+                    <img src="<?= asset_url('images/depedalbay.png') ?>" alt="DepEd SDO Albay" class="h-16 w-16 shrink-0 translate-y-0.5 object-contain">
+                </div>
+                <div class="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-white shadow-md ring-2 ring-white/20">
+                    <img src="<?= asset_url('images/Department_of_Education_(DepEd).svg.webp') ?>" alt="Department of Education" class="h-11 w-11 object-contain">
+                </div>
+            </div>
 
             <div class="relative z-10 flex flex-col items-center justify-start h-full px-10 pt-60 text-center">
-                <div class="w-32 h-32 rounded-full bg-white shadow-2xl flex items-center justify-center border border-white">
-                    <img src="<?= asset_url('images/depedalbay.png') ?>" alt="Logo" class="w-30 h-30 object-contain">
-                </div>
+                <img src="<?= asset_url('images/cares-logo.svg') ?>" alt="SDO Albay CARES logo" class="h-40 w-40 drop-shadow-xl">
 
-                <h1 class="text-4xl font-black text-gray-800 mt-8">
+                <h1 class="text-4xl font-black text-white mt-8">
                     Career Application &amp; Recruitment for Education Services (CARES)
                 </h1>
 
-                <p class="text-gray-700 mt-4 text-lg max-w-md leading-relaxed">
+                <p class="text-white/85 mt-4 text-lg max-w-md leading-relaxed">
                     Welcome to the online recruitment and application management system.
                 </p>
             </div>
@@ -357,15 +368,19 @@ $oldEmail = $oldInput['email'] ?? '';
         <div class="bg-white px-8 md:px-16 py-14 flex items-center">
             <div class="w-full">
 
-                <div class="lg:hidden flex justify-center mb-8">
-                    <div class="w-24 h-24 rounded-full bg-indigo-100 flex items-center justify-center shadow-lg">
-                        <img src="<?= asset_url('images/depedalbay.png') ?>" class="w-14 h-14 object-contain" alt="Logo">
+                <div class="lg:hidden flex items-center justify-center gap-3 mb-8">
+                    <div class="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-white shadow ring-1 ring-slate-200">
+                        <img src="<?= asset_url('images/depedalbay.png') ?>" alt="DepEd SDO Albay" class="h-14 w-14 shrink-0 translate-y-0.5 object-contain">
+                    </div>
+                    <img src="<?= asset_url('images/cares-logo.svg') ?>" alt="SDO Albay CARES logo" class="h-24 w-24 drop-shadow-md">
+                    <div class="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-white shadow ring-1 ring-slate-200">
+                        <img src="<?= asset_url('images/Department_of_Education_(DepEd).svg.webp') ?>" alt="Department of Education" class="h-10 w-10 object-contain">
                     </div>
                 </div>
 
                 <div class="mb-10">
-                    <h2 class="text-4xl font-black text-[#123B6D]">Office System</h2>
-                    <p class="mt-3 text-lg text-[#1D4E89]">Sign in to continue — Administrator and Evaluator accounts both work here.</p>
+                    <h2 class="text-4xl font-black text-[#1E6B42]">Office System</h2>
+                    <p class="mt-3 text-lg text-[#278253]">Sign in to continue — Administrator and Evaluator accounts both work here.</p>
                 </div>
 
                 <form method="POST" action="<?= asset_url('staff-login.php') ?><?= isset($_GET['redirect']) ? '?redirect='.urlencode($_GET['redirect']) : '' ?>" class="space-y-6">

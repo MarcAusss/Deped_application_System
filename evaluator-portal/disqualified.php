@@ -6,13 +6,14 @@ evaluator_require_login();
 
 $jobFilter = $_GET['job'] ?? '';
 $where = ["a.status = 'disqualified'"];
+$where[] = eval_visible_applications_sql();
 $params = [];
 if ($jobFilter !== '' && ctype_digit((string) $jobFilter)) {
     $where[] = 'a.job_position_id = :job';
     $params['job'] = $jobFilter;
 }
 
-$sql = 'SELECT a.id, a.updated_at,
+$sql = 'SELECT a.id, a.jp_number, a.posting_date, a.updated_at,
                jp.title AS job_title,
                cn.control_number,
                p.full_name, p.email
@@ -27,7 +28,7 @@ $stmt = portal_pdo()->prepare($sql);
 $stmt->execute($params);
 $applications = $stmt->fetchAll();
 
-$jobs = portal_pdo()->query('SELECT id, title FROM job_positions ORDER BY title')->fetchAll();
+$jobs = portal_pdo()->query('SELECT jp.id, jp.title FROM job_positions jp WHERE '.eval_visible_positions_sql().' ORDER BY jp.title')->fetchAll();
 $positionGroups = eval_group_by_position($applications);
 
 $pageTitle = 'Disqualified | Evaluation Desk';
@@ -109,7 +110,7 @@ require __DIR__.'/_layout_head.php';
                 <?php foreach ($positionGroups as $positionTitle => $rows): ?>
                     <details class="position-group group mb-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm" open>
                         <summary class="flex cursor-pointer select-none items-center justify-between gap-3 bg-rose-50 px-4 py-3">
-                            <span class="font-black text-rose-800"><?= evaluator_e($positionTitle) ?></span>
+                            <span class="flex flex-wrap items-center gap-2"><span class="font-black text-rose-800"><?= evaluator_e($rows[0]->job_title ?? 'Unassigned Position') ?></span><span class="pill bg-white text-slate-600 ring-1 ring-slate-200"><?= evaluator_e(eval_posting_round_label($rows)) ?></span></span>
                             <span class="pill bg-rose-200 text-rose-800"><?= count($rows) ?> application(s)</span>
                         </summary>
 

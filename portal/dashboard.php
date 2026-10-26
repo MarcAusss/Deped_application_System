@@ -135,24 +135,24 @@ require __DIR__.'/_layout_head.php';
                 <div class="grid gap-0 lg:grid-cols-[1.65fr_0.9fr]">
                     <div class="p-6 sm:p-8">
                         <div class="mb-4 flex flex-wrap items-center gap-2">
-                            <span class="text-xs font-bold uppercase tracking-widest text-blue-200">Applicant workspace</span>
+                            <span class="text-xs font-bold uppercase tracking-widest text-white/70">Applicant workspace</span>
                             <span class="inline-flex items-center gap-1.5 rounded-full border border-teal-300/30 bg-teal-900/40 px-2.5 py-1 text-[11px] font-bold text-teal-200">
                                 <span class="h-1.5 w-1.5 rounded-full bg-teal-300"></span> Application tracking
                             </span>
                         </div>
                         <h1 class="text-2xl font-black leading-tight sm:text-3xl"><?= portal_e($greeting) ?>, <?= portal_e($firstName) ?>.</h1>
-                        <p class="mt-3 max-w-xl text-sm leading-relaxed text-blue-100">Track the status of every position you've applied for from one place, and explore new openings when you're ready for your next opportunity.</p>
+                        <p class="mt-3 max-w-xl text-sm leading-relaxed text-white/80">Track the status of every position you've applied for from one place, and explore new openings when you're ready for your next opportunity.</p>
                         <div class="mt-6 flex flex-wrap gap-3">
-                            <a href="<?= portal_url('jobs.php') ?>" class="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-bold text-government-navy transition hover:bg-blue-50">Browse to Apply</a>
+                            <a href="<?= portal_url('jobs.php') ?>" class="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-bold text-government-navy transition hover:bg-green-50">Browse to Apply</a>
                         </div>
                     </div>
                     <aside class="border-t border-white/15 bg-black/10 p-6 sm:p-8 lg:border-l lg:border-t-0">
-                        <span class="text-[11px] font-bold uppercase tracking-widest text-blue-200">Your applications today</span>
+                        <span class="text-[11px] font-bold uppercase tracking-widest text-white/70">Your applications today</span>
                         <p class="mt-1 text-sm font-bold text-white"><?= portal_e(date('l, d F Y')) ?></p>
                         <div class="mt-4 grid grid-cols-3 border-t border-white/15 pt-4">
-                            <div><strong class="block text-xl font-black text-white"><?= $pendingCount ?></strong><span class="text-[11px] font-bold text-blue-200">Pending</span></div>
-                            <div class="border-l border-white/15 pl-3"><strong class="block text-xl font-black text-white"><?= $evaluatedCount ?></strong><span class="text-[11px] font-bold text-blue-200">Evaluated</span></div>
-                            <div class="border-l border-white/15 pl-3"><strong class="block text-xl font-black text-white"><?= $qualifiedCount ?></strong><span class="text-[11px] font-bold text-blue-200">Qualified</span></div>
+                            <div><strong class="block text-xl font-black text-white"><?= $pendingCount ?></strong><span class="text-[11px] font-bold text-white/70">Pending</span></div>
+                            <div class="border-l border-white/15 pl-3"><strong class="block text-xl font-black text-white"><?= $evaluatedCount ?></strong><span class="text-[11px] font-bold text-white/70">Evaluated</span></div>
+                            <div class="border-l border-white/15 pl-3"><strong class="block text-xl font-black text-white"><?= $qualifiedCount ?></strong><span class="text-[11px] font-bold text-white/70">Qualified</span></div>
                         </div>
                     </aside>
                 </div>
@@ -221,7 +221,7 @@ require __DIR__.'/_layout_head.php';
                                 $topBadgeClass = 'bg-slate-100 text-slate-600 ring-slate-200';
                                 $topBadgeLabel = 'Pending';
                             } else {
-                                $topBadgeClass = 'bg-blue-50 text-government-navy ring-government-navy/20';
+                                $topBadgeClass = 'bg-green-50 text-government-navy ring-government-navy/20';
                                 $topBadgeLabel = 'Evaluated';
                             }
                         ?>

@@ -43,7 +43,7 @@ if ($jobFilter !== '' && ctype_digit((string) $jobFilter)) {
     $params['job'] = $jobFilter;
 }
 
-$sql = "SELECT a.id, a.updated_at, jp.title AS job_title, cn.control_number, p.full_name, p.email
+$sql = "SELECT a.id, a.jp_number, a.posting_date, a.updated_at, jp.title AS job_title, cn.control_number, p.full_name, p.email
         FROM applications a
         LEFT JOIN job_positions jp ON jp.id = a.job_position_id
         LEFT JOIN application_control_numbers cn ON cn.application_id = a.id
@@ -115,6 +115,8 @@ require __DIR__.'/_layout_head.php';
                 </div>
             </form>
 
+            <?php $ierScope = 'disqualified'; $ierStatus = ''; $ierJob = $jobFilter; $ierCount = count($applications); require __DIR__.'/_ier_export_bar.php'; ?>
+
             <?php if (empty($applications)): ?>
                 <div class="rounded-2xl border border-slate-200 bg-white p-10 text-center text-slate-500 shadow-sm">No disqualified applications.</div>
             <?php endif; ?>
@@ -122,13 +124,14 @@ require __DIR__.'/_layout_head.php';
             <?php foreach ($positionGroups as $positionTitle => $rows): ?>
                 <details class="position-group group mb-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm" open>
                     <summary class="flex cursor-pointer select-none items-center justify-between gap-3 bg-rose-50 px-4 py-3">
-                        <span class="font-black text-rose-800"><?= admin_e($positionTitle) ?></span>
+                        <span class="flex flex-wrap items-center gap-2"><span class="font-black text-rose-800"><?= admin_e($rows[0]->job_title ?? 'Unassigned Position') ?></span><span class="pill bg-white text-slate-600 ring-1 ring-slate-200"><?= admin_e(eval_posting_round_label($rows)) ?></span></span>
                         <span class="pill bg-rose-200 text-rose-800"><?= count($rows) ?> application(s)</span>
                     </summary>
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-slate-200 text-sm">
                             <thead class="bg-slate-50">
                                 <tr>
+                                    <th class="w-10 px-4 py-3"><span class="sr-only">Select for IER export</span></th>
                                     <th class="px-4 py-3 text-left font-bold text-slate-600">Control #</th>
                                     <th class="px-4 py-3 text-left font-bold text-slate-600">Applicant Name</th>
                                     <th class="px-4 py-3 text-left font-bold text-slate-600">Email</th>
@@ -139,6 +142,7 @@ require __DIR__.'/_layout_head.php';
                             <tbody class="divide-y divide-slate-100">
                                 <?php foreach ($rows as $app): ?>
                                     <tr class="app-row hover:bg-slate-50" data-search="<?= admin_e(mb_strtolower($app->control_number.' '.$app->full_name.' '.$app->email)) ?>">
+                                        <td class="px-4 py-3"><input type="checkbox" name="ids[]" value="<?= $app->id ?>" form="ier-selected-form" class="ier-row-check h-4 w-4 accent-admin-indigo" aria-label="Select <?= admin_e($app->full_name ?? 'application') ?> for IER export"></td>
                                         <td class="px-4 py-3 font-mono text-xs"><?= admin_e($app->control_number ?: 'Not assigned') ?></td>
                                         <td class="px-4 py-3 font-bold text-slate-800"><?= admin_e($app->full_name ?? '—') ?></td>
                                         <td class="px-4 py-3 text-slate-600"><?= admin_e($app->email ?? '—') ?></td>

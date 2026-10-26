@@ -35,6 +35,13 @@ $stmt = portal_pdo()->prepare('SELECT * FROM job_positions WHERE id = ?');
 $stmt->execute([$application->job_position_id]);
 $job = $stmt->fetch();
 
+// Postings the admin evaluates are not visible to evaluator accounts.
+if (eval_is_admin_evaluated($job)) {
+    http_response_code(404);
+    require __DIR__.'/_error.php';
+    exit;
+}
+
 // Evaluation only opens once the position's application period has actually
 // ended — but that only gates STARTING a fresh evaluation on a still-pending
 // application. An application that's already been evaluated or excluded
@@ -414,7 +421,7 @@ function qs_button(string $field, ?bool $current, bool $wantTrue): void
                         <p class="mb-2 text-sm font-bold text-slate-700" id="mandatory-count-label">Mandatory Requirements (<?= $mandatoryCount ?> of <?= eval_mandatory_count() ?>)</p>
                         <div class="grid gap-2 sm:grid-cols-2">
                             <?php foreach (eval_mandatory_requirements() as $key => $label): ?>
-                                <label class="requirement-card flex items-start gap-2 rounded-lg border border-slate-200 px-3 py-2.5 text-sm transition has-[:checked]:border-emerald-300 has-[:checked]:bg-emerald-50 has-[:checked]:[&_span]:font-bold has-[:checked]:[&_span]:text-indigo-700">
+                                <label class="requirement-card flex items-start gap-2 rounded-lg border border-slate-200 px-3 py-2.5 text-sm transition has-[:checked]:border-emerald-300 has-[:checked]:bg-emerald-50 has-[:checked]:[&_span]:font-bold has-[:checked]:[&_span]:text-green-700">
                                     <input type="checkbox" name="documentary_mandatory[]" value="<?= evaluator_e($key) ?>" class="mandatory-check mt-0.5 h-4 w-4 accent-emerald-600" <?= in_array($key, $mandatorySelected, true) ? 'checked' : '' ?>>
                                     <span class="text-slate-600"><?= evaluator_e($label) ?></span>
                                 </label>
@@ -426,7 +433,7 @@ function qs_button(string $field, ?bool $current, bool $wantTrue): void
                         <p class="mb-2 text-sm font-bold text-slate-700" id="other-count-label">Other Requirements (<?= $otherCount ?> of <?= eval_other_count() ?>)</p>
                         <div class="grid gap-2 sm:grid-cols-2">
                             <?php foreach (eval_other_requirements() as $key => $label): ?>
-                                <label class="requirement-card flex items-start gap-2 rounded-lg border border-slate-200 px-3 py-2.5 text-sm transition has-[:checked]:border-emerald-300 has-[:checked]:bg-emerald-50 has-[:checked]:[&_span]:font-bold has-[:checked]:[&_span]:text-indigo-700">
+                                <label class="requirement-card flex items-start gap-2 rounded-lg border border-slate-200 px-3 py-2.5 text-sm transition has-[:checked]:border-emerald-300 has-[:checked]:bg-emerald-50 has-[:checked]:[&_span]:font-bold has-[:checked]:[&_span]:text-green-700">
                                     <input type="checkbox" name="documentary_other[]" value="<?= evaluator_e($key) ?>" class="other-check mt-0.5 h-4 w-4 accent-emerald-600" <?= in_array($key, $otherSelected, true) ? 'checked' : '' ?>>
                                     <span class="text-slate-600"><?= evaluator_e($label) ?></span>
                                 </label>
@@ -492,7 +499,7 @@ function qs_button(string $field, ?bool $current, bool $wantTrue): void
                     <div class="p-6">
                         <div id="result-badge-box" class="mb-4 rounded-lg border-2 px-4 py-2" style="background:<?= $resultStyle['bg'] ?>;border-color:<?= $resultStyle['fg'] ?>;">
                             <span id="result-badge-label" class="inline-block rounded-md px-2.5 py-1 text-sm font-bold text-white" style="background:<?= $resultStyle['badge'] ?>;"><?= evaluator_e(strtoupper(eval_result_label($computedResult))) ?></span>
-                            <span id="result-badge-desc" class="ml-2 text-xs font-bold" style="color:#1e3a8a;"><?= evaluator_e($resultDescription) ?></span>
+                            <span id="result-badge-desc" class="ml-2 text-xs font-bold" style="color:#334155;"><?= evaluator_e($resultDescription) ?></span>
                         </div>
                         <?php if ($missingMandatory): ?>
                             <div id="result-missing-box" class="mb-4 rounded-lg border border-rose-200 bg-rose-50 p-4">

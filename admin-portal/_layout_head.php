@@ -18,9 +18,9 @@ $pageTitle = $pageTitle ?? 'DepEd Recruitment | Administration';
                 extend: {
                     colors: {
                         admin: {
-                            indigo: '#4338CA',
-                            indigoLight: '#EEF2FF',
-                            indigoDark: '#1E1B4B',
+                            indigo: '#1E6B42',
+                            indigoLight: '#EAF4EE',
+                            indigoDark: '#16402B',
                             gold: '#D4A017',
                         }
                     }
@@ -42,6 +42,10 @@ $pageTitle = $pageTitle ?? 'DepEd Recruitment | Administration';
         @media (min-width: 1024px) {
             html { font-size: clamp(11.2px, calc(100vw / 120), 16px); }
         }
+    </style>
+    <style>
+        /* Edge adds its own eye button to password fields; these pages have their own show-password toggle. */
+        input[type="password"]::-ms-reveal, input[type="password"]::-ms-clear { display: none; }
     </style>
 </head>
 <body class="flex min-h-screen flex-col bg-slate-50 text-slate-800">

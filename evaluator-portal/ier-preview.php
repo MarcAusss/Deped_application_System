@@ -12,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 csrf_verify();
 
 $ids = eval_ier_resolve_ids();
-$groups = eval_ier_load_groups($ids);
+$groups = eval_ier_load_groups($ids, eval_visible_applications_sql('applications'));
 $totalApplications = count($ids);
 
 $pageTitle = 'IER Preview | Evaluation Desk';

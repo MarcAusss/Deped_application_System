@@ -14,10 +14,10 @@ if (!defined('PORTAL_BOOTED')) {
 <style>
   body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; background:#f8fafc; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; color:#1e293b; }
   .card { max-width:420px; margin:24px; padding:32px; background:#fff; border:1px solid #e2e8f0; border-radius:16px; box-shadow:0 1px 3px rgba(0,0,0,.08); text-align:center; }
-  h1 { margin:0 0 12px; font-size:22px; color:#1E1B4B; }
+  h1 { margin:0 0 12px; font-size:22px; color:#16402B; }
   p { margin:0 0 20px; color:#475569; line-height:1.5; }
-  a { display:inline-block; padding:10px 20px; background:#1E1B4B; color:#fff; text-decoration:none; border-radius:10px; font-weight:700; }
-  a:hover { background:#3730A3; }
+  a { display:inline-block; padding:10px 20px; background:#16402B; color:#fff; text-decoration:none; border-radius:10px; font-weight:700; }
+  a:hover { background:#278253; }
 </style>
 </head>
 <body>

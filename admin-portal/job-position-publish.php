@@ -41,6 +41,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $experienceRequirement = trim($_POST['experience_requirement'] ?? '');
     $minExperienceYears = trim($_POST['min_experience_years'] ?? '');
     $eligibilityRequirement = trim($_POST['eligibility_requirement'] ?? '');
+    $evaluatedBy = admin_evaluated_by_input($_POST['evaluated_by'] ?? null, $position->evaluated_by ?? 'evaluator');
+    // 'reopen' keeps the current JP number (applications stay in the same
+    // table); 'new' is a new posting with a new memo and a new JP number.
+    $isNewPosting = $position->jp_number && ($_POST['posting_mode'] ?? 'reopen') === 'new';
 
     if (!v_present($title)) {
         $errors->add('title', 'The title field is required.');
@@ -107,14 +111,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // is ever posted — identical logic used by both Job Postings'
         // "Manage" action and Closed Postings' "Repost" action.
         $finalPostedAt = $postedAt ?: date('Y-m-d');
-        $jpNumber = $position->jp_number ?: admin_generate_jp_number();
+        $jpNumber = $position->jp_number && !$isNewPosting ? $position->jp_number : admin_generate_jp_number();
 
         $pdo->prepare(
             'UPDATE job_positions SET
                 title = ?, abbreviation = ?, slots = ?, description = ?, posted_at = ?, `until` = ?, until_time = ?,
                 salary_grade = ?, monthly_salary = ?, education_requirement = ?, training_requirement = ?, min_training_hours = ?,
                 experience_requirement = ?, min_experience_years = ?, eligibility_requirement = ?,
-                attachment_paths = ?, csc_publication_paths = ?,
+                attachment_paths = ?, csc_publication_paths = ?, evaluated_by = ?,
                 is_open = 1, jp_number = ?, updated_at = NOW()
              WHERE id = ?'
         )->execute([
@@ -124,12 +128,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $educationRequirement ?: null, $trainingRequirement ?: null, $minTrainingHours !== '' ? (int) $minTrainingHours : null,
             $experienceRequirement ?: null, $minExperienceYears !== '' ? $minExperienceYears : null,
             $eligibilityRequirement ?: null,
-            json_encode($attachmentPaths), json_encode($cscPaths),
+            json_encode($attachmentPaths), json_encode($cscPaths), $evaluatedBy,
             $jpNumber,
             $positionId,
         ]);
 
-        flash_set('success', 'Job position posted.');
+        flash_set('success', 'Job position posted as '.$jpNumber.'.');
 
         if (($_POST['ajax'] ?? '') === '1') {
             header('Content-Type: application/json');
