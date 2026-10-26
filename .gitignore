@@ -2,6 +2,7 @@
 *.sql
 !/database/*.sql
 .DS_Store
+/.claude/
 .env
 .env.backup
 .env.production
