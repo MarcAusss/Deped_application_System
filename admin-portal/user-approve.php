@@ -2,7 +2,7 @@
 define('PORTAL_BOOTED', true);
 require __DIR__.'/_boot.php';
 
-admin_require_login();
+admin_require_main_account();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -17,7 +17,8 @@ if (!$id) {
 }
 
 $pdo = portal_pdo();
-$pdo->prepare("UPDATE users SET is_approved = 1, updated_at = NOW() WHERE id = ? AND role = 'evaluator'")->execute([$id]);
+// Admin and evaluator accounts both need approval before they can sign in.
+$pdo->prepare("UPDATE users SET is_approved = 1, updated_at = NOW() WHERE id = ? AND role IN ('admin', 'evaluator')")->execute([$id]);
 
 flash_set('success', 'User approved.');
 header('Location: '.admin_url('users.php'));

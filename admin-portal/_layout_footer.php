@@ -168,5 +168,19 @@
             })();
         })();
     </script>
+
+    <script>
+        // Show/hide for password fields with admin_password_toggle() buttons.
+        // Pages that define their own toggleAuthPassword (Create User) keep theirs.
+        window.toggleAuthPassword = window.toggleAuthPassword || function (inputId, button) {
+            var input = document.getElementById(inputId);
+            if (!input) return;
+            var willShow = input.type === 'password';
+            input.type = willShow ? 'text' : 'password';
+            button.querySelector('.icon-eye').classList.toggle('hidden', willShow);
+            button.querySelector('.icon-eye-slash').classList.toggle('hidden', !willShow);
+            button.setAttribute('aria-label', willShow ? 'Hide password' : 'Show password');
+        };
+    </script>
 </body>
 </html>

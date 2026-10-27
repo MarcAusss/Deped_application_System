@@ -2,7 +2,7 @@
 define('PORTAL_BOOTED', true);
 require __DIR__.'/_boot.php';
 
-admin_require_login();
+admin_require_main_account();
 $pdo = portal_pdo();
 
 $admins = $pdo->query("SELECT id, name, email, role, is_approved, created_at FROM users WHERE role = 'admin' ORDER BY created_at DESC")->fetchAll();
@@ -47,27 +47,46 @@ require __DIR__.'/_layout_head.php';
                             <tr>
                                 <th class="px-4 py-3 text-left font-bold text-slate-600">Name</th>
                                 <th class="px-4 py-3 text-left font-bold text-slate-600">Email</th>
+                                <th class="px-4 py-3 text-left font-bold text-slate-600">Approved</th>
                                 <th class="px-4 py-3 text-left font-bold text-slate-600">Created</th>
                                 <th class="px-4 py-3 text-center font-bold text-slate-600">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
                             <?php if (empty($admins)): ?>
-                                <tr><td colspan="4" class="px-4 py-10 text-center text-slate-500">No administrator accounts.</td></tr>
+                                <tr><td colspan="5" class="px-4 py-10 text-center text-slate-500">No administrator accounts.</td></tr>
                             <?php endif; ?>
-                            <?php foreach ($admins as $u): ?>
+                            <?php foreach ($admins as $u): $isMain = admin_is_main_account($u); ?>
                                 <tr class="hover:bg-slate-50">
                                     <td class="px-4 py-3 font-bold text-slate-800"><?= admin_e($u->name) ?></td>
                                     <td class="px-4 py-3 text-slate-600"><?= admin_e($u->email) ?></td>
+                                    <td class="px-4 py-3">
+                                        <?php if ($isMain): ?>
+                                            <span class="pill bg-admin-indigoLight text-admin-indigo">Admin Account</span>
+                                        <?php else: ?>
+                                            <?= eval_bool($u->is_approved) ? '<span class="pill bg-emerald-100 text-emerald-700">Approved</span>' : '<span class="pill bg-amber-100 text-amber-700">Pending</span>' ?>
+                                        <?php endif; ?>
+                                    </td>
                                     <td class="px-4 py-3 text-slate-500"><?= admin_e(date('M d, Y', strtotime($u->created_at))) ?></td>
                                     <td class="px-4 py-3 text-center">
                                         <div class="flex items-center justify-center gap-3">
                                             <button type="button" class="user-edit-trigger font-bold text-admin-indigo hover:underline" data-id="<?= $u->id ?>">Edit</button>
-                                            <form method="POST" action="<?= admin_url('user-delete.php') ?>" class="inline" data-confirm="Delete this user?">
-                                                <?= admin_csrf_field() ?>
-                                                <input type="hidden" name="id" value="<?= $u->id ?>">
-                                                <button type="submit" class="font-bold text-rose-600 hover:underline">Delete</button>
-                                            </form>
+
+                                            <?php if (!$isMain && !eval_bool($u->is_approved)): ?>
+                                                <form method="POST" action="<?= admin_url('user-approve.php') ?>" class="inline">
+                                                    <?= admin_csrf_field() ?>
+                                                    <input type="hidden" name="id" value="<?= $u->id ?>">
+                                                    <button type="submit" class="font-bold text-emerald-600 hover:underline">Approve</button>
+                                                </form>
+                                            <?php endif; ?>
+
+                                            <?php if (!$isMain): ?>
+                                                <form method="POST" action="<?= admin_url('user-delete.php') ?>" class="inline" data-confirm="Delete this user?">
+                                                    <?= admin_csrf_field() ?>
+                                                    <input type="hidden" name="id" value="<?= $u->id ?>">
+                                                    <button type="submit" class="font-bold text-rose-600 hover:underline">Delete</button>
+                                                </form>
+                                            <?php endif; ?>
                                         </div>
                                     </td>
                                 </tr>
@@ -164,12 +183,18 @@ require __DIR__.'/_layout_head.php';
 
             <div>
                 <label class="mb-1 block text-sm font-bold text-slate-700">New Password</label>
-                <input type="password" name="password" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                <div class="relative">
+                    <input type="password" id="user-edit-password" name="password" required class="w-full rounded-lg border border-slate-300 px-3 py-2 pr-11 text-sm">
+                    <?= admin_password_toggle('user-edit-password') ?>
+                </div>
             </div>
 
             <div>
                 <label class="mb-1 block text-sm font-bold text-slate-700">Confirm New Password</label>
-                <input type="password" name="passwordConfirmation" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                <div class="relative">
+                    <input type="password" id="user-edit-passwordConfirmation" name="passwordConfirmation" required class="w-full rounded-lg border border-slate-300 px-3 py-2 pr-11 text-sm">
+                    <?= admin_password_toggle('user-edit-passwordConfirmation') ?>
+                </div>
             </div>
 
             <div>
@@ -180,7 +205,7 @@ require __DIR__.'/_layout_head.php';
                 </select>
             </div>
 
-            <div class="flex flex-col justify-center">
+            <div id="user-edit-approved-wrap" class="flex flex-col justify-center">
                 <label class="inline-flex cursor-pointer items-center gap-3">
                     <span class="relative inline-flex h-6 w-11 shrink-0 items-center">
                         <input type="checkbox" name="is_approved" id="user-edit-field-is_approved" value="1" class="peer sr-only">
@@ -189,7 +214,7 @@ require __DIR__.'/_layout_head.php';
                     </span>
                     <span class="text-sm font-bold text-slate-700">Approved</span>
                 </label>
-                <p class="mt-1.5 text-xs text-slate-500">Evaluator accounts must be approved before they can sign in.</p>
+                <p class="mt-1.5 text-xs text-slate-500">Admin and evaluator accounts must be approved before they can sign in.</p>
             </div>
 
             <div class="flex items-center justify-end gap-3 border-t border-slate-200 pt-4 sm:col-span-2">
@@ -207,6 +232,7 @@ require __DIR__.'/_layout_head.php';
         'email' => $u->email,
         'role' => $u->role,
         'is_approved' => (bool) eval_bool($u->is_approved),
+        'is_main' => admin_is_main_account($u),
     ], array_merge($admins, $evaluators))) ?>;
 
     (function () {
@@ -224,6 +250,8 @@ require __DIR__.'/_layout_head.php';
             document.getElementById('user-edit-field-email').value = user.email;
             document.getElementById('user-edit-field-role').value = user.role;
             document.getElementById('user-edit-field-is_approved').checked = user.is_approved;
+            // admin@deped.gov.ph is always approved (enforced in user-edit.php), so no switch for it.
+            document.getElementById('user-edit-approved-wrap').classList.toggle('hidden', user.is_main);
             form.querySelector('input[name="password"]').value = '';
             form.querySelector('input[name="passwordConfirmation"]').value = '';
             errorBox.classList.add('hidden');

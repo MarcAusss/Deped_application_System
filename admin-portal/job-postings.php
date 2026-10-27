@@ -112,7 +112,7 @@ require __DIR__.'/_layout_head.php';
             </button>
         </div>
 
-        <form method="POST" action="<?= admin_url('job-position-publish.php') ?>" id="manage-posting-form" class="grid gap-5 px-8 py-6 sm:grid-cols-3">
+        <form method="POST" action="<?= admin_url('job-position-publish.php') ?>" enctype="multipart/form-data" id="manage-posting-form" class="grid gap-5 px-8 py-6 sm:grid-cols-3">
             <?= admin_csrf_field() ?>
             <input type="hidden" name="id" id="manage-field-id" value="">
             <input type="hidden" name="return" value="job-postings">
@@ -166,12 +166,12 @@ require __DIR__.'/_layout_head.php';
                 <input type="date" name="posted_at" id="manage-field-posted_at" class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-base">
             </div>
             <div>
-                <label class="mb-1.5 block text-sm font-bold text-slate-700">Until</label>
-                <input type="date" name="until" id="manage-field-until" class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-base">
+                <label class="mb-1.5 block text-sm font-bold text-slate-700">Until <span class="text-rose-500">*</span></label>
+                <input type="date" name="until" id="manage-field-until" required class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-base">
             </div>
             <div>
-                <label class="mb-1.5 block text-sm font-bold text-slate-700">Closing Time</label>
-                <input type="text" name="until_time" id="manage-field-until_time" placeholder="e.g. 5:00 PM, 12 midnight, or 12 noon" class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-base">
+                <label class="mb-1.5 block text-sm font-bold text-slate-700">Closing Time <span class="text-rose-500">*</span></label>
+                <input type="text" name="until_time" id="manage-field-until_time" required placeholder="e.g. 5:00 PM, 12 midnight, or 12 noon" class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-base">
             </div>
 
             <?php $postingModeId = 'manage-posting-mode'; require __DIR__.'/_posting_mode_field.php'; ?>
@@ -215,6 +215,8 @@ require __DIR__.'/_layout_head.php';
                 <textarea name="eligibility_requirement" id="manage-field-eligibility_requirement" rows="2" class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-base"></textarea>
             </div>
 
+            <?php $postingFilesPrefix = 'manage'; require __DIR__.'/_posting_files_field.php'; ?>
+
             <div class="flex items-center justify-end gap-3 border-t border-slate-200 pt-5 sm:col-span-3">
                 <button type="button" id="manage-posting-cancel" class="rounded-lg px-5 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-100">Cancel</button>
                 <button type="submit" id="manage-posting-submit" disabled class="rounded-lg bg-admin-indigo px-6 py-3 text-sm font-bold text-white transition hover:bg-admin-indigoDark disabled:cursor-not-allowed disabled:opacity-40">Post This Job Position</button>
@@ -244,6 +246,8 @@ require __DIR__.'/_layout_head.php';
             'min_experience_years' => $p->min_experience_years,
             'eligibility_requirement' => $p->eligibility_requirement,
             'evaluated_by' => $p->evaluated_by,
+            'attachment_paths' => json_decode($p->attachment_paths ?? '[]', true) ?: [],
+            'csc_publication_paths' => json_decode($p->csc_publication_paths ?? '[]', true) ?: [],
         ];
     }, $allPositions)) ?>;
 
@@ -315,6 +319,7 @@ require __DIR__.'/_layout_head.php';
             });
 
             adminPostingMode('manage-posting-mode', position ? position.jp_number : null, document.getElementById('manage-field-posted_at'));
+            adminPostingFiles.load('manage', position);
 
             var evaluatedBy = position && position.evaluated_by === 'admin' ? 'admin' : 'evaluator';
             form.querySelectorAll('.evaluated-by-input').forEach(function (radio) {

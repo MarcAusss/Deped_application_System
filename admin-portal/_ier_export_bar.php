@@ -58,8 +58,22 @@ $ierJob = (string) ($ierJob ?? '');
             return !check.closest('.app-row.hidden, .position-group.hidden');
         }
 
+        // Header checkbox of one position table: its row checkboxes (search-visible ones).
+        function tableChecks(groupCheck) {
+            return Array.prototype.slice.call(groupCheck.closest('table').querySelectorAll('.ier-row-check')).filter(visible);
+        }
+
         function refresh() {
             exportBtn.disabled = !rowChecks().some(function (c) { return c.checked; });
+
+            // Keep each table's header checkbox in step: checked when all of its
+            // rows are, a dash when only some are.
+            document.querySelectorAll('.ier-group-check').forEach(function (g) {
+                var rows = tableChecks(g);
+                var checked = rows.filter(function (c) { return c.checked; }).length;
+                g.checked = rows.length > 0 && checked === rows.length;
+                g.indeterminate = checked > 0 && checked < rows.length;
+            });
         }
 
         selectAll.addEventListener('change', function () {
@@ -67,7 +81,13 @@ $ierJob = (string) ($ierJob ?? '');
             refresh();
         });
         document.addEventListener('change', function (e) {
-            if (e.target.classList && e.target.classList.contains('ier-row-check')) refresh();
+            if (!e.target.classList) return;
+            if (e.target.classList.contains('ier-group-check')) {
+                tableChecks(e.target).forEach(function (c) { c.checked = e.target.checked; });
+                refresh();
+            } else if (e.target.classList.contains('ier-row-check')) {
+                refresh();
+            }
         });
     })();
 </script>

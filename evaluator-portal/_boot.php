@@ -227,26 +227,57 @@ function eval_application_period_ended(?object $job): bool
 
 /**
  * True when the admin evaluates this posting's applications
- * (job_positions.evaluated_by = 'admin') — evaluators must not see them.
+ * (job_positions.evaluated_by = 'admin') — evaluators must not see them,
+ * except ones they evaluated themselves (see eval_can_see_application()).
  */
 function eval_is_admin_evaluated(?object $job): bool
 {
     return $job !== null && ($job->evaluated_by ?? 'evaluator') === 'admin';
 }
 
+/** The logged-in evaluator's id, or 0 when nobody is logged in. */
+function eval_current_user_id(): int
+{
+    return (int) (evaluator_user()?->id ?? 0);
+}
+
 /**
- * SQL condition limiting an applications query to postings evaluators
- * handle. $alias is the applications table alias (or its name) in the query.
+ * Whether the logged-in evaluator may see this application: every posting
+ * evaluators handle, plus — on postings switched to Admin — the ones this
+ * evaluator already evaluated (those stay theirs to edit).
+ */
+function eval_can_see_application(int $applicationId, ?object $job): bool
+{
+    if (!eval_is_admin_evaluated($job)) {
+        return true;
+    }
+
+    $stmt = portal_pdo()->prepare('SELECT 1 FROM application_evaluations WHERE application_id = ? AND evaluator_id = ?');
+    $stmt->execute([$applicationId, eval_current_user_id()]);
+
+    return (bool) $stmt->fetchColumn();
+}
+
+/**
+ * SQL condition limiting an applications query to what the logged-in
+ * evaluator may see (see eval_can_see_application()). $alias is the
+ * applications table alias (or its name) in the query.
  */
 function eval_visible_applications_sql(string $alias = 'a'): string
 {
-    return "{$alias}.job_position_id NOT IN (SELECT id FROM job_positions WHERE evaluated_by = 'admin')";
+    $me = eval_current_user_id();
+
+    return "({$alias}.job_position_id NOT IN (SELECT id FROM job_positions WHERE evaluated_by = 'admin')"
+        ." OR {$alias}.id IN (SELECT application_id FROM application_evaluations WHERE evaluator_id = {$me}))";
 }
 
-/** SQL condition limiting a job_positions query to postings evaluators handle. */
+/** SQL condition limiting a job_positions query to postings the logged-in evaluator may see. */
 function eval_visible_positions_sql(string $alias = 'jp'): string
 {
-    return "{$alias}.evaluated_by <> 'admin'";
+    $me = eval_current_user_id();
+
+    return "({$alias}.evaluated_by <> 'admin' OR {$alias}.id IN (SELECT ap.job_position_id FROM applications ap"
+        ." JOIN application_evaluations ev ON ev.application_id = ap.id WHERE ev.evaluator_id = {$me}))";
 }
 
 /**

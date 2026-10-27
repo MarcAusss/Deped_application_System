@@ -57,6 +57,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($slots === '' || (int) $slots < 1) {
         $errors->add('slots', 'No. of Vacancies must be at least 1.');
     }
+    // Once posted (it has a JP number), a position must keep a deadline.
+    if ($position->jp_number) {
+        if (!v_present($until)) {
+            $errors->add('until', 'The Until date is required for a posted position.');
+        }
+        if ($untilTimeRaw === '') {
+            $errors->add('until_time', 'The Closing Time is required for a posted position, e.g. 5:00 PM.');
+        }
+    }
     if ($until !== '' && $postedAt !== '' && $until < $postedAt) {
         $errors->add('until', 'Until must be on or after Posted.');
     }

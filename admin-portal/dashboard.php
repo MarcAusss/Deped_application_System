@@ -162,10 +162,12 @@ require __DIR__.'/_layout_head.php';
 
     .portfolio-section {
         position: relative; border: 1px solid #e5e7eb; border-radius: 1rem; background: #fff;
-        padding: 1.25rem 1.25rem 1.25rem 1.6rem; box-shadow: 0 10px 28px rgba(16, 24, 40, .055);
+        padding: 1.25rem; box-shadow: 0 10px 28px rgba(16, 24, 40, .055);
     }
-    .portfolio-section::before {
-        position: absolute; left: 1.25rem; top: 1.35rem; bottom: 1.35rem; width: 4px; border-radius: 999px;
+    /* Accent bar beside the heading and description only. */
+    .portfolio-section__header { position: relative; padding-left: .85rem; }
+    .portfolio-section__header::before {
+        position: absolute; left: 0; top: .1rem; bottom: .1rem; width: 4px; border-radius: 999px;
         background: linear-gradient(180deg, #1E6B42, #2E7D6B); content: '';
     }
     .portfolio-section__heading { color: #101828; font-size: 1rem; font-weight: 780; letter-spacing: -.018em; }
@@ -219,6 +221,9 @@ require __DIR__.'/_layout_head.php';
     <div class="min-w-0 flex-1">
         <main class="px-4 py-8 sm:px-6 lg:px-10">
 
+            <?php if (flash_get('error')): ?>
+                <div class="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-red-800"><?= admin_e(flash_get('error')) ?></div>
+            <?php endif; ?>
             <?php if (flash_get('success')): ?>
                 <div class="mb-6 rounded-xl border border-green-200 bg-green-50 p-4 text-green-800"><?= admin_e(flash_get('success')) ?></div>
             <?php endif; ?>
@@ -271,8 +276,10 @@ require __DIR__.'/_layout_head.php';
             </section>
 
             <section class="portfolio-section mb-8">
-                <h3 class="portfolio-section__heading">Recruitment portfolio</h3>
-                <p class="portfolio-section__description">A concise view of workload, decisions, and staffing capacity.</p>
+                <div class="portfolio-section__header">
+                    <h3 class="portfolio-section__heading">Recruitment portfolio</h3>
+                    <p class="portfolio-section__description">A concise view of workload, decisions, and staffing capacity.</p>
+                </div>
 
                 <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
                     <?php

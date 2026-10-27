@@ -35,8 +35,9 @@ $stmt = portal_pdo()->prepare('SELECT * FROM job_positions WHERE id = ?');
 $stmt->execute([$application->job_position_id]);
 $job = $stmt->fetch();
 
-// Postings the admin evaluates are not visible to evaluator accounts.
-if (eval_is_admin_evaluated($job)) {
+// Postings the admin evaluates are not visible to evaluator accounts,
+// except applications this evaluator already evaluated.
+if (!eval_can_see_application($applicationId, $job)) {
     http_response_code(404);
     require __DIR__.'/_error.php';
     exit;
@@ -56,11 +57,20 @@ if ($application->status === 'pending' && !eval_application_period_ended($job)) 
 // Opening this page does NOT claim it — ownership is only assigned on save,
 // so an evaluator who opens this by accident and goes "Back to List" without
 // saving leaves it free for anyone, including themselves, to pick up later.
-$stmt = portal_pdo()->prepare('SELECT * FROM application_evaluations WHERE application_id = ?');
+$stmt = portal_pdo()->prepare(
+    'SELECT e.*, u.role AS evaluator_role
+     FROM application_evaluations e
+     LEFT JOIN users u ON u.id = e.evaluator_id
+     WHERE e.application_id = ?'
+);
 $stmt->execute([$applicationId]);
 $existingEvaluation = $stmt->fetch();
 
-if ($existingEvaluation && $existingEvaluation->evaluator_id && (int) $existingEvaluation->evaluator_id !== (int) $user->id) {
+// Locked to whoever saved it — another evaluator, or an admin (an admin's
+// evaluation stays theirs even after the posting is switched to Evaluator).
+// Only an evaluation whose author no longer exists can be taken over.
+if ($existingEvaluation && $existingEvaluation->evaluator_id && (int) $existingEvaluation->evaluator_id !== (int) $user->id
+    && $existingEvaluation->evaluator_role !== null) {
     http_response_code(403);
     require __DIR__.'/_error.php';
     exit;
@@ -121,6 +131,16 @@ function eval_save_checklist(int $applicationId, int $userId): string
     $qsExperience = $qsValue('qs_experience_met');
     $qsTraining = $qsValue('qs_training_met');
     $qsEligibility = $qsValue('qs_eligibility_met');
+
+    // Once the Mandatory Requirements are complete, a qualification standard
+    // left unmarked counts as Did not Meet the QS — so saving always gives a
+    // final result (Qualified or Not Qualified), never Pending Document Review.
+    if (eval_is_documentary_complete($mandatorySelected)) {
+        $qsEducation ??= false;
+        $qsExperience ??= false;
+        $qsTraining ??= false;
+        $qsEligibility ??= false;
+    }
     $remarks = trim($_POST['remarks'] ?? '') ?: null;
 
     $stmt = portal_pdo()->prepare('SELECT result, documentary_mandatory FROM application_evaluations WHERE application_id = ?');
@@ -483,7 +503,7 @@ function qs_button(string $field, ?bool $current, bool $wantTrue): void
                         $profileFields = [
                             'Full Name' => $profile->full_name ?? null, 'Email Address' => $profile->email ?? null,
                             'Phone Number' => $profile->phone ?? null, 'Address' => $profile->address ?? null,
-                            'Birth Date' => isset($profile->birth_date) ? date('M d, Y', strtotime($profile->birth_date)) : null,
+                            'Birth Date' => isset($profile->birth_date) ? (new DateTime($profile->birth_date))->format('M d, Y') : null,
                             'Sex' => $profile->sex ?? null, 'Civil Status' => $profile->civil_status ?? null,
                             'Religion' => $profile->religion ?? null, 'Disability (if any)' => $profile->disability ?? null,
                             'Ethnic Group' => $profile->ethnic_group ?? null,
@@ -519,7 +539,7 @@ function qs_button(string $field, ?bool $current, bool $wantTrue): void
                             <button type="submit" formaction="<?= evaluator_url('evaluate.php?id='.$applicationId.$fromParam) ?>" formnovalidate data-confirm="This marks the applicant as Excluded from further consideration. You can change this later by re-editing the checklist.&#10;&#10;Exclude this applicant?" name="action" value="exclude" class="rounded-lg border-2 border-rose-600 px-4 py-2 text-sm font-bold text-rose-600 hover:bg-rose-50">
                                 Exclude Applicant
                             </button>
-                            <button type="submit" name="action" value="save" class="rounded-lg border-2 border-evaluator-indigo px-4 py-2 text-sm font-bold text-evaluator-indigo hover:bg-evaluator-indigoLight">
+                            <button type="submit" id="save-evaluation-btn" data-confirm="Save this evaluation?" name="action" value="save" class="rounded-lg border-2 border-evaluator-indigo px-4 py-2 text-sm font-bold text-evaluator-indigo hover:bg-evaluator-indigoLight">
                                 Save Changes
                             </button>
                         </div>
@@ -780,13 +800,17 @@ function qs_button(string $field, ?bool $current, bool $wantTrue): void
             result = 'excluded'; color = 'danger'; label = 'Excluded';
             desc = 'This applicant was excluded by the evaluator.';
             missing = [];
-        } else if (e === false || x === false || t === false || l === false) {
-            result = 'not_qualified'; color = 'danger'; label = 'Not Qualified';
-            desc = disqualified.length ? 'Did not Meet the QS: ' + disqualified.join(', ') + '.' : 'At least one qualification standard is marked Did not Meet the QS.';
-            missing = [];
         } else {
-            result = 'pending'; color = 'gray'; label = 'Pending Document Review';
-            desc = 'The status defaults to Pending Document Review until mandatory requirements are complete. Applicants are marked Qualified when all qualification standards are marked Meet the QS. Applicants can be marked Excluded only when specifically using the Exclude button below.';
+            // Documents complete: a standard left unmarked counts as Did not Meet the QS on save.
+            var notMet = [];
+            if (e !== true) notMet.push("Bachelor's Degree");
+            if (x !== true) notMet.push('Years of Experience');
+            if (t !== true) notMet.push('Hours of Training');
+            if (l !== true) notMet.push('Eligibility');
+            var anyUnmarked = e === null || x === null || t === null || l === null;
+            result = 'not_qualified'; color = 'danger'; label = 'Not Qualified';
+            desc = 'Did not Meet the QS: ' + notMet.join(', ') + '.'
+                + (anyUnmarked ? ' Standards not yet marked count as Did not Meet the QS when saved.' : '');
             missing = [];
         }
 
@@ -818,7 +842,43 @@ function qs_button(string $field, ?bool $current, bool $wantTrue): void
         } else if (missingBox) {
             missingBox.style.display = 'none';
         }
+        updateSaveConfirm();
     }
+
+    // The note shown before saving (like Exclude's), kept in sync with what the
+    // save will record — above all, that an incomplete Mandatory Requirements
+    // checklist marks the applicant Excluded.
+    function updateSaveConfirm() {
+        var saveBtn = document.getElementById('save-evaluation-btn');
+        if (!saveBtn) return;
+
+        var unchecked = mandatoryTotal - countChecked('.mandatory-check');
+        var e = qsBool('qs_education_met'), x = qsBool('qs_experience_met'), t = qsBool('qs_training_met'), l = qsBool('qs_eligibility_met');
+        var failed = [];
+        // Not met = marked Did not Meet, or left unmarked (saved as Did not Meet).
+        if (e !== true) failed.push("Bachelor's Degree");
+        if (x !== true) failed.push('Years of Experience');
+        if (t !== true) failed.push('Hours of Training');
+        if (l !== true) failed.push('Eligibility');
+        var unmarkedCount = [e, x, t, l].filter(function (v) { return v === null; }).length;
+
+        var note;
+        if (unchecked > 0) {
+            note = 'Saving now will mark this applicant EXCLUDED because ' + unchecked + ' of ' + mandatoryTotal
+                + ' Mandatory Requirements are still unchecked.\n\nCheck every submitted mandatory requirement first if this is not intended.\n\nSave anyway?';
+        } else if (e === true && x === true && t === true && l === true) {
+            note = 'This saves the evaluation as QUALIFIED: documents are complete and all qualification standards are marked Meet the QS.\n\nSave changes?';
+        } else if (WAS_MANUALLY_EXCLUDED) {
+            note = 'This applicant stays EXCLUDED (excluded earlier with the Exclude button).\n\nSave changes?';
+        } else {
+            note = 'This saves the evaluation as NOT QUALIFIED. Did not Meet the QS: ' + failed.join(', ') + '.'
+                + (unmarkedCount ? '\n\n' + unmarkedCount + ' qualification standard(s) are not marked yet and will be saved as Did not Meet the QS.' : '')
+                + '\n\nSave changes?';
+        }
+        saveBtn.setAttribute('data-confirm', note);
+    }
+
+    updateSaveConfirm();
 })();
 </script>
 

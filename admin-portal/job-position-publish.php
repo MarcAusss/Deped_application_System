@@ -52,6 +52,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!v_present($description)) {
         $errors->add('description', 'The description field is required.');
     }
+    // A posting must always have a deadline, or it would stay open forever.
+    if (!v_present($until)) {
+        $errors->add('until', 'The Until date is required to post this position.');
+    }
+    if ($untilTimeRaw === '') {
+        $errors->add('until_time', 'The Closing Time is required to post this position, e.g. 5:00 PM.');
+    }
     if ($until !== '' && $postedAt !== '' && $until < $postedAt) {
         $errors->add('until', 'Until must be on or after Posted.');
     }

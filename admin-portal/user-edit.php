@@ -2,7 +2,7 @@
 define('PORTAL_BOOTED', true);
 require __DIR__.'/_boot.php';
 
-admin_require_login();
+admin_require_main_account();
 $pdo = portal_pdo();
 
 const PASSWORD_REGEX = '/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/';
@@ -32,6 +32,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $passwordConfirmation = (string) ($_POST['passwordConfirmation'] ?? '');
     $role = $_POST['role'] ?? '';
     $isApproved = isset($_POST['is_approved']) && $_POST['is_approved'] === '1';
+
+    // The main admin account always stays an approved admin, so it can never
+    // be locked out of user management by its own edit.
+    if (admin_is_main_account($user)) {
+        $role = 'admin';
+        $isApproved = true;
+    }
 
     if (!v_present($name)) {
         $errors->add('name', 'The name field is required.');
@@ -124,13 +131,19 @@ require __DIR__.'/_layout_head.php';
 
                 <div>
                     <label class="mb-1 block text-sm font-bold text-slate-700">New Password</label>
-                    <input type="password" name="password" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                    <div class="relative">
+                        <input type="password" id="password" name="password" required class="w-full rounded-lg border border-slate-300 px-3 py-2 pr-11 text-sm">
+                        <?= admin_password_toggle('password') ?>
+                    </div>
                     <?php if ($errors->has('password')): ?><p class="mt-1 text-xs text-red-600"><?= admin_e($errors->first('password')) ?></p><?php endif; ?>
                 </div>
 
                 <div>
                     <label class="mb-1 block text-sm font-bold text-slate-700">Confirm New Password</label>
-                    <input type="password" name="passwordConfirmation" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                    <div class="relative">
+                        <input type="password" id="passwordConfirmation" name="passwordConfirmation" required class="w-full rounded-lg border border-slate-300 px-3 py-2 pr-11 text-sm">
+                        <?= admin_password_toggle('passwordConfirmation') ?>
+                    </div>
                     <?php if ($errors->has('passwordConfirmation')): ?><p class="mt-1 text-xs text-red-600"><?= admin_e($errors->first('passwordConfirmation')) ?></p><?php endif; ?>
                 </div>
 
@@ -143,12 +156,14 @@ require __DIR__.'/_layout_head.php';
                     <?php if ($errors->has('role')): ?><p class="mt-1 text-xs text-red-600"><?= admin_e($errors->first('role')) ?></p><?php endif; ?>
                 </div>
 
+                <?php if (!admin_is_main_account($user)): /* the main account is always approved */ ?>
                 <div class="flex items-end">
                     <label class="flex items-center gap-2 text-sm font-bold text-slate-700">
                         <input type="checkbox" name="is_approved" value="1" <?= $old('is_approved', eval_bool($user->is_approved) ? '1' : '') === '1' ? 'checked' : '' ?>>
-                        Approved (required for Evaluator panel login)
+                        Approved (required to sign in)
                     </label>
                 </div>
+                <?php endif; ?>
 
                 <div class="sm:col-span-2">
                     <button type="submit" class="rounded-lg bg-admin-indigo px-5 py-2.5 text-sm font-bold text-white hover:bg-admin-indigoDark">Save Changes</button>

@@ -136,12 +136,12 @@ require __DIR__.'/_layout_head.php';
                 <input type="date" name="posted_at" id="repost-field-posted_at" class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-base">
             </div>
             <div>
-                <label class="mb-1.5 block text-sm font-bold text-slate-700">Until</label>
-                <input type="date" name="until" id="repost-field-until" class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-base">
+                <label class="mb-1.5 block text-sm font-bold text-slate-700">Until <span class="text-rose-500">*</span></label>
+                <input type="date" name="until" id="repost-field-until" required class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-base">
             </div>
             <div>
-                <label class="mb-1.5 block text-sm font-bold text-slate-700">Closing Time</label>
-                <input type="text" name="until_time" id="repost-field-until_time" placeholder="e.g. 5:00 PM, 12 midnight, or 12 noon" class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-base">
+                <label class="mb-1.5 block text-sm font-bold text-slate-700">Closing Time <span class="text-rose-500">*</span></label>
+                <input type="text" name="until_time" id="repost-field-until_time" required placeholder="e.g. 5:00 PM, 12 midnight, or 12 noon" class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-base">
             </div>
 
             <?php $postingModeId = 'repost-posting-mode'; require __DIR__.'/_posting_mode_field.php'; ?>
@@ -191,27 +191,7 @@ require __DIR__.'/_layout_head.php';
                 <textarea name="eligibility_requirement" id="repost-field-eligibility_requirement" rows="2" class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-base"></textarea>
             </div>
 
-            <div class="sm:col-span-3">
-                <label class="mb-1.5 block text-sm font-bold text-slate-700">D.M Notice of Vacancy</label>
-                <ul id="repost-existing-attachments" class="mb-2 space-y-1"></ul>
-                <div class="repost-dropzone relative rounded-lg border-2 border-dashed border-slate-300 px-4 py-6 text-center transition" data-input="repost-attachment-input">
-                    <input type="file" name="attachment_paths[]" id="repost-attachment-input" multiple accept="application/pdf" class="absolute inset-0 h-full w-full cursor-pointer opacity-0">
-                    <p class="pointer-events-none text-sm text-slate-500">Drag &amp; Drop your files or <span class="font-bold text-admin-indigo underline">Browse</span></p>
-                </div>
-                <p class="mt-2 text-xs text-slate-500">Upload the official D.M Notice of Vacancy. You can select or drag in multiple PDF files (or an entire folder of PDFs) at once. Applicants will be able to download each of these from the job listing.</p>
-                <ul id="repost-attachment-selected" class="mt-2 space-y-1 text-sm text-slate-600"></ul>
-            </div>
-
-            <div class="sm:col-span-3">
-                <label class="mb-1.5 block text-sm font-bold text-slate-700">CSC Publication of Vacancy</label>
-                <ul id="repost-existing-csc" class="mb-2 space-y-1"></ul>
-                <div class="repost-dropzone relative rounded-lg border-2 border-dashed border-slate-300 px-4 py-6 text-center transition" data-input="repost-csc-input">
-                    <input type="file" name="csc_publication_paths[]" id="repost-csc-input" multiple accept="application/pdf" class="absolute inset-0 h-full w-full cursor-pointer opacity-0">
-                    <p class="pointer-events-none text-sm text-slate-500">Drag &amp; Drop your files or <span class="font-bold text-admin-indigo underline">Browse</span></p>
-                </div>
-                <p class="mt-2 text-xs text-slate-500">Upload the official CSC Publication of Vacancy. You can select or drag in multiple PDF files (or an entire folder of PDFs) at once. Applicants will be able to download each of these from the job listing.</p>
-                <ul id="repost-csc-selected" class="mt-2 space-y-1 text-sm text-slate-600"></ul>
-            </div>
+            <?php $postingFilesPrefix = 'repost'; require __DIR__.'/_posting_files_field.php'; ?>
 
             <div class="flex items-center justify-end gap-3 border-t border-slate-200 pt-5 sm:col-span-3">
                 <button type="button" id="repost-cancel" class="rounded-lg px-5 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-100">Cancel</button>
@@ -255,54 +235,6 @@ require __DIR__.'/_layout_head.php';
 
         var fieldMap = ['title', 'abbreviation', 'slots', 'description', 'posted_at', 'until', 'until_time', 'salary_grade', 'monthly_salary', 'education_requirement', 'training_requirement', 'min_training_hours', 'experience_requirement', 'min_experience_years', 'eligibility_requirement'];
 
-        function renderExistingFiles(listId, removeFieldName, paths) {
-            var list = document.getElementById(listId);
-            list.innerHTML = '';
-            paths.forEach(function (path) {
-                var li = document.createElement('li');
-                li.className = 'file-remove-row flex items-center gap-2 text-sm';
-
-                var checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.name = removeFieldName;
-                checkbox.value = path;
-                checkbox.className = 'file-remove-checkbox hidden';
-
-                var link = document.createElement('a');
-                link.href = '/admin-portal/document.php?path=' + encodeURIComponent(path);
-                link.target = '_blank';
-                link.className = 'file-remove-link text-admin-indigo underline';
-                link.textContent = path.split('/').pop();
-
-                var toggle = document.createElement('button');
-                toggle.type = 'button';
-                toggle.className = 'file-remove-toggle font-bold text-rose-600 hover:underline';
-                toggle.textContent = 'Remove';
-                toggle.addEventListener('click', function () {
-                    var marked = checkbox.checked;
-                    checkbox.checked = !marked;
-                    link.classList.toggle('line-through', !marked);
-                    link.classList.toggle('text-slate-400', !marked);
-                    link.classList.toggle('text-admin-indigo', marked);
-                    toggle.textContent = marked ? 'Remove' : 'Undo';
-                    toggle.classList.toggle('text-rose-600', marked);
-                    toggle.classList.toggle('text-slate-500', !marked);
-                });
-
-                li.appendChild(checkbox);
-                li.appendChild(link);
-                li.appendChild(toggle);
-                list.appendChild(li);
-            });
-        }
-
-        function resetSelectedPreview(inputId, previewId) {
-            var input = document.getElementById(inputId);
-            var preview = document.getElementById(previewId);
-            input.value = '';
-            preview.innerHTML = '';
-        }
-
         function openModal(position) {
             document.getElementById('repost-field-id').value = position.id;
             fieldMap.forEach(function (field) {
@@ -317,10 +249,7 @@ require __DIR__.'/_layout_head.php';
                 radio.checked = radio.value === evaluatedBy;
             });
 
-            renderExistingFiles('repost-existing-attachments', 'remove_attachment_paths[]', position.attachment_paths || []);
-            renderExistingFiles('repost-existing-csc', 'remove_csc_publication_paths[]', position.csc_publication_paths || []);
-            resetSelectedPreview('repost-attachment-input', 'repost-attachment-selected');
-            resetSelectedPreview('repost-csc-input', 'repost-csc-selected');
+            adminPostingFiles.load('repost', position);
 
             modal.classList.remove('hidden');
             modal.classList.add('flex');
@@ -342,40 +271,6 @@ require __DIR__.'/_layout_head.php';
         cancelBtn.addEventListener('click', closeModal);
         modal.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });
         document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeModal(); });
-
-        function wireDropzone(dropzoneEl, previewId) {
-            var input = dropzoneEl.querySelector('input[type="file"]');
-            var preview = document.getElementById(previewId);
-
-            function renderPreview() {
-                preview.innerHTML = '';
-                Array.prototype.forEach.call(input.files, function (file) {
-                    var li = document.createElement('li');
-                    li.textContent = file.name;
-                    preview.appendChild(li);
-                });
-            }
-
-            input.addEventListener('change', renderPreview);
-
-            ['dragover', 'dragleave', 'drop'].forEach(function (evtName) {
-                dropzoneEl.addEventListener(evtName, function (e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    dropzoneEl.classList.toggle('border-admin-indigo', evtName === 'dragover');
-                    dropzoneEl.classList.toggle('bg-admin-indigoLight', evtName === 'dragover');
-                });
-            });
-
-            dropzoneEl.addEventListener('drop', function (e) {
-                if (e.dataTransfer && e.dataTransfer.files.length) {
-                    input.files = e.dataTransfer.files;
-                    renderPreview();
-                }
-            });
-        }
-
-        document.querySelectorAll('.repost-dropzone').forEach(function (zone) { wireDropzone(zone, zone.dataset.input === 'repost-attachment-input' ? 'repost-attachment-selected' : 'repost-csc-selected'); });
 
         var form = document.getElementById('repost-form');
         var submitBtn = document.getElementById('repost-submit');

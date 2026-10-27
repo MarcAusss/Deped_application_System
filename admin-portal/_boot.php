@@ -145,11 +145,10 @@ function admin_user(): ?object
     $stmt->execute([$_SESSION['admin_user_id']]);
     $user = $stmt->fetch();
 
-    // Re-check role on every request, not just at login time — matches
-    // User::canAccessPanel()'s admin-panel gate exactly: role === 'admin'
-    // only, is_approved is NOT checked for the admin panel (that column only
-    // gates the evaluator panel).
-    if ($user && $user->role !== 'admin') {
+    // Re-check role and approval on every request, not just at login time, so
+    // revoking an admin's approval takes effect immediately. Admin accounts
+    // need approval like evaluators; the main admin account is always allowed.
+    if ($user && ($user->role !== 'admin' || (!(int) $user->is_approved && !admin_is_main_account($user)))) {
         $user = null;
     }
 
@@ -280,6 +279,38 @@ function admin_is_main_account(?object $user): bool
     return $user !== null && strcasecmp(trim((string) $user->email), trim($mainEmail)) === 0;
 }
 
+/**
+ * Like admin_require_login(), but only the main admin account may continue —
+ * for user management (Users and the user create/edit/approve/delete pages).
+ * Other admins are sent back to the dashboard.
+ */
+function admin_require_main_account(): void
+{
+    admin_require_login();
+
+    if (!admin_is_main_account(admin_user())) {
+        flash_set('error', 'Only the main administrator account can manage users.');
+        header('Location: '.admin_url('dashboard.php'));
+        exit;
+    }
+}
+
+/**
+ * Show/hide-password eye button for the password input with id $inputId —
+ * the same control as on Create User. Place it right after the input inside a
+ * `relative` wrapper (give the input `pr-11`); toggleAuthPassword() lives in
+ * _layout_footer.php.
+ */
+function admin_password_toggle(string $inputId): string
+{
+    $id = admin_e($inputId);
+
+    return '<button type="button" class="absolute right-0 top-0 flex h-full w-10 items-center justify-center rounded-r-lg border-l border-slate-300 bg-slate-50 text-slate-500 hover:text-slate-700" onclick="toggleAuthPassword(\''.$id.'\', this)" aria-label="Show password">'
+        .'<svg class="icon-eye h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>'
+        .'<svg class="icon-eye-slash hidden h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" /></svg>'
+        .'</button>';
+}
+
 /** Mirrors DocumentsRelationManager's `type` Select options exactly. */
 function admin_document_types(): array
 {
@@ -304,6 +335,25 @@ function admin_document_types(): array
 function admin_group_by_position(array $applications): array
 {
     return eval_group_by_posting_round($applications);
+}
+
+/**
+ * Splits admin_group_by_position() tables by who evaluates each posting
+ * (rows need ->evaluated_by): admin-evaluated first, then evaluator-
+ * evaluated. Empty sections are left out.
+ *
+ * @param array<string, array<int, object>> $positionGroups
+ * @return array<string, array<string, array<int, object>>> keyed 'admin' / 'evaluator'
+ */
+function admin_split_groups_by_evaluator(array $positionGroups): array
+{
+    $sections = ['admin' => [], 'evaluator' => []];
+
+    foreach ($positionGroups as $key => $rows) {
+        $sections[($rows[0]->evaluated_by ?? 'evaluator') === 'admin' ? 'admin' : 'evaluator'][$key] = $rows;
+    }
+
+    return array_filter($sections);
 }
 
 /**

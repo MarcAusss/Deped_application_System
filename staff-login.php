@@ -177,8 +177,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $credentialsValid = $user && password_verify($password, $user->password);
             $role = $credentialsValid ? $user->role : null;
-            $isApprovedEvaluator = $role === 'evaluator' && (int) $user->is_approved === 1;
-            $isRecognizedStaff = $credentialsValid && ($role === 'admin' || $isApprovedEvaluator);
+            // Admin and evaluator accounts both need the main admin's approval.
+            $isStaffRole = in_array($role, ['admin', 'evaluator'], true);
+            $isAwaitingApproval = $isStaffRole && (int) $user->is_approved !== 1;
+            $isRecognizedStaff = $credentialsValid && $isStaffRole && !$isAwaitingApproval;
 
             if (!$credentialsValid) {
                 $level = (int) ($throttle?->lockout_level ?? 0);
@@ -227,6 +229,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $errors->add('email', "Invalid email or password. {$remaining} attempt(s) remaining before your account is temporarily locked.");
                     }
                 }
+            } elseif ($isAwaitingApproval) {
+                $errors->add('email', 'This account has not been approved yet. Please wait for the main administrator to approve it.');
             } elseif (!$isRecognizedStaff) {
                 $errors->add('email', 'This account is not an active Administrator or approved Evaluator account.');
             } else {

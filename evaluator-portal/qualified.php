@@ -118,7 +118,7 @@ require __DIR__.'/_layout_head.php';
                             <table class="min-w-full divide-y divide-slate-200 text-sm">
                                 <thead class="bg-slate-50">
                                     <tr>
-                                        <th class="px-4 py-3"></th>
+                                        <th class="w-10 px-4 py-3 text-left align-middle"><input type="checkbox" class="group-check align-middle" title="Select all applicants in this table" aria-label="Select all applicants in this table for IER export"></th>
                                         <th class="px-4 py-3 text-left font-bold text-slate-600">Control #</th>
                                         <th class="px-4 py-3 text-left font-bold text-slate-600">Applicant Name</th>
                                         <th class="px-4 py-3 text-left font-bold text-slate-600">Email</th>
@@ -197,10 +197,33 @@ require __DIR__.'/_layout_head.php';
     var checks = document.querySelectorAll('.row-check');
     var exportBtn = document.getElementById('export-selected-btn');
 
+    // Row checkboxes of one table (header checkbox → its table), skipping
+    // rows hidden by the search box.
+    function tableChecks(groupCheck) {
+        return Array.prototype.filter.call(groupCheck.closest('table').querySelectorAll('.row-check'), function (c) {
+            return !c.closest('.app-row.hidden, .position-group.hidden');
+        });
+    }
+
     function refreshExportBtn() {
         var any = Array.prototype.some.call(checks, function (c) { return c.checked; });
         exportBtn.disabled = !any;
+
+        // Each table's header checkbox: checked when all its rows are, a dash when some are.
+        document.querySelectorAll('.group-check').forEach(function (g) {
+            var rows = tableChecks(g);
+            var ticked = rows.filter(function (c) { return c.checked; }).length;
+            g.checked = rows.length > 0 && ticked === rows.length;
+            g.indeterminate = ticked > 0 && ticked < rows.length;
+        });
     }
+
+    document.querySelectorAll('.group-check').forEach(function (g) {
+        g.addEventListener('change', function () {
+            tableChecks(g).forEach(function (c) { c.checked = g.checked; });
+            refreshExportBtn();
+        });
+    });
 
     if (selectAll) {
         selectAll.addEventListener('change', function () {

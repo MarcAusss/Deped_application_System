@@ -2,7 +2,7 @@
 define('PORTAL_BOOTED', true);
 require __DIR__.'/_boot.php';
 
-admin_require_login();
+admin_require_main_account();
 $pdo = portal_pdo();
 
 const PASSWORD_REGEX = '/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/';
@@ -155,7 +155,7 @@ require __DIR__.'/_layout_head.php';
                         </span>
                         <span class="text-sm font-bold text-slate-700">Approved</span>
                     </label>
-                    <p class="mt-1.5 text-xs text-slate-500">Evaluator accounts must be approved before they can sign in.</p>
+                    <p class="mt-1.5 text-xs text-slate-500">Admin and evaluator accounts must be approved before they can sign in.</p>
                 </div>
 
                 <div class="sm:col-span-2 flex flex-wrap gap-3">
@@ -181,7 +181,7 @@ require __DIR__.'/_layout_head.php';
         var role = document.getElementById('role-select').value;
         var wrap = document.getElementById('approved-wrap');
         var checkbox = wrap.querySelector('input[name="is_approved"]');
-        var show = role === 'evaluator';
+        var show = role === 'admin' || role === 'evaluator';
         wrap.classList.toggle('hidden', !show);
         wrap.classList.toggle('flex', show);
         if (!show) checkbox.checked = false;

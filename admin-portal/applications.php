@@ -3,6 +3,7 @@ define('PORTAL_BOOTED', true);
 require __DIR__.'/_boot.php';
 
 admin_require_login();
+$currentAdmin = admin_user();
 
 $statusFilter = $_GET['status'] ?? '';
 $jobFilter = $_GET['job'] ?? '';
@@ -23,12 +24,13 @@ $sql = 'SELECT a.id, a.jp_number, a.posting_date, a.status, a.created_at,
                jp.title AS job_title, jp.evaluated_by, jp.is_open, jp.until, jp.until_time,
                cn.control_number,
                p.full_name, p.email,
-               e.result
+               e.result, e.evaluator_id, eu.name AS evaluator_name, eu.role AS evaluator_role
         FROM applications a
         LEFT JOIN job_positions jp ON jp.id = a.job_position_id
         LEFT JOIN application_control_numbers cn ON cn.application_id = a.id
         LEFT JOIN applicant_profiles p ON p.application_id = a.id
         LEFT JOIN application_evaluations e ON e.application_id = a.id
+        LEFT JOIN users eu ON eu.id = e.evaluator_id
         WHERE '.implode(' AND ', $where).'
         ORDER BY a.created_at DESC';
 
@@ -115,13 +117,16 @@ require __DIR__.'/_layout_head.php';
                 <div class="rounded-2xl border border-slate-200 bg-white p-10 text-center text-slate-500 shadow-sm">No applications found.</div>
             <?php endif; ?>
 
-            <?php foreach ($positionGroups as $positionTitle => $rows): ?>
+            <?php foreach (admin_split_groups_by_evaluator($positionGroups) as $evaluatorSection => $sectionGroups): ?>
+                <section class="mb-8 [&:not(:has(.position-group:not(.hidden)))]:hidden">
+                    <?php require __DIR__.'/_evaluator_section_header.php'; ?>
+            <?php foreach ($sectionGroups as $positionTitle => $rows): ?>
                 <details class="position-group group mb-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm" open>
                     <summary class="flex cursor-pointer select-none items-center justify-between gap-3 bg-slate-50 px-4 py-3">
                         <span class="flex flex-wrap items-center gap-2">
                             <span class="flex flex-wrap items-center gap-2"><span class="font-black text-admin-indigoDark"><?= admin_e($rows[0]->job_title ?? 'Unassigned Position') ?></span><span class="pill bg-white text-slate-600 ring-1 ring-slate-200"><?= admin_e(eval_posting_round_label($rows)) ?></span></span>
                             <?php if (($rows[0]->evaluated_by ?? '') === 'admin'): ?>
-                                <span class="pill bg-amber-100 text-amber-800">Evaluated by Admin</span>
+                                <span class="pill bg-amber-100 text-amber-800">Evaluation by Admin</span>
                             <?php endif; ?>
                         </span>
                         <span class="pill bg-slate-200 text-slate-700"><?= count($rows) ?> application(s)</span>
@@ -130,7 +135,7 @@ require __DIR__.'/_layout_head.php';
                         <table class="min-w-full divide-y divide-slate-200 text-sm">
                             <thead class="bg-slate-50">
                                 <tr>
-                                    <th class="w-10 px-4 py-3"><span class="sr-only">Select for IER export</span></th>
+                                    <th class="w-10 px-4 py-3 text-left align-middle"><input type="checkbox" class="ier-group-check align-middle h-4 w-4 accent-admin-indigo" title="Select all applicants in this table" aria-label="Select all applicants in this table for IER export"></th>
                                     <th class="px-4 py-3 text-left font-bold text-slate-600">Control #</th>
                                     <th class="px-4 py-3 text-left font-bold text-slate-600">Applicant Name</th>
                                     <th class="px-4 py-3 text-left font-bold text-slate-600">Email</th>
@@ -143,10 +148,20 @@ require __DIR__.'/_layout_head.php';
                                 <?php foreach ($rows as $app):
                                     $canDecide = in_array($app->status, ['evaluated', 'excluded'], true);
                                     $adminEvaluates = $app->evaluated_by === 'admin';
-                                    // Same gate as application-evaluate.php: a pending application
+                                    // Same gates as application-evaluate.php: a saved evaluation belongs
+                                    // to whoever saved it (admin or evaluator), whichever way the posting
+                                    // is switched; unsaved ones follow the posting. A pending application
                                     // can only be evaluated once its posting has closed.
-                                    $canEvaluate = $adminEvaluates && ($canDecide
-                                        || !$app->is_open || admin_job_deadline_passed($app->until, $app->until_time));
+                                    $periodOpen = !$canDecide && $app->is_open && !admin_job_deadline_passed($app->until, $app->until_time);
+                                    $ownedByMe = $app->evaluator_id && (int) $app->evaluator_id === (int) $currentAdmin->id && $app->evaluator_role !== null;
+                                    $ownedByOther = $app->evaluator_id && (int) $app->evaluator_id !== (int) $currentAdmin->id && $app->evaluator_role !== null;
+                                    $showEvaluate = $adminEvaluates || $ownedByMe;
+                                    $canEvaluate = $showEvaluate && !$periodOpen && !$ownedByOther;
+                                    $evaluateBlockedReason = match (true) {
+                                        $ownedByOther && $app->evaluator_role === 'admin' => 'Being evaluated by '.$app->evaluator_name.'. Only they can edit it.',
+                                        $ownedByOther => 'Evaluated by evaluator '.$app->evaluator_name.'. Only they can edit it.',
+                                        default => 'Evaluation opens once this posting\'s application period has ended.',
+                                    };
                                 ?>
                                     <tr class="app-row hover:bg-slate-50" data-search="<?= admin_e(mb_strtolower($app->control_number.' '.$app->full_name.' '.$app->email)) ?>">
                                         <td class="px-4 py-3"><input type="checkbox" name="ids[]" value="<?= $app->id ?>" form="ier-selected-form" class="ier-row-check h-4 w-4 accent-admin-indigo" aria-label="Select <?= admin_e($app->full_name ?? 'application') ?> for IER export"></td>
@@ -166,11 +181,11 @@ require __DIR__.'/_layout_head.php';
                                             <div class="flex items-center justify-center gap-2">
                                                 <button type="button" class="view-trigger font-bold text-slate-600 hover:text-admin-indigo" data-id="<?= $app->id ?>">View</button>
 
-                                                <?php if ($adminEvaluates): ?>
+                                                <?php if ($showEvaluate): ?>
                                                     <?php if ($canEvaluate): ?>
                                                         <a href="<?= admin_url('application-evaluate.php?id='.$app->id) ?>" class="font-bold text-admin-indigo hover:underline">Evaluate</a>
                                                     <?php else: ?>
-                                                        <span title="Evaluation opens once this posting's application period has ended." class="cursor-not-allowed font-bold text-slate-300">Evaluate</span>
+                                                        <span title="<?= admin_e($evaluateBlockedReason) ?>" class="cursor-not-allowed font-bold text-slate-300">Evaluate</span>
                                                     <?php endif; ?>
                                                 <?php endif; ?>
 
@@ -195,6 +210,8 @@ require __DIR__.'/_layout_head.php';
                         </table>
                     </div>
                 </details>
+            <?php endforeach; ?>
+                </section>
             <?php endforeach; ?>
         </main>
     </div>

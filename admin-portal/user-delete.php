@@ -2,7 +2,7 @@
 define('PORTAL_BOOTED', true);
 require __DIR__.'/_boot.php';
 
-admin_require_login();
+admin_require_main_account();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -13,6 +13,16 @@ csrf_verify();
 $id = (int) ($_POST['id'] ?? 0);
 if (!$id) {
     http_response_code(400);
+    exit;
+}
+
+// The main admin account can't be deleted — it is the only one that can manage users.
+$stmt = portal_pdo()->prepare('SELECT id, email FROM users WHERE id = ?');
+$stmt->execute([$id]);
+$target = $stmt->fetch();
+if ($target && admin_is_main_account($target)) {
+    flash_set('error', 'The main administrator account cannot be deleted.');
+    header('Location: '.admin_url('users.php'));
     exit;
 }
 

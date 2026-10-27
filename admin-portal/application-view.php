@@ -254,7 +254,7 @@ require __DIR__.'/_layout_head.php';
                     $profileFields = [
                         'Full Name' => $profile->full_name ?? null, 'Email Address' => $profile->email ?? null,
                         'Phone Number' => $profile->phone ?? null, 'Address' => $profile->address ?? null,
-                        'Birth Date' => isset($profile->birth_date) ? date('M d, Y', strtotime($profile->birth_date)) : null,
+                        'Birth Date' => isset($profile->birth_date) ? (new DateTime($profile->birth_date))->format('M d, Y') : null,
                         'Sex' => $profile->sex ?? null, 'Civil Status' => $profile->civil_status ?? null,
                         'Religion' => $profile->religion ?? null, 'Disability (if any)' => $profile->disability ?? null,
                         'Ethnic Group' => $profile->ethnic_group ?? null,
@@ -295,22 +295,19 @@ require __DIR__.'/_layout_head.php';
                                 <p class="text-sm font-bold text-slate-800">—</p>
                             <?php endif; ?>
                             <p class="text-xs text-slate-500">Evaluated on <?= $evaluation->evaluated_at ? admin_e(date('M d, Y h:i A', strtotime($evaluation->evaluated_at))) : '—' ?></p>
+
+                            <?php // The remarks belong to the evaluation, so they sit with who evaluated it. ?>
+                            <div class="mt-3 border-t border-slate-200 pt-3">
+                                <p class="mb-1.5 text-xs font-bold uppercase tracking-wide text-slate-500">Remarks / Notes</p>
+                                <div class="rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-600"><?= nl2br(admin_e($evaluation->remarks ?? '—')) ?></div>
+                            </div>
                         </div>
 
                         <?php if ($showAccountability): ?>
                             <div class="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
                                 <p class="mb-3 text-xs font-bold uppercase tracking-wide text-slate-500">Accountability · visible to the main admin account only</p>
                                 <div class="grid gap-4 sm:grid-cols-2">
-                                    <?php // Evaluator accounts are already named under Evaluated By above — only admin evaluators are listed here. ?>
-                                    <?php if (($evaluation->evaluator_role ?? null) === 'admin'): ?>
-                                        <div>
-                                            <p class="text-xs font-bold uppercase text-slate-500">Evaluation done by</p>
-                                            <p class="mt-1 text-sm font-bold text-slate-800"><?= admin_e($evaluation->evaluator_name) ?>
-                                                <span class="pill ml-1 bg-amber-100 text-amber-800">Admin</span>
-                                            </p>
-                                            <p class="text-xs text-slate-500"><?= admin_e($evaluation->evaluator_email) ?></p>
-                                        </div>
-                                    <?php endif; ?>
+                                    <?php // Who evaluated is already shown under Evaluated By above; this box only adds the final decision. ?>
                                     <div>
                                         <p class="text-xs font-bold uppercase text-slate-500">Final decision made by</p>
                                         <?php if ($finalDecision && $finalDecision->name): ?>
@@ -329,13 +326,6 @@ require __DIR__.'/_layout_head.php';
                                 </div>
                             </div>
                         <?php endif; ?>
-                        <div class="mt-4">
-                            <p class="mb-1 text-sm font-bold text-slate-700">Remarks / Notes</p>
-                            <div class="rounded-lg border border-slate-300 p-3 text-sm text-slate-600"><?= nl2br(admin_e($evaluation->remarks ?? '—')) ?></div>
-                            <?php if (trim((string) ($evaluation->remarks ?? '')) !== '' && $evaluation->evaluator_name): ?>
-                                <p class="mt-1.5 text-xs text-slate-500">Remarks by <span class="font-bold text-slate-700"><?= admin_e($evaluation->evaluator_name) ?></span> · <?= $evaluation->evaluator_role === 'admin' ? 'Admin' : 'Evaluator' ?></p>
-                            <?php endif; ?>
-                        </div>
                     </div>
                 </section>
             <?php else: ?>

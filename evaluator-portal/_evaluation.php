@@ -319,11 +319,12 @@ function eval_ier_row(
 
 function eval_age_from_date(string $date): ?int
 {
-    $ts = strtotime($date);
-    if ($ts === false) {
+    // DateTime, not strtotime(): handles any year on 32-bit PHP too.
+    try {
+        $birth = new DateTime($date);
+    } catch (\Exception) {
         return null;
     }
-    $birth = new DateTime(date('Y-m-d', $ts));
     $now = new DateTime('today');
 
     return $birth->diff($now)->y;

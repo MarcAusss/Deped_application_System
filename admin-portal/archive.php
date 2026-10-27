@@ -43,7 +43,7 @@ if ($jobFilter !== '' && ctype_digit((string) $jobFilter)) {
     $params['job'] = $jobFilter;
 }
 
-$sql = "SELECT a.id, a.jp_number, a.posting_date, a.updated_at, jp.title AS job_title, cn.control_number, p.full_name, p.email
+$sql = "SELECT a.id, a.jp_number, a.posting_date, a.updated_at, jp.title AS job_title, jp.evaluated_by, cn.control_number, p.full_name, p.email
         FROM applications a
         LEFT JOIN job_positions jp ON jp.id = a.job_position_id
         LEFT JOIN application_control_numbers cn ON cn.application_id = a.id
@@ -121,7 +121,10 @@ require __DIR__.'/_layout_head.php';
                 <div class="rounded-2xl border border-slate-200 bg-white p-10 text-center text-slate-500 shadow-sm">No disqualified applications.</div>
             <?php endif; ?>
 
-            <?php foreach ($positionGroups as $positionTitle => $rows): ?>
+            <?php foreach (admin_split_groups_by_evaluator($positionGroups) as $evaluatorSection => $sectionGroups): ?>
+                <section class="mb-8 [&:not(:has(.position-group:not(.hidden)))]:hidden">
+                    <?php require __DIR__.'/_evaluator_section_header.php'; ?>
+            <?php foreach ($sectionGroups as $positionTitle => $rows): ?>
                 <details class="position-group group mb-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm" open>
                     <summary class="flex cursor-pointer select-none items-center justify-between gap-3 bg-rose-50 px-4 py-3">
                         <span class="flex flex-wrap items-center gap-2"><span class="font-black text-rose-800"><?= admin_e($rows[0]->job_title ?? 'Unassigned Position') ?></span><span class="pill bg-white text-slate-600 ring-1 ring-slate-200"><?= admin_e(eval_posting_round_label($rows)) ?></span></span>
@@ -131,7 +134,7 @@ require __DIR__.'/_layout_head.php';
                         <table class="min-w-full divide-y divide-slate-200 text-sm">
                             <thead class="bg-slate-50">
                                 <tr>
-                                    <th class="w-10 px-4 py-3"><span class="sr-only">Select for IER export</span></th>
+                                    <th class="w-10 px-4 py-3 text-left align-middle"><input type="checkbox" class="ier-group-check align-middle h-4 w-4 accent-admin-indigo" title="Select all applicants in this table" aria-label="Select all applicants in this table for IER export"></th>
                                     <th class="px-4 py-3 text-left font-bold text-slate-600">Control #</th>
                                     <th class="px-4 py-3 text-left font-bold text-slate-600">Applicant Name</th>
                                     <th class="px-4 py-3 text-left font-bold text-slate-600">Email</th>
@@ -162,6 +165,8 @@ require __DIR__.'/_layout_head.php';
                         </table>
                     </div>
                 </details>
+            <?php endforeach; ?>
+                </section>
             <?php endforeach; ?>
         </main>
     </div>

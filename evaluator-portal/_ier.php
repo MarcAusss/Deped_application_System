@@ -229,8 +229,9 @@ function ier_build_sheet(Spreadsheet $spreadsheet, ?object $position, array $app
 
     $sheet->getStyle("A1:S{$lastRow}")->getFont()->setName('Arial')->setSize(8);
 
+    // System green (#16402B dark, #1E6B42 primary); borders stay black for printing.
     $sheet->getStyle('A1:S1')->applyFromArray([
-        'font' => ['bold' => true, 'size' => 13],
+        'font' => ['bold' => true, 'size' => 13, 'color' => ['argb' => 'FF16402B']],
         'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
     ]);
 
@@ -238,16 +239,16 @@ function ier_build_sheet(Spreadsheet $spreadsheet, ?object $position, array $app
         'font' => ['size' => 9],
         'alignment' => ['vertical' => Alignment::VERTICAL_CENTER, 'wrapText' => true],
     ]);
-    $sheet->getStyle('A3:A9')->getFont()->setBold(true);
-    $sheet->getStyle('A5:G5')->getFont()->setBold(true);
+    $sheet->getStyle('A3:A9')->getFont()->setBold(true)->getColor()->setARGB('FF16402B');
+    $sheet->getStyle('A5:G5')->getFont()->setBold(true)->getColor()->setARGB('FF16402B');
 
     foreach (['C3:G3', 'D4:G4', 'C6:G6', 'C7:G7', 'C8:G8', 'C9:G9'] as $range) {
         $sheet->getStyle($range)->getBorders()->getBottom()->applyFromArray(['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => 'FF000000']]);
     }
 
     $sheet->getStyle('A10:S11')->applyFromArray([
-        'font' => ['bold' => true, 'size' => 8],
-        'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FFF2F2F2']],
+        'font' => ['bold' => true, 'size' => 8, 'color' => ['argb' => 'FFFFFFFF']],
+        'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FF1E6B42']],
         'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER, 'wrapText' => true],
     ]);
 

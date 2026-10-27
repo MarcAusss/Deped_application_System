@@ -66,13 +66,13 @@ require __DIR__.'/_layout_head.php';
 
     <div class="min-w-0 flex-1">
         <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-            <a href="javascript:history.back()" class="mb-4 inline-flex items-center gap-1.5 text-sm font-bold text-slate-500 hover:text-admin-indigo">&larr; Back</a>
+            <a href="javascript:history.back()" class="mb-4 inline-flex items-center gap-1.5 rounded-lg border-2 border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-600 transition hover:border-admin-indigo hover:text-admin-indigo">&larr; Back</a>
 
-            <div class="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-sky-200 bg-sky-50 p-4">
-                <div class="text-sm text-sky-800"><strong><?= number_format($totalApplications) ?></strong> application(s) will be included in the Excel file.</div>
+            <div class="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#CFE3D6] bg-[#EAF4EE] p-4">
+                <div class="text-sm text-[#16402B]"><strong><?= number_format($totalApplications) ?></strong> application(s) will be included in the Excel file.</div>
                 <div class="flex flex-wrap gap-2">
-                    <span class="rounded-full border border-sky-300 bg-white px-3 py-1.5 text-xs font-bold text-sky-700">A3 Landscape</span>
-                    <span class="rounded-full border border-sky-300 bg-white px-3 py-1.5 text-xs font-bold text-sky-700"><?= count($groups) ?> Worksheet(s)</span>
+                    <span class="rounded-full border border-[#CFE3D6] bg-white px-3 py-1.5 text-xs font-bold text-[#16402B]">A3 Landscape</span>
+                    <span class="rounded-full border border-[#CFE3D6] bg-white px-3 py-1.5 text-xs font-bold text-[#16402B]"><?= count($groups) ?> Worksheet(s)</span>
                 </div>
             </div>
 
@@ -90,48 +90,48 @@ require __DIR__.'/_layout_head.php';
 
                     <table class="mb-4 w-full table-fixed border-collapse text-xs">
                         <tr>
-                            <th class="border border-sky-300 bg-sky-50 p-2 text-left font-bold text-sky-800">Position</th>
-                            <td class="border border-sky-300 p-2"><?= admin_e($summary['position'] ?: '—') ?></td>
-                            <th class="border border-sky-300 bg-sky-50 p-2 text-left font-bold text-sky-800">Salary Grade and Monthly Salary</th>
-                            <td class="border border-sky-300 p-2"><?= admin_e($summary['salary'] ?: '—') ?></td>
+                            <th class="border border-[#CFE3D6] bg-[#EAF4EE] p-2 text-left font-bold text-[#16402B]">Position</th>
+                            <td class="border border-[#CFE3D6] p-2"><?= admin_e($summary['position'] ?: '—') ?></td>
+                            <th class="border border-[#CFE3D6] bg-[#EAF4EE] p-2 text-left font-bold text-[#16402B]">Salary Grade and Monthly Salary</th>
+                            <td class="border border-[#CFE3D6] p-2"><?= admin_e($summary['salary'] ?: '—') ?></td>
                         </tr>
-                        <tr><th colspan="4" class="border border-sky-800 bg-sky-600 p-2 text-left font-bold uppercase text-white">Qualification Standards</th></tr>
+                        <tr><th colspan="4" class="border border-[#16402B] bg-[#1E6B42] p-2 text-left font-bold uppercase text-white">Qualification Standards</th></tr>
                         <tr>
-                            <th class="border border-sky-300 bg-sky-50 p-2 text-left font-bold text-sky-800">Education</th>
-                            <td class="border border-sky-300 p-2"><?= admin_e($summary['education_requirement'] ?: '—') ?></td>
-                            <th class="border border-sky-300 bg-sky-50 p-2 text-left font-bold text-sky-800">Training</th>
-                            <td class="border border-sky-300 p-2"><?= admin_e($summary['training_requirement'] ?: '—') ?></td>
+                            <th class="border border-[#CFE3D6] bg-[#EAF4EE] p-2 text-left font-bold text-[#16402B]">Education</th>
+                            <td class="border border-[#CFE3D6] p-2"><?= admin_e($summary['education_requirement'] ?: '—') ?></td>
+                            <th class="border border-[#CFE3D6] bg-[#EAF4EE] p-2 text-left font-bold text-[#16402B]">Training</th>
+                            <td class="border border-[#CFE3D6] p-2"><?= admin_e($summary['training_requirement'] ?: '—') ?></td>
                         </tr>
                         <tr>
-                            <th class="border border-sky-300 bg-sky-50 p-2 text-left font-bold text-sky-800">Experience</th>
-                            <td class="border border-sky-300 p-2"><?= admin_e($summary['experience_requirement'] ?: '—') ?></td>
-                            <th class="border border-sky-300 bg-sky-50 p-2 text-left font-bold text-sky-800">Eligibility</th>
-                            <td class="border border-sky-300 p-2"><?= admin_e($summary['eligibility_requirement'] ?: '—') ?></td>
+                            <th class="border border-[#CFE3D6] bg-[#EAF4EE] p-2 text-left font-bold text-[#16402B]">Experience</th>
+                            <td class="border border-[#CFE3D6] p-2"><?= admin_e($summary['experience_requirement'] ?: '—') ?></td>
+                            <th class="border border-[#CFE3D6] bg-[#EAF4EE] p-2 text-left font-bold text-[#16402B]">Eligibility</th>
+                            <td class="border border-[#CFE3D6] p-2"><?= admin_e($summary['eligibility_requirement'] ?: '—') ?></td>
                         </tr>
                     </table>
 
-                    <div class="overflow-x-auto border-2 border-sky-800">
+                    <div class="overflow-x-auto border-2 border-[#16402B]">
                         <table class="w-full min-w-[1400px] border-collapse text-[11px]">
                             <thead>
                                 <tr>
-                                    <th rowspan="2" class="border border-sky-800 bg-sky-600 p-2 text-white">No.</th>
-                                    <th rowspan="2" class="border border-sky-800 bg-sky-600 p-2 text-white">Application Code</th>
-                                    <th rowspan="2" class="border border-sky-800 bg-sky-600 p-2 text-white">Name</th>
-                                    <th colspan="9" class="border border-sky-800 bg-sky-600 p-2 text-white">Personal Information</th>
-                                    <th rowspan="2" class="border border-sky-800 bg-sky-600 p-2 text-white">Education</th>
-                                    <th colspan="2" class="border border-sky-800 bg-sky-600 p-2 text-white">Training</th>
-                                    <th colspan="2" class="border border-sky-800 bg-sky-600 p-2 text-white">Experience</th>
-                                    <th rowspan="2" class="border border-sky-800 bg-sky-600 p-2 text-white">Eligibility</th>
-                                    <th rowspan="2" class="border border-sky-800 bg-sky-600 p-2 text-white">Remarks</th>
+                                    <th rowspan="2" class="border border-[#16402B] bg-[#1E6B42] p-2 text-white">No.</th>
+                                    <th rowspan="2" class="border border-[#16402B] bg-[#1E6B42] p-2 text-white">Application Code</th>
+                                    <th rowspan="2" class="border border-[#16402B] bg-[#1E6B42] p-2 text-white">Name</th>
+                                    <th colspan="9" class="border border-[#16402B] bg-[#1E6B42] p-2 text-white">Personal Information</th>
+                                    <th rowspan="2" class="border border-[#16402B] bg-[#1E6B42] p-2 text-white">Education</th>
+                                    <th colspan="2" class="border border-[#16402B] bg-[#1E6B42] p-2 text-white">Training</th>
+                                    <th colspan="2" class="border border-[#16402B] bg-[#1E6B42] p-2 text-white">Experience</th>
+                                    <th rowspan="2" class="border border-[#16402B] bg-[#1E6B42] p-2 text-white">Eligibility</th>
+                                    <th rowspan="2" class="border border-[#16402B] bg-[#1E6B42] p-2 text-white">Remarks</th>
                                 </tr>
                                 <tr>
                                     <?php foreach (['Address', 'Age', 'Sex', 'Civil Status', 'Religion', 'Disability', 'Ethnic Group', 'Email', 'Contact'] as $h): ?>
-                                        <th class="border border-sky-800 bg-sky-500 p-1.5 text-white"><?= $h ?></th>
+                                        <th class="border border-[#16402B] bg-[#278253] p-1.5 text-white"><?= $h ?></th>
                                     <?php endforeach; ?>
-                                    <th class="border border-sky-800 bg-sky-500 p-1.5 text-white">Title</th>
-                                    <th class="border border-sky-800 bg-sky-500 p-1.5 text-white">Hours</th>
-                                    <th class="border border-sky-800 bg-sky-500 p-1.5 text-white">Details</th>
-                                    <th class="border border-sky-800 bg-sky-500 p-1.5 text-white">Years</th>
+                                    <th class="border border-[#16402B] bg-[#278253] p-1.5 text-white">Title</th>
+                                    <th class="border border-[#16402B] bg-[#278253] p-1.5 text-white">Hours</th>
+                                    <th class="border border-[#16402B] bg-[#278253] p-1.5 text-white">Details</th>
+                                    <th class="border border-[#16402B] bg-[#278253] p-1.5 text-white">Years</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -165,8 +165,8 @@ require __DIR__.'/_layout_head.php';
                     </div>
 
                     <div class="mt-2 flex items-center justify-between text-xs text-slate-500">
-                        <span>Position: <strong class="text-sky-700"><?= admin_e($summary['position'] ?: 'Unassigned') ?></strong></span>
-                        <span>Previewing <strong class="text-sky-700"><?= count($previewRows) ?></strong> of <strong class="text-sky-700"><?= $total ?></strong> record(s)</span>
+                        <span>Position: <strong class="text-[#16402B]"><?= admin_e($summary['position'] ?: 'Unassigned') ?></strong></span>
+                        <span>Previewing <strong class="text-[#16402B]"><?= count($previewRows) ?></strong> of <strong class="text-[#16402B]"><?= $total ?></strong> record(s)</span>
                     </div>
                 </article>
             <?php endforeach; ?>

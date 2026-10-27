@@ -27,8 +27,9 @@ $stmt = portal_pdo()->prepare('SELECT * FROM job_positions WHERE id = ?');
 $stmt->execute([$application->job_position_id]);
 $job = $stmt->fetch();
 
-// Postings the admin evaluates are not visible to evaluator accounts.
-if (eval_is_admin_evaluated($job)) {
+// Postings the admin evaluates are not visible to evaluator accounts,
+// except applications this evaluator already evaluated.
+if (!eval_can_see_application($applicationId, $job)) {
     http_response_code(404);
     require __DIR__.'/_error.php';
     exit;
@@ -193,7 +194,7 @@ require __DIR__.'/_layout_head.php';
                     $profileFields = [
                         'Full Name' => $profile->full_name ?? null, 'Email Address' => $profile->email ?? null,
                         'Phone Number' => $profile->phone ?? null, 'Address' => $profile->address ?? null,
-                        'Birth Date' => isset($profile->birth_date) ? date('M d, Y', strtotime($profile->birth_date)) : null,
+                        'Birth Date' => isset($profile->birth_date) ? (new DateTime($profile->birth_date))->format('M d, Y') : null,
                         'Sex' => $profile->sex ?? null, 'Civil Status' => $profile->civil_status ?? null,
                         'Religion' => $profile->religion ?? null, 'Disability (if any)' => $profile->disability ?? null,
                         'Ethnic Group' => $profile->ethnic_group ?? null,
@@ -223,12 +224,15 @@ require __DIR__.'/_layout_head.php';
                             </div>
                         <?php endif; ?>
                         <?php /* "Evaluated By" is intentionally not shown here — only Administrators can see which evaluator handled an application. */ ?>
-                        <div class="grid gap-4 sm:grid-cols-2">
-                            <div><p class="text-xs font-bold uppercase text-slate-500">Evaluated On</p><p class="mt-1 text-sm"><?= $evaluation->evaluated_at ? evaluator_e(date('M d, Y h:i A', strtotime($evaluation->evaluated_at))) : '—' ?></p></div>
-                        </div>
-                        <div class="mt-4">
-                            <p class="mb-1 text-sm font-bold text-slate-700">Remarks / Notes</p>
-                            <div class="rounded-lg border border-slate-300 p-3 text-sm text-slate-600"><?= nl2br(evaluator_e($evaluation->remarks ?? '—')) ?></div>
+                        <?php /* Same card as the admin's Evaluated By box, minus the evaluator's name. */ ?>
+                        <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                            <p class="mb-3 text-xs font-bold uppercase tracking-wide text-slate-500">Evaluated On</p>
+                            <p class="text-sm font-bold text-slate-800"><?= $evaluation->evaluated_at ? evaluator_e(date('M d, Y h:i A', strtotime($evaluation->evaluated_at))) : 'Not yet evaluated' ?></p>
+
+                            <div class="mt-3 border-t border-slate-200 pt-3">
+                                <p class="mb-1.5 text-xs font-bold uppercase tracking-wide text-slate-500">Remarks / Notes</p>
+                                <div class="rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-600"><?= nl2br(evaluator_e($evaluation->remarks ?? '—')) ?></div>
+                            </div>
                         </div>
                     </div>
                 </section>

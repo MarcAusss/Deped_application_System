@@ -28,12 +28,13 @@ $sql = 'SELECT a.id, a.jp_number, a.posting_date, a.status, a.created_at,
                jp.title AS job_title, jp.is_open, jp.until, jp.until_time,
                cn.control_number,
                p.full_name, p.email,
-               e.evaluated_at, e.recommended, e.evaluator_id, e.result
+               e.evaluated_at, e.recommended, e.evaluator_id, e.result, eu.role AS evaluator_role
         FROM applications a
         LEFT JOIN job_positions jp ON jp.id = a.job_position_id
         LEFT JOIN application_control_numbers cn ON cn.application_id = a.id
         LEFT JOIN applicant_profiles p ON p.application_id = a.id
         LEFT JOIN application_evaluations e ON e.application_id = a.id
+        LEFT JOIN users eu ON eu.id = e.evaluator_id
         WHERE '.implode(' AND ', $where).'
         ORDER BY a.created_at DESC';
 
@@ -147,7 +148,7 @@ require __DIR__.'/_layout_head.php';
                             <table class="min-w-full divide-y divide-slate-200 text-sm">
                                 <thead class="bg-slate-50">
                                     <tr>
-                                        <th class="px-4 py-3"></th>
+                                        <th class="w-10 px-4 py-3 text-left align-middle"><input type="checkbox" class="group-check align-middle" title="Select all applicants in this table" aria-label="Select all applicants in this table for IER export"></th>
                                         <th class="px-4 py-3 text-left font-bold text-slate-600">Control #</th>
                                         <th class="px-4 py-3 text-left font-bold text-slate-600">Applicant Name</th>
                                         <th class="px-4 py-3 text-left font-bold text-slate-600">Email</th>
@@ -161,7 +162,12 @@ require __DIR__.'/_layout_head.php';
                                 <tbody class="divide-y divide-slate-100">
                                     <?php foreach ($rows as $app): ?>
                                         <?php
-                                            $claimedByOther = $app->evaluator_id && (int) $app->evaluator_id !== (int) $user->id;
+                                            // Locked to whoever saved it, evaluator or admin. Names are never shown
+                                            // to evaluators — only admins can see who evaluated an application.
+                                            $claimedByOther = $app->evaluator_id && (int) $app->evaluator_id !== (int) $user->id && $app->evaluator_role !== null;
+                                            $lockedReason = $app->evaluator_role === 'admin'
+                                                ? 'Evaluated by an admin. Only they can edit it.'
+                                                : 'Claimed by another evaluator';
                                             $periodBlocked = $app->status === 'pending' && !eval_application_period_ended((object) [
                                                 'is_open' => $app->is_open,
                                                 'until' => $app->until,
@@ -169,7 +175,7 @@ require __DIR__.'/_layout_head.php';
                                             ]);
                                             $canEvaluate = !$claimedByOther && !$periodBlocked;
                                             $blockedReason = $claimedByOther
-                                                ? 'Claimed by another evaluator'
+                                                ? $lockedReason
                                                 : ($periodBlocked ? 'Application period is still open' : '');
                                         ?>
                                         <tr class="app-row hover:bg-slate-50" data-search="<?= evaluator_e(mb_strtolower($app->control_number.' '.$app->full_name.' '.$app->email)) ?>">
@@ -257,10 +263,33 @@ require __DIR__.'/_layout_head.php';
     var checks = document.querySelectorAll('.row-check');
     var exportBtn = document.getElementById('export-selected-btn');
 
+    // Row checkboxes of one table (header checkbox → its table), skipping
+    // rows hidden by the search box.
+    function tableChecks(groupCheck) {
+        return Array.prototype.filter.call(groupCheck.closest('table').querySelectorAll('.row-check'), function (c) {
+            return !c.closest('.app-row.hidden, .position-group.hidden');
+        });
+    }
+
     function refreshExportBtn() {
         var any = Array.prototype.some.call(checks, function (c) { return c.checked; });
         exportBtn.disabled = !any;
+
+        // Each table's header checkbox: checked when all its rows are, a dash when some are.
+        document.querySelectorAll('.group-check').forEach(function (g) {
+            var rows = tableChecks(g);
+            var ticked = rows.filter(function (c) { return c.checked; }).length;
+            g.checked = rows.length > 0 && ticked === rows.length;
+            g.indeterminate = ticked > 0 && ticked < rows.length;
+        });
     }
+
+    document.querySelectorAll('.group-check').forEach(function (g) {
+        g.addEventListener('change', function () {
+            tableChecks(g).forEach(function (c) { c.checked = g.checked; });
+            refreshExportBtn();
+        });
+    });
 
     if (selectAll) {
         selectAll.addEventListener('change', function () {
