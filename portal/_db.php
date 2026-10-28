@@ -20,7 +20,7 @@ function portal_pdo(): PDO
 
     $host = portal_env('DB_HOST', '127.0.0.1');
     $port = portal_env('DB_PORT', '3306');
-    $database = portal_env('DB_DATABASE', 'laravel');
+    $database = portal_env('DB_DATABASE', 'deped_application_system');
     $username = portal_env('DB_USERNAME', 'root');
     $password = portal_env('DB_PASSWORD', '');
 
