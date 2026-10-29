@@ -228,7 +228,8 @@ function eval_application_period_ended(?object $job): bool
 /**
  * True when the admin evaluates this posting's applications
  * (job_positions.evaluated_by = 'admin') — evaluators must not see them,
- * except ones they evaluated themselves (see eval_can_see_application()).
+ * except helper evaluators the admin picked for this posting, or ones they
+ * evaluated themselves (see eval_can_see_application()).
  */
 function eval_is_admin_evaluated(?object $job): bool
 {
@@ -241,14 +242,28 @@ function eval_current_user_id(): int
     return (int) (evaluator_user()?->id ?? 0);
 }
 
+/** True when the logged-in evaluator was picked as a helper on this (Admin-mode) posting. */
+function eval_is_helper_on_job(int $jobPositionId): bool
+{
+    $stmt = portal_pdo()->prepare('SELECT 1 FROM job_position_assigned_evaluators WHERE job_position_id = ? AND evaluator_user_id = ?');
+    $stmt->execute([$jobPositionId, eval_current_user_id()]);
+
+    return (bool) $stmt->fetchColumn();
+}
+
 /**
  * Whether the logged-in evaluator may see this application: every posting
- * evaluators handle, plus — on postings switched to Admin — the ones this
- * evaluator already evaluated (those stay theirs to edit).
+ * open to all evaluators, plus — on Admin-mode postings — ones this
+ * evaluator was picked as a helper for, or already evaluated themselves
+ * (that access sticks even if the admin later removes them as a helper).
  */
 function eval_can_see_application(int $applicationId, ?object $job): bool
 {
     if (!eval_is_admin_evaluated($job)) {
+        return true;
+    }
+
+    if (eval_is_helper_on_job((int) $job->id)) {
         return true;
     }
 
@@ -268,6 +283,7 @@ function eval_visible_applications_sql(string $alias = 'a'): string
     $me = eval_current_user_id();
 
     return "({$alias}.job_position_id NOT IN (SELECT id FROM job_positions WHERE evaluated_by = 'admin')"
+        ." OR {$alias}.job_position_id IN (SELECT job_position_id FROM job_position_assigned_evaluators WHERE evaluator_user_id = {$me})"
         ." OR {$alias}.id IN (SELECT application_id FROM application_evaluations WHERE evaluator_id = {$me}))";
 }
 
@@ -276,7 +292,9 @@ function eval_visible_positions_sql(string $alias = 'jp'): string
 {
     $me = eval_current_user_id();
 
-    return "({$alias}.evaluated_by <> 'admin' OR {$alias}.id IN (SELECT ap.job_position_id FROM applications ap"
+    return "({$alias}.evaluated_by <> 'admin'"
+        ." OR {$alias}.id IN (SELECT job_position_id FROM job_position_assigned_evaluators WHERE evaluator_user_id = {$me})"
+        ." OR {$alias}.id IN (SELECT ap.job_position_id FROM applications ap"
         ." JOIN application_evaluations ev ON ev.application_id = ap.id WHERE ev.evaluator_id = {$me}))";
 }
 

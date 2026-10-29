@@ -268,6 +268,82 @@ function admin_evaluated_by_input(mixed $value, string $fallback = 'evaluator'):
 }
 
 /**
+ * Every evaluator account, for the "let specific evaluator(s) help" picker
+ * shown under the Admin option. Kept separate from admin_evaluated_by_options()
+ * since this lists accounts, not the evaluated_by modes themselves.
+ *
+ * @return array<int, object>
+ */
+function admin_active_evaluators(): array
+{
+    return portal_pdo()->query(
+        "SELECT id, name, email FROM users WHERE role = 'evaluator' ORDER BY name"
+    )->fetchAll();
+}
+
+/**
+ * Filters submitted evaluator ids down to real evaluator-role accounts only
+ * — never trust the client to say who's an evaluator (an id could belong to
+ * an admin, or not exist at all).
+ *
+ * @param array<int, mixed> $ids
+ * @return array<int, int>
+ */
+function admin_valid_evaluator_ids(array $ids): array
+{
+    $ids = array_values(array_unique(array_map('intval', $ids)));
+    if (empty($ids)) {
+        return [];
+    }
+
+    $placeholders = implode(',', array_fill(0, count($ids), '?'));
+    $stmt = portal_pdo()->prepare(
+        "SELECT id FROM users WHERE role = 'evaluator' AND id IN ($placeholders)"
+    );
+    $stmt->execute($ids);
+
+    return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+}
+
+/** @return array<int, int> */
+function admin_get_assigned_evaluator_ids(int $jobPositionId): array
+{
+    $stmt = portal_pdo()->prepare(
+        'SELECT evaluator_user_id FROM job_position_assigned_evaluators WHERE job_position_id = ?'
+    );
+    $stmt->execute([$jobPositionId]);
+
+    return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+}
+
+/**
+ * Replaces a posting's helper-evaluator list (evaluators allowed to see and
+ * evaluate an Admin-mode posting alongside admins) with exactly
+ * $evaluatorIds. Call this after every create/edit/publish save, regardless
+ * of evaluated_by — an empty array just clears any existing helpers, which
+ * is correct for 'evaluator' mode (the field isn't shown there) too.
+ *
+ * @param array<int, int> $evaluatorIds
+ */
+function admin_sync_assigned_evaluators(int $jobPositionId, array $evaluatorIds): void
+{
+    $pdo = portal_pdo();
+
+    $pdo->prepare('DELETE FROM job_position_assigned_evaluators WHERE job_position_id = ?')->execute([$jobPositionId]);
+
+    if (empty($evaluatorIds)) {
+        return;
+    }
+
+    $stmt = $pdo->prepare(
+        'INSERT INTO job_position_assigned_evaluators (job_position_id, evaluator_user_id, created_at) VALUES (?, ?, NOW())'
+    );
+    foreach ($evaluatorIds as $evaluatorId) {
+        $stmt->execute([$jobPositionId, $evaluatorId]);
+    }
+}
+
+/**
  * The main administrator account (MAIN_ADMIN_EMAIL in .env, default
  * admin@deped.gov.ph) — the only account shown who evaluated each
  * application and who made its final decision.

@@ -125,9 +125,6 @@ require __DIR__.'/_layout_head.php';
                     <summary class="flex cursor-pointer select-none items-center justify-between gap-3 bg-slate-50 px-4 py-3">
                         <span class="flex flex-wrap items-center gap-2">
                             <span class="flex flex-wrap items-center gap-2"><span class="font-black text-admin-indigoDark"><?= admin_e($rows[0]->job_title ?? 'Unassigned Position') ?></span><span class="pill bg-white text-slate-600 ring-1 ring-slate-200"><?= admin_e(eval_posting_round_label($rows)) ?></span></span>
-                            <?php if (($rows[0]->evaluated_by ?? '') === 'admin'): ?>
-                                <span class="pill bg-amber-100 text-amber-800">Evaluation by Admin</span>
-                            <?php endif; ?>
                         </span>
                         <span class="pill bg-slate-200 text-slate-700"><?= count($rows) ?> application(s)</span>
                     </summary>

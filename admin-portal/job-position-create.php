@@ -26,6 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $minExperienceYears = trim($_POST['min_experience_years'] ?? '');
     $eligibilityRequirement = trim($_POST['eligibility_requirement'] ?? '');
     $evaluatedBy = admin_evaluated_by_input($_POST['evaluated_by'] ?? null);
+    $assignedEvaluatorIds = $evaluatedBy === 'admin' ? admin_valid_evaluator_ids($_POST['assigned_evaluator_ids'] ?? []) : [];
 
     if (!v_present($title)) {
         $errors->add('title', 'The title field is required.');
@@ -80,6 +81,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $eligibilityRequirement ?: null,
             json_encode($attachmentPaths), json_encode($cscPaths), $evaluatedBy,
         ]);
+
+        admin_sync_assigned_evaluators((int) $pdo->lastInsertId(), $assignedEvaluatorIds);
 
         flash_set('success', 'Job position created.');
         header('Location: '.admin_url('job-positions.php'));
