@@ -42,6 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $minExperienceYears = trim($_POST['min_experience_years'] ?? '');
     $eligibilityRequirement = trim($_POST['eligibility_requirement'] ?? '');
     $evaluatedBy = admin_evaluated_by_input($_POST['evaluated_by'] ?? null, $position->evaluated_by ?? 'evaluator');
+    $assignedEvaluatorIds = $evaluatedBy === 'admin' ? admin_valid_evaluator_ids($_POST['assigned_evaluator_ids'] ?? []) : [];
     // 'reopen' keeps the current JP number (applications stay in the same
     // table); 'new' is a new posting with a new memo and a new JP number.
     $isNewPosting = $position->jp_number && ($_POST['posting_mode'] ?? 'reopen') === 'new';
@@ -139,6 +140,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $jpNumber,
             $positionId,
         ]);
+
+        admin_sync_assigned_evaluators($positionId, $assignedEvaluatorIds);
 
         flash_set('success', 'Job position posted as '.$jpNumber.'.');
 

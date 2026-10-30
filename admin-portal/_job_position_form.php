@@ -54,7 +54,12 @@ $deadlineRequired = $isEdit && !empty($position->jp_number);
         <?php if ($errors->has('until_time')): ?><p class="mt-1 text-xs text-red-600"><?= admin_e($errors->first('until_time')) ?></p><?php endif; ?>
     </div>
 
-    <?php $evaluatedByValue = $old('evaluated_by', $position->evaluated_by ?? 'evaluator'); $evaluatedByIdPrefix = 'form-evaluated-by'; require __DIR__.'/_evaluated_by_field.php'; ?>
+    <?php
+    $evaluatedByValue = $old('evaluated_by', $position->evaluated_by ?? 'evaluator');
+    $evaluatedByIdPrefix = 'form-evaluated-by';
+    $assignedEvaluatorIds = $old('assigned_evaluator_ids', $isEdit ? admin_get_assigned_evaluator_ids($position->id) : []);
+    require __DIR__.'/_evaluated_by_field.php';
+    ?>
 
     <div>
         <label class="mb-1 block text-sm font-bold text-slate-700">Salary Grade</label>

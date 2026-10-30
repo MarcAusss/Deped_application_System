@@ -146,7 +146,7 @@ require __DIR__.'/_layout_head.php';
 
             <?php $postingModeId = 'repost-posting-mode'; require __DIR__.'/_posting_mode_field.php'; ?>
 
-            <?php $evaluatedByValue = 'evaluator'; $evaluatedByIdPrefix = 'repost-evaluated-by'; require __DIR__.'/_evaluated_by_field.php'; ?>
+            <?php $evaluatedByValue = 'evaluator'; $evaluatedByIdPrefix = 'repost-evaluated-by'; $assignedEvaluatorIds = []; require __DIR__.'/_evaluated_by_field.php'; ?>
 
             <div class="sm:col-span-3">
                 <label class="mb-1.5 block text-sm font-bold text-slate-700">Salary Grade</label>
@@ -212,6 +212,7 @@ require __DIR__.'/_layout_head.php';
             'posted_at' => $p->posted_at ? substr((string) $p->posted_at, 0, 10) : date('Y-m-d'),
             'jp_number' => $p->jp_number,
             'evaluated_by' => $p->evaluated_by,
+            'assigned_evaluator_ids' => admin_get_assigned_evaluator_ids($p->id),
             'until' => $p->until ? substr((string) $p->until, 0, 10) : '',
             'until_time' => $p->until_time ? date('g:i A', strtotime($p->until_time)) : '',
             'salary_grade' => $p->salary_grade,
@@ -244,10 +245,7 @@ require __DIR__.'/_layout_head.php';
 
             adminPostingMode('repost-posting-mode', position.jp_number, document.getElementById('repost-field-posted_at'));
 
-            var evaluatedBy = position.evaluated_by === 'admin' ? 'admin' : 'evaluator';
-            document.querySelectorAll('#repost-form .evaluated-by-input').forEach(function (radio) {
-                radio.checked = radio.value === evaluatedBy;
-            });
+            window.adminSetEvaluatedBy('repost-evaluated-by', position.evaluated_by, position.assigned_evaluator_ids);
 
             adminPostingFiles.load('repost', position);
 
