@@ -21,6 +21,9 @@ function portal_mailer(): PHPMailer
     $mail->SMTPAuth = portal_env('MAIL_USERNAME') !== null && portal_env('MAIL_USERNAME') !== '';
     $mail->Username = portal_env('MAIL_USERNAME');
     $mail->Password = portal_env('MAIL_PASSWORD');
+    // Give up after 15s instead of PHPMailer's 5 minutes, so a mail server
+    // problem never leaves an applicant waiting on Submit.
+    $mail->Timeout = 15;
 
     $scheme = portal_env('MAIL_SCHEME') ?: portal_env('MAIL_ENCRYPTION');
     if ($scheme === 'tls' || (int) $mail->Port === 587) {

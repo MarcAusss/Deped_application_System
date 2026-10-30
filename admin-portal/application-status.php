@@ -49,6 +49,7 @@ $pdo->prepare('INSERT INTO application_status_logs (application_id, status, chan
 // Mirrors ApplicationResource's qualify/disqualify actions: email failures
 // are swallowed (just logged) so a broken mail server never blocks the
 // finalized hiring decision that was already saved above.
+$emailSent = null; // null = no email to send (no profile/address)
 try {
     $stmt = $pdo->prepare('SELECT * FROM job_positions WHERE id = ?');
     $stmt->execute([$application->job_position_id]);
@@ -86,7 +87,7 @@ try {
         $isExcluded = $evaluation && $evaluation->result === EVAL_RESULT_EXCLUDED;
 
         if ($action === 'qualify') {
-            send_qualified($profile->email, $profile->full_name, $job->title, $controlNumber, $qsRows, $remarks, $isExcluded);
+            $emailSent = send_qualified($profile->email, $profile->full_name, $job->title, $controlNumber, $qsRows, $remarks, $isExcluded);
         } else {
             $missingMandatory = [];
 
@@ -99,13 +100,20 @@ try {
                 }
             }
 
-            send_disqualified($profile->email, $profile->full_name, $job->title, $controlNumber, $qsRows, $isExcluded, $missingMandatory, $remarks);
+            $emailSent = send_disqualified($profile->email, $profile->full_name, $job->title, $controlNumber, $qsRows, $isExcluded, $missingMandatory, $remarks);
         }
     }
 } catch (\Throwable $e) {
+    $emailSent = false;
     error_log('[admin-portal] application-status email failed: '.$e->getMessage());
 }
 
-flash_set('success', 'Application marked '.ucfirst($newStatus).'.');
+// The status is saved either way; just don't let the admin think the
+// applicant was told when the email didn't go out.
+if ($emailSent === false) {
+    flash_set('error', 'Application marked '.ucfirst($newStatus).', but the email to the applicant could not be sent. Please inform them another way.');
+} else {
+    flash_set('success', 'Application marked '.ucfirst($newStatus).'.');
+}
 header('Location: '.$referer);
 exit;

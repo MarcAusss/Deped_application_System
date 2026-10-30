@@ -47,14 +47,44 @@ function is_pdf_file(string $tmpPath): bool
     return $header === '%PDF-';
 }
 
+// php.ini size ("10M", "2G", "512K") to bytes.
+function ini_size_bytes(string $value): int
+{
+    $value = trim($value);
+    $number = (int) $value;
+
+    return match (strtoupper(substr($value, -1))) {
+        'G' => $number * 1073741824,
+        'M' => $number * 1048576,
+        'K' => $number * 1024,
+        default => $number,
+    };
+}
+
+// Largest PDF accepted per document (10 MB, or less if the server is set
+// lower) and largest total for one submission.
+$maxDocumentBytes = min(10 * 1048576, ini_size_bytes((string) ini_get('upload_max_filesize')) ?: PHP_INT_MAX);
+$maxSubmissionBytes = ini_size_bytes((string) ini_get('post_max_size')) ?: PHP_INT_MAX;
+
+// A supporting document that passed validation but could not be saved on
+// the server (missing/unwritable storage folder, failed move).
+class DocumentStoreException extends RuntimeException
+{
+}
+
 function store_uploaded_document(array $file): string
 {
     $dir = PORTAL_ROOT.'/storage/app/public/documents';
-    if (!is_dir($dir)) {
-        mkdir($dir, 0755, true);
+    if (!is_dir($dir) && !@mkdir($dir, 0755, true) && !is_dir($dir)) {
+        throw new DocumentStoreException("the documents folder ({$dir}) does not exist and could not be created");
+    }
+    if (!is_writable($dir)) {
+        throw new DocumentStoreException("the documents folder ({$dir}) is not writable");
     }
     $filename = bin2hex(random_bytes(20)).'.pdf';
-    move_uploaded_file($file['tmp_name'], $dir.'/'.$filename);
+    if (!move_uploaded_file($file['tmp_name'], $dir.'/'.$filename)) {
+        throw new DocumentStoreException("the uploaded file could not be moved into {$dir}");
+    }
 
     return 'documents/'.$filename;
 }
@@ -132,13 +162,14 @@ if ($applicationId) {
     $job = $stmt->fetch();
 
     if (!$job) {
-        http_response_code(404);
+        flash_set('error', 'That job position could not be found. It may have been removed.');
+        header('Location: '.portal_url('jobs.php'));
         exit;
     }
 
     if (!$job->is_open || job_deadline_passed($job->until, $job->until_time)) {
-        http_response_code(403);
-        echo 'This job position is currently closed.';
+        flash_set('error', 'The '.$job->title.' position is already closed and no longer accepts applications.');
+        header('Location: '.portal_url('jobs.php'));
         exit;
     }
 
@@ -165,6 +196,16 @@ $isEdit = $application !== null;
 $errors = new Errors();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // When all the PDFs together exceed post_max_size, PHP silently drops
+    // the whole form (empty $_POST/$_FILES), which would otherwise look
+    // like an expired session. Say what actually happened instead.
+    if (empty($_POST) && empty($_FILES) && (int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
+        flash_set('error', 'Your Supporting Documents together are too big ('.round((int) $_SERVER['CONTENT_LENGTH'] / 1048576, 1)
+            .' MB). The maximum for one submission is '.round($maxSubmissionBytes / 1048576, 1).' MB. Please upload smaller PDFs.');
+        header('Location: '.portal_url('apply.php').'?'.($isEdit ? 'application='.$applicationId : 'job='.$jobId));
+        exit;
+    }
+
     csrf_verify();
 
     $fullName = trim($_POST['full_name'] ?? '');
@@ -262,15 +303,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             continue;
         }
         if ($_FILES[$field]['error'] !== UPLOAD_ERR_OK) {
-            $errors->add($field, "The {$label} failed to upload. Please try again.");
+            $errors->add($field, match ($_FILES[$field]['error']) {
+                UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE => "{$label}: \"{$_FILES[$field]['name']}\" is too big. The maximum is ".round($maxDocumentBytes / 1048576, 1).' MB.',
+                UPLOAD_ERR_PARTIAL => "{$label}: \"{$_FILES[$field]['name']}\" was only partly uploaded. Please choose it again.",
+                default => "{$label}: \"{$_FILES[$field]['name']}\" was not submitted. Please choose it again.",
+            });
             continue;
         }
-        if ($_FILES[$field]['size'] > 10240 * 1024) {
-            $errors->add($field, "The {$label} must not be greater than 10 MB.");
+        if ($_FILES[$field]['size'] > $maxDocumentBytes) {
+            $errors->add($field, "{$label}: \"{$_FILES[$field]['name']}\" is too big (".round($_FILES[$field]['size'] / 1048576, 1).' MB). The maximum is '.round($maxDocumentBytes / 1048576, 1).' MB.');
             continue;
         }
         if (!is_pdf_file($_FILES[$field]['tmp_name'])) {
-            $errors->add($field, "The {$label} must be a PDF file.");
+            $errors->add($field, "{$label}: \"{$_FILES[$field]['name']}\" is not a PDF file.");
         }
     }
 
@@ -283,6 +328,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$errors->any()) {
+        $savingDocument = null;
+        $storedPaths = [];
         try {
             portal_pdo()->beginTransaction();
 
@@ -421,7 +468,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                 }
 
+                $savingDocument = $label;
                 $path = store_uploaded_document($_FILES[$field]);
+                $storedPaths[] = $path;
+                $savingDocument = null;
 
                 portal_insert('application_documents', [
                     'application_id' => $applicationRowId,
@@ -436,9 +486,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (portal_pdo()->inTransaction()) {
                 portal_pdo()->rollBack();
             }
-            error_log('[portal] apply.php save failed: '.$e->getMessage());
+            // Nothing was saved, so don't leave the already-stored PDFs behind.
+            foreach ($storedPaths as $storedPath) {
+                @unlink(PORTAL_ROOT.'/storage/app/public/'.$storedPath);
+            }
+            error_log('[portal] apply.php save failed'.($savingDocument ? " while saving {$savingDocument}" : '').': '.$e);
 
-            flash_set('error', 'The application could not be '.($isEdit ? 'updated' : 'submitted').'. Please try again.');
+            // Tell the applicant what went wrong. Raw server details stay in
+            // storage/logs/laravel.log unless APP_DEBUG is on.
+            $action = $isEdit ? 'updated' : 'submitted';
+            if ($savingDocument !== null) {
+                $message = "{$savingDocument} could not be saved. Please choose the file again and resubmit.";
+            } elseif ($e instanceof PDOException) {
+                $message = "The application could not be {$action} because of a database problem (not your files). Please contact the SDO Albay office.";
+            } else {
+                $message = "The application could not be {$action}. Please try again.";
+            }
+            if ($portalDebug) {
+                $message .= ' (Details: '.$e->getMessage().')';
+            }
+            flash_set('error', $message);
             set_old_input($_POST);
             header('Location: '.portal_url('apply.php').'?'.($isEdit ? 'application='.$applicationId : 'job='.$jobId));
             exit;
@@ -750,7 +817,7 @@ require __DIR__.'/_layout_head.php';
                     <div class="mb-7 border-b border-slate-200 pb-5">
                         <p class="text-xs font-bold uppercase tracking-widest text-government-blue">Section 6</p>
                         <h3 class="mt-2 text-2xl font-black text-government-dark">Supporting Documents</h3>
-                        <p class="mt-2 text-sm text-slate-500">PDF files only. Maximum file size is 10 MB per document.</p>
+                        <p class="mt-2 text-sm text-slate-500">PDF files only. Maximum file size is <?= round($maxDocumentBytes / 1048576, 1) ?> MB per document.</p>
                     </div>
                     <div class="grid gap-5 md:grid-cols-2">
                         <?php foreach (DOCUMENT_FIELDS as $field => $label): $existingDoc = $existingDocuments[$field] ?? null; ?>
@@ -762,15 +829,17 @@ require __DIR__.'/_layout_head.php';
                             <?php endif; ?>
                             <div class="rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 p-5">
                                 <label for="<?= $field ?>" class="mb-3 block font-bold text-government-dark"><?= portal_e($label) ?></label>
-                                <?php if ($existingDoc): ?>
-                                    <p class="mb-3 text-sm text-slate-600">Current file: <a href="<?= portal_url('document.php?path='.urlencode($existingDoc->file_path)) ?>#zoom=100" target="_blank" rel="noopener" class="font-bold text-government-blue hover:underline">View current file</a></p>
-                                <?php endif; ?>
                                 <div class="flex min-w-0 items-center gap-3">
-                                    <button type="button" onclick="document.getElementById('<?= $field ?>').click()" class="shrink-0 rounded-lg bg-government-navy px-4 py-2.5 text-sm font-bold text-white transition hover:bg-government-blue">Choose File</button>
+                                    <button type="button" id="<?= $field ?>-choose-btn" onclick="document.getElementById('<?= $field ?>').click()" class="<?= $existingDoc ? 'hidden ' : '' ?>shrink-0 rounded-lg bg-government-navy px-4 py-2.5 text-sm font-bold text-white transition hover:bg-government-blue">Choose File</button>
                                     <input type="file" id="<?= $field ?>" name="<?= $field ?>" accept=".pdf,application/pdf" onchange="handleDocFileSelect(this)" class="hidden">
+                                    <?php if ($existingDoc): ?>
+                                        <p id="<?= $field ?>-current-file" class="min-w-0 flex-1 truncate text-sm text-slate-600">Current file: <a href="<?= portal_url('document.php?path='.urlencode($existingDoc->file_path)) ?>#zoom=100" target="_blank" rel="noopener" class="font-bold text-government-blue hover:underline">View current file</a></p>
+                                    <?php endif; ?>
                                     <span id="<?= $field ?>-selected-preview" class="hidden min-w-0 flex-1 text-sm"><button type="button" class="doc-selected-preview-trigger block w-full truncate text-left font-bold text-government-blue underline" data-field="<?= $field ?>"></button></span>
+                                    <button type="button" id="<?= $field ?>-replace-btn" onclick="document.getElementById('<?= $field ?>').click()" class="<?= $existingDoc ? '' : 'hidden ' ?>shrink-0 rounded-md border border-government-navy bg-white px-2.5 py-1 text-xs font-bold text-government-navy transition hover:bg-government-light">Replace</button>
                                 </div>
                                 <?php if ($existingDoc): ?><p class="mt-2 text-xs text-slate-500">Leave blank to keep the currently uploaded file.</p><?php endif; ?>
+                                <p id="<?= $field ?>-file-error" class="mt-2 hidden text-sm font-medium text-red-600"></p>
                                 <?php if ($errors->has($field)): ?><p class="mt-2 text-sm font-medium text-red-600"><?= portal_e($errors->first($field)) ?></p><?php endif; ?>
                             </div>
                             <?php if ($field === 'movs'): ?><div class="hidden md:block" aria-hidden="true"></div><?php endif; ?>
@@ -816,6 +885,56 @@ require __DIR__.'/_layout_head.php';
         const frame = document.getElementById('doc-select-preview-modal-frame');
         const fileObjectUrls = {};
 
+        // Checked in the browser so the applicant sees exactly which file is
+        // the problem before anything is sent to the server.
+        const DOC_LABELS = <?= json_encode(DOCUMENT_FIELDS) ?>;
+        const MAX_FILE_BYTES = <?= $maxDocumentBytes ?>;
+        const MAX_TOTAL_BYTES = <?= $maxSubmissionBytes ?>;
+
+        function mb(bytes) { return (bytes / 1048576).toFixed(1) + ' MB'; }
+
+        function isPdfFile(file) {
+            return file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+        }
+
+        function docFileProblem(input) {
+            const file = input.files && input.files[0];
+            if (!file) return '';
+            const label = DOC_LABELS[input.name] || input.name;
+            if (!isPdfFile(file)) return label + ': "' + file.name + '" is not a PDF file. Only PDF files are allowed.';
+            if (file.size > MAX_FILE_BYTES) return label + ': "' + file.name + '" is too big (' + mb(file.size) + '). The maximum is ' + mb(MAX_FILE_BYTES) + '.';
+            return '';
+        }
+
+        function showDocFileError(input) {
+            const el = document.getElementById(input.id + '-file-error');
+            if (!el) return;
+            const problem = docFileProblem(input);
+            el.textContent = problem;
+            el.classList.toggle('hidden', !problem);
+        }
+
+        document.getElementById('applyForm').addEventListener('submit', function (e) {
+            const problems = [];
+            let total = 0;
+            Object.keys(DOC_LABELS).forEach(function (field) {
+                const input = document.getElementById(field);
+                if (!input) return;
+                if (input.files && input.files[0]) showDocFileError(input);
+                const problem = docFileProblem(input);
+                if (problem) problems.push('• ' + problem);
+                if (input.files && input.files[0]) total += input.files[0].size;
+            });
+            if (!problems.length && total > MAX_TOTAL_BYTES) {
+                problems.push('• All your Supporting Documents together are too big (' + mb(total) + '). The maximum for one submission is ' + mb(MAX_TOTAL_BYTES) + '. Please upload smaller PDFs.');
+            }
+            if (problems.length) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                showAlert('These files cannot be submitted:\n' + problems.join('\n'));
+            }
+        });
+
         function openPreview(name, url) {
             titleEl.textContent = name;
             frame.src = url + '#zoom=100';
@@ -832,6 +951,12 @@ require __DIR__.'/_layout_head.php';
         window.handleDocFileSelect = function (input) {
             const wrap = document.getElementById(input.id + '-selected-preview');
             if (!wrap) return;
+            showDocFileError(input);
+            // The picker only lists PDFs, but "All files" can still be chosen
+            // there. Refuse anything else right away so it is never selected;
+            // the error message above stays visible.
+            const chosen = input.files && input.files[0];
+            if (chosen && !isPdfFile(chosen)) input.value = '';
 
             if (fileObjectUrls[input.id]) {
                 URL.revokeObjectURL(fileObjectUrls[input.id]);
@@ -839,6 +964,16 @@ require __DIR__.'/_layout_head.php';
             }
 
             const file = input.files && input.files[0];
+            const chooseBtn = document.getElementById(input.id + '-choose-btn');
+            const replaceBtn = document.getElementById(input.id + '-replace-btn');
+            const currentFile = document.getElementById(input.id + '-current-file');
+            // A file (newly chosen or already uploaded) swaps the big Choose
+            // File button for the file name plus a small Replace button.
+            const hasFile = !!file || !!currentFile;
+            if (chooseBtn) chooseBtn.classList.toggle('hidden', hasFile);
+            if (replaceBtn) replaceBtn.classList.toggle('hidden', !hasFile);
+            if (currentFile) currentFile.classList.toggle('hidden', !!file);
+
             if (!file) {
                 wrap.classList.add('hidden');
                 return;

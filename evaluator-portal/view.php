@@ -30,8 +30,8 @@ $job = $stmt->fetch();
 // Postings the admin evaluates are not visible to evaluator accounts,
 // except applications this evaluator already evaluated.
 if (!eval_can_see_application($applicationId, $job)) {
-    http_response_code(404);
-    require __DIR__.'/_error.php';
+    flash_set('error', 'That application could not be found.');
+    header('Location: '.evaluator_url('applications.php'));
     exit;
 }
 

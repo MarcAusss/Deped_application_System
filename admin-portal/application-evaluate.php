@@ -36,8 +36,8 @@ $job = $stmt->fetch();
 
 // Finalized applications (qualified/disqualified) are no longer evaluated.
 if (!$job || !in_array($application->status, ['pending', 'evaluated', 'excluded'], true)) {
-    http_response_code(403);
-    require __DIR__.'/_error.php';
+    flash_set('error', 'This application is already '.ucfirst($application->status).' and can no longer be evaluated.');
+    header('Location: '.admin_url('applications.php'));
     exit;
 }
 
@@ -75,8 +75,8 @@ if (!$ownedByMe && ($job->evaluated_by ?? 'evaluator') !== 'admin') {
 // must stay editable regardless of the position's current deadline.
 $applicationPeriodEnded = !$job->is_open || admin_job_deadline_passed($job->until, $job->until_time);
 if ($application->status === 'pending' && !$applicationPeriodEnded) {
-    http_response_code(403);
-    require __DIR__.'/_error.php';
+    flash_set('error', 'Evaluation opens after the application period for '.$job->title.' ends.');
+    header('Location: '.admin_url('applications.php'));
     exit;
 }
 

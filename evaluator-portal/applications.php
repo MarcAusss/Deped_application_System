@@ -60,6 +60,9 @@ require __DIR__.'/_layout_head.php';
             <?php if (flash_get('success')): ?>
                 <div class="mb-6 rounded-xl border border-green-200 bg-green-50 p-4 text-green-800"><?= evaluator_e(flash_get('success')) ?></div>
             <?php endif; ?>
+            <?php if (flash_get('error')): ?>
+                <div class="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-red-800"><?= evaluator_e(flash_get('error')) ?></div>
+            <?php endif; ?>
 
             <div class="mb-6 flex flex-wrap items-end justify-between gap-3 border-b border-slate-200 pb-6">
                 <div>

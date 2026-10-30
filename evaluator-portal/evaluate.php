@@ -38,8 +38,8 @@ $job = $stmt->fetch();
 // Postings the admin evaluates are not visible to evaluator accounts,
 // except applications this evaluator already evaluated.
 if (!eval_can_see_application($applicationId, $job)) {
-    http_response_code(404);
-    require __DIR__.'/_error.php';
+    flash_set('error', 'That application could not be found.');
+    header('Location: '.evaluator_url('applications.php'));
     exit;
 }
 
@@ -49,8 +49,8 @@ if (!eval_can_see_application($applicationId, $job)) {
 // must stay editable regardless of the position's current deadline (e.g. it
 // was later reopened/extended).
 if ($application->status === 'pending' && !eval_application_period_ended($job)) {
-    http_response_code(403);
-    require __DIR__.'/_error.php';
+    flash_set('error', 'Evaluation opens after the application period for '.$job->title.' ends.');
+    header('Location: '.evaluator_url('applications.php'));
     exit;
 }
 
@@ -71,8 +71,8 @@ $existingEvaluation = $stmt->fetch();
 // Only an evaluation whose author no longer exists can be taken over.
 if ($existingEvaluation && $existingEvaluation->evaluator_id && (int) $existingEvaluation->evaluator_id !== (int) $user->id
     && $existingEvaluation->evaluator_role !== null) {
-    http_response_code(403);
-    require __DIR__.'/_error.php';
+    flash_set('error', 'This application is already being evaluated by someone else. Only they can edit it.');
+    header('Location: '.evaluator_url('applications.php'));
     exit;
 }
 

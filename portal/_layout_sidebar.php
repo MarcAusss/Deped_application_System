@@ -78,20 +78,23 @@ function nav_link_class(string $page, string $active): string
     <?php endif; ?>
 </aside>
 
-<nav class="flex gap-1 overflow-x-auto border-b border-slate-200 bg-white px-4 py-2 sm:px-6 lg:hidden">
+<nav class="flex gap-0.5 overflow-x-auto border-b border-slate-200 bg-white px-3 py-2 sm:gap-1 sm:px-6 lg:hidden">
     <?php if ($__user): ?>
-        <a href="<?= portal_url('dashboard.php') ?>" class="whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-bold transition <?= $activePage === 'dashboard' ? 'bg-government-light text-government-navy' : 'text-slate-500 hover:text-government-navy' ?>">Dashboard</a>
+        <a href="<?= portal_url('dashboard.php') ?>" class="whitespace-nowrap rounded-lg px-2 py-1.5 text-sm font-bold transition sm:px-3 <?= $activePage === 'dashboard' ? 'bg-government-light text-government-navy' : 'text-slate-500 hover:text-government-navy' ?>">Dashboard</a>
     <?php endif; ?>
 
-    <a href="<?= portal_url('jobs.php') ?>" class="whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-bold transition <?= $activePage === 'jobs' ? 'bg-government-light text-government-navy' : 'text-slate-500 hover:text-government-navy' ?>">Browse Jobs</a>
+    <a href="<?= portal_url('jobs.php') ?>" class="whitespace-nowrap rounded-lg px-2 py-1.5 text-sm font-bold transition sm:px-3 <?= $activePage === 'jobs' ? 'bg-government-light text-government-navy' : 'text-slate-500 hover:text-government-navy' ?>">Browse Jobs</a>
 
     <?php if ($__user): ?>
-        <a href="<?= portal_url('profile.php') ?>" class="whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-bold transition <?= $activePage === 'profile' ? 'bg-government-light text-government-navy' : 'text-slate-500 hover:text-government-navy' ?>">My Profile</a>
+        <a href="<?= portal_url('profile.php') ?>" class="whitespace-nowrap rounded-lg px-2 py-1.5 text-sm font-bold transition sm:px-3 <?= $activePage === 'profile' ? 'bg-government-light text-government-navy' : 'text-slate-500 hover:text-government-navy' ?>">My Profile</a>
 
         <?php if (!$hideLogout): ?>
             <form method="POST" action="<?= portal_url('logout.php') ?>" class="ml-auto">
                 <?= portal_csrf_field() ?>
-                <button type="submit" class="whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-bold text-slate-500 transition hover:text-red-600">Logout</button>
+                <button type="submit" title="Logout" aria-label="Logout" class="flex items-center gap-1.5 whitespace-nowrap rounded-lg px-2 py-1.5 text-sm font-bold text-slate-500 transition hover:text-red-600 sm:px-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" class="h-5 w-5 shrink-0"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" /></svg>
+                    <span class="hidden sm:inline">Logout</span>
+                </button>
             </form>
         <?php endif; ?>
     <?php endif; ?>

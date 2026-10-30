@@ -33,11 +33,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'created_at' => date('Y-m-d H:i:s'),
             ]);
 
-            send_reset_code($applicant->email, $applicant->name, $code);
+            if (send_reset_code($applicant->email, $applicant->name, $code)) {
+                flash_set('status', 'We have emailed a 6-digit verification code to your address.');
+                header('Location: '.portal_url('reset-password.php').'?email='.urlencode($applicant->email));
+                exit;
+            }
 
-            flash_set('status', 'We have emailed a 6-digit verification code to your address.');
-            header('Location: '.portal_url('reset-password.php').'?email='.urlencode($applicant->email));
-            exit;
+            // Don't claim a code was sent when the email failed (details in the log).
+            portal_pdo()->prepare('DELETE FROM applicant_password_reset_tokens WHERE email = ?')->execute([$applicant->email]);
+            $errors->add('email', 'We could not send the verification code right now. Please try again later, or contact the SDO Albay office.');
         }
     }
 

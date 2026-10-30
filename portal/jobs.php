@@ -126,8 +126,22 @@ require __DIR__.'/_layout_head.php';
 
                             <div class="flex items-center border-t border-slate-200 bg-slate-50 p-6 lg:border-l lg:border-t-0">
                                 <div class="w-full">
-                                    <p class="text-sm leading-6 text-slate-600">Complete the application form and upload the required PDF documents.</p>
-                                    <a href="<?= portal_url('apply.php?job='.$job->id) ?>" class="mt-5 inline-flex w-full items-center justify-center rounded-xl bg-government-navy px-5 py-3.5 font-bold text-white transition hover:bg-government-blue">
+                                    <?php $requirements = array_filter([
+                                        'Education Requirement' => trim((string) ($job->education_requirement ?? '')),
+                                        'Training Requirement' => trim((string) ($job->training_requirement ?? '')),
+                                        'Experience Requirement' => trim((string) ($job->experience_requirement ?? '')),
+                                    ], 'strlen'); ?>
+                                    <?php if ($requirements): ?>
+                                        <dl class="mb-5 space-y-3 text-sm">
+                                            <?php foreach ($requirements as $label => $text): ?>
+                                                <div>
+                                                    <dt class="text-xs font-bold uppercase tracking-wide text-government-blue"><?= $label ?></dt>
+                                                    <dd class="mt-0.5 whitespace-pre-line break-words leading-6 text-slate-700"><?= portal_e($text) ?></dd>
+                                                </div>
+                                            <?php endforeach; ?>
+                                        </dl>
+                                    <?php endif; ?>
+                                    <a href="<?= portal_url('apply.php?job='.$job->id) ?>" class="inline-flex w-full items-center justify-center rounded-xl bg-government-navy px-5 py-3.5 font-bold text-white transition hover:bg-government-blue">
                                         View Details &amp; Apply
                                     </a>
                                 </div>
