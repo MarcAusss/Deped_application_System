@@ -25,6 +25,7 @@ $fromPage = $_GET['from'] ?? '';
 $returnDestinations = [
     'job-postings' => ['url' => admin_url('job-postings.php'), 'label' => 'Job Postings'],
     'publication-of-vacancy' => ['url' => admin_url('publication-of-vacancy.php'), 'label' => 'Publication of Vacancy'],
+    'closed-job-postings' => ['url' => admin_url('closed-job-postings.php'), 'label' => 'Closed Postings'],
 ];
 $returnTo = $returnDestinations[$fromPage] ?? ['url' => admin_url('job-positions.php'), 'label' => 'Job Positions'];
 

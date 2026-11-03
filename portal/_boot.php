@@ -85,6 +85,13 @@ if (!$portalDebug) {
     });
 }
 
+// The application form (apply.php) is long — personal info, education,
+// experience, multiple document uploads — and a server's default session
+// lifetime (commonly ~24 minutes of inactivity) can expire mid-fill-out,
+// silently discarding everything the applicant typed. Must be set before
+// session_start() to take effect for this session.
+ini_set('session.gc_maxlifetime', 3600);
+
 session_name('depedcares_portal_sess');
 session_set_cookie_params([
     'lifetime' => 0,

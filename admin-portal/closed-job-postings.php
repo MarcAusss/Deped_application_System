@@ -5,12 +5,14 @@ require __DIR__.'/_boot.php';
 admin_require_login();
 $pdo = portal_pdo();
 
-$postings = $pdo->query(
+$stmt = $pdo->prepare(
     "SELECT * FROM job_positions
      WHERE posted_at IS NOT NULL
-       AND (is_open = 0 OR (`until` IS NOT NULL AND TIMESTAMP(`until`, COALESCE(until_time, '23:59:59')) < NOW()))
+       AND (is_open = 0 OR (`until` IS NOT NULL AND TIMESTAMP(`until`, COALESCE(until_time, '23:59:59')) < ?))
      ORDER BY updated_at DESC"
-)->fetchAll();
+);
+$stmt->execute([portal_now()]);
+$postings = $stmt->fetchAll();
 
 $pageTitle = 'Closed Postings | Administration';
 require __DIR__.'/_layout_head.php';
@@ -78,6 +80,8 @@ require __DIR__.'/_layout_head.php';
                                         <?php endif; ?>
                                     </td>
                                     <td class="px-4 py-3 text-center">
+                                        <a href="<?= admin_url('job-position-edit.php?id='.$p->id.'&from=closed-job-postings') ?>" class="font-bold text-admin-indigo hover:underline">Edit</a>
+                                        <span class="text-slate-300">|</span>
                                         <button type="button" class="repost-trigger font-bold text-admin-indigo hover:underline" data-id="<?= $p->id ?>">Repost</button>
                                     </td>
                                 </tr>

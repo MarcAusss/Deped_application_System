@@ -2,12 +2,13 @@
 define('PORTAL_BOOTED', true);
 require __DIR__.'/_boot.php';
 
-$stmt = portal_pdo()->query(
+$stmt = portal_pdo()->prepare(
     "SELECT * FROM job_positions
      WHERE is_open = 1
-       AND (until IS NULL OR TIMESTAMP(until, COALESCE(until_time, '23:59:59')) >= NOW())
+       AND (until IS NULL OR TIMESTAMP(until, COALESCE(until_time, '23:59:59')) >= ?)
      ORDER BY created_at DESC"
 );
+$stmt->execute([portal_now()]);
 $jobs = $stmt->fetchAll();
 
 function job_paths(?string $json): array

@@ -37,13 +37,15 @@ function nav_link_class(string $page, string $active): string
             </a>
         <?php else: ?>
             <?php
-                $__openJobs = portal_pdo()->query(
+                $__openJobsStmt = portal_pdo()->prepare(
                     "SELECT id, title FROM job_positions
                      WHERE is_open = 1
-                       AND (until IS NULL OR TIMESTAMP(until, COALESCE(until_time, '23:59:59')) >= NOW())
+                       AND (until IS NULL OR TIMESTAMP(until, COALESCE(until_time, '23:59:59')) >= ?)
                      ORDER BY created_at DESC
                      LIMIT 8"
-                )->fetchAll();
+                );
+                $__openJobsStmt->execute([portal_now()]);
+                $__openJobs = $__openJobsStmt->fetchAll();
             ?>
 
             <p class="sidebar-label mt-4 px-3 text-xs font-bold uppercase tracking-widest text-white/70">Open Positions</p>

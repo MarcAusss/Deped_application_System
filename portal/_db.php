@@ -6,6 +6,19 @@ if (!defined('PORTAL_BOOTED')) {
 }
 
 /**
+ * The current time, as a 'Y-m-d H:i:s' string in the app's own timezone
+ * (Asia/Manila, set in _boot.php). Use this instead of SQL's NOW() for any
+ * deadline comparison — NOW() reflects the DATABASE SERVER's configured
+ * timezone, which silently defaults to UTC on many hosts and would make a
+ * posting's deadline stay "open" up to 8 extra hours past its real local
+ * cutoff on a server where that wasn't set to match.
+ */
+function portal_now(): string
+{
+    return date('Y-m-d H:i:s');
+}
+
+/**
  * PDO connection + a couple of tiny helpers, built once per request.
  * No ORM by design (Phase 1 of the pure-PHP rewrite) — every query in this
  * portal is a hand-written prepared statement.
@@ -106,6 +119,56 @@ function portal_ensure_schema(PDO $pdo, string $database): void
                 CONSTRAINT `job_position_assigned_evaluators_job_position_id_foreign` FOREIGN KEY (`job_position_id`) REFERENCES `job_positions` (`id`) ON DELETE CASCADE,
                 CONSTRAINT `job_position_assigned_evaluators_evaluator_user_id_foreign` FOREIGN KEY (`evaluator_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+        }
+    });
+
+    portal_apply_migration_once($pdo, $database, $storageDir.'/.schema_migrated_2026_10_29_throttle', function (PDO $pdo, string $database) {
+        // Each portal's login-throttle table is independent (see portal/login.php,
+        // evaluator-portal/login.php, admin-portal/login.php) — a database built
+        // from a partial export can easily end up with some but not all three.
+        $existing = $pdo->prepare(
+            "SELECT table_name FROM information_schema.tables WHERE table_schema = ?
+               AND table_name IN ('portal_login_throttle', 'evaluator_login_throttle', 'admin_login_throttle')"
+        );
+        $existing->execute([$database]);
+        $have = $existing->fetchAll(PDO::FETCH_COLUMN);
+
+        foreach (['portal_login_throttle', 'evaluator_login_throttle', 'admin_login_throttle'] as $table) {
+            if (in_array($table, $have, true)) {
+                continue;
+            }
+
+            $pdo->exec("CREATE TABLE `$table` (
+                `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                `throttle_key` VARCHAR(191) NOT NULL,
+                `attempts` INT UNSIGNED NOT NULL DEFAULT 0,
+                `locked_until` DATETIME NULL DEFAULT NULL,
+                `lockout_level` INT UNSIGNED NOT NULL DEFAULT 0,
+                `lockout_level_expires_at` DATETIME NULL DEFAULT NULL,
+                `updated_at` DATETIME NOT NULL,
+                PRIMARY KEY (`id`),
+                UNIQUE KEY `{$table}_throttle_key_unique` (`throttle_key`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+        }
+    });
+
+    portal_apply_migration_once($pdo, $database, $storageDir.'/.schema_migrated_2026_11_03_evaluator_id_nullable', function (PDO $pdo, string $database) {
+        // Opening an application for evaluation (admin-portal/application-evaluate.php,
+        // evaluator-portal/evaluate.php) inserts an application_evaluations row
+        // WITHOUT evaluator_id yet — the claim is only set later, when something
+        // is actually saved. A database where this column ended up NOT NULL
+        // (no default) makes that very first insert fatal. Nullable + NULL
+        // default is the only correct shape here, so force it regardless of
+        // whatever the column currently is.
+        $col = $pdo->prepare(
+            "SELECT is_nullable FROM information_schema.columns
+             WHERE table_schema = ? AND table_name = 'application_evaluations' AND column_name = 'evaluator_id'"
+        );
+        $col->execute([$database]);
+        $isNullable = $col->fetchColumn();
+
+        if ($isNullable === 'NO') {
+            $pdo->exec("ALTER TABLE `application_evaluations` MODIFY COLUMN `evaluator_id` BIGINT UNSIGNED NULL DEFAULT NULL");
         }
     });
 }

@@ -5,12 +5,14 @@ require __DIR__.'/_boot.php';
 admin_require_login();
 $pdo = portal_pdo();
 
-$postings = $pdo->query(
+$postingsStmt = $pdo->prepare(
     "SELECT * FROM job_positions
      WHERE is_open = 1
-       AND (`until` IS NULL OR TIMESTAMP(`until`, COALESCE(until_time, '23:59:59')) >= NOW())
+       AND (`until` IS NULL OR TIMESTAMP(`until`, COALESCE(until_time, '23:59:59')) >= ?)
      ORDER BY created_at DESC"
-)->fetchAll();
+);
+$postingsStmt->execute([portal_now()]);
+$postings = $postingsStmt->fetchAll();
 
 $allPositions = $pdo->query('SELECT * FROM job_positions ORDER BY title')->fetchAll();
 

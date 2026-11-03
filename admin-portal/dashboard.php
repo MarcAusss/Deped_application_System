@@ -13,11 +13,13 @@ $pendingCount = (int) $pdo->query("SELECT COUNT(*) FROM applications WHERE statu
 $approvalCount = (int) $pdo->query("SELECT COUNT(*) FROM applications WHERE status IN ('evaluated', 'excluded')")->fetchColumn();
 // Matches jobs.php's own WHERE clause — a stale is_open=1 row whose deadline
 // has already passed must not count as "open" here either.
-$openPositionCount = (int) $pdo->query(
+$openPositionStmt = $pdo->prepare(
     "SELECT COUNT(*) FROM job_positions
      WHERE is_open = 1
-       AND (until IS NULL OR TIMESTAMP(until, COALESCE(until_time, '23:59:59')) >= NOW())"
-)->fetchColumn();
+       AND (until IS NULL OR TIMESTAMP(until, COALESCE(until_time, '23:59:59')) >= ?)"
+);
+$openPositionStmt->execute([portal_now()]);
+$openPositionCount = (int) $openPositionStmt->fetchColumn();
 
 $evaluatorCount = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'evaluator'")->fetchColumn();
 $totalApplicants = (int) $pdo->query('SELECT COUNT(*) FROM applications')->fetchColumn();
