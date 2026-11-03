@@ -8,28 +8,40 @@ if (!defined('PORTAL_BOOTED')) {
 use PHPMailer\PHPMailer\PHPMailer;
 
 /**
- * Build a PHPMailer instance wired to the same SMTP settings Laravel's
- * .env already defines (MAIL_HOST/MAIL_PORT/MAIL_USERNAME/MAIL_PASSWORD),
- * so the portal sends through the exact same mail account.
+ * Build a PHPMailer instance wired to the same mail settings Laravel's
+ * .env already defines (MAIL_MAILER/MAIL_HOST/MAIL_PORT/MAIL_USERNAME/
+ * MAIL_PASSWORD), so the portal sends through the exact same mail account.
+ *
+ * MAIL_MAILER=sendmail (or 'mail') hands off to the server's own local
+ * mail transfer agent directly via PHP's mail() — no network socket at
+ * all, which is the standard, more reliable way to send from shared
+ * hosting than guessing at a local SMTP port (25 is commonly blocked even
+ * for localhost; many hosts expect 26 instead, if SMTP is used at all).
+ * Anything else (including the default) uses real SMTP.
  */
 function portal_mailer(): PHPMailer
 {
     $mail = new PHPMailer(true);
-    $mail->isSMTP();
-    $mail->Host = portal_env('MAIL_HOST', '127.0.0.1');
-    $mail->Port = (int) portal_env('MAIL_PORT', 587);
-    $mail->SMTPAuth = portal_env('MAIL_USERNAME') !== null && portal_env('MAIL_USERNAME') !== '';
-    $mail->Username = portal_env('MAIL_USERNAME');
-    $mail->Password = portal_env('MAIL_PASSWORD');
-    // Give up after 15s instead of PHPMailer's 5 minutes, so a mail server
-    // problem never leaves an applicant waiting on Submit.
-    $mail->Timeout = 15;
 
-    $scheme = portal_env('MAIL_SCHEME') ?: portal_env('MAIL_ENCRYPTION');
-    if ($scheme === 'tls' || (int) $mail->Port === 587) {
-        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-    } elseif ($scheme === 'ssl' || (int) $mail->Port === 465) {
-        $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+    if (in_array(portal_env('MAIL_MAILER', 'smtp'), ['sendmail', 'mail'], true)) {
+        $mail->isMail();
+    } else {
+        $mail->isSMTP();
+        $mail->Host = portal_env('MAIL_HOST', '127.0.0.1');
+        $mail->Port = (int) portal_env('MAIL_PORT', 587);
+        $mail->SMTPAuth = portal_env('MAIL_USERNAME') !== null && portal_env('MAIL_USERNAME') !== '';
+        $mail->Username = portal_env('MAIL_USERNAME');
+        $mail->Password = portal_env('MAIL_PASSWORD');
+        // Give up after 15s instead of PHPMailer's 5 minutes, so a mail server
+        // problem never leaves an applicant waiting on Submit.
+        $mail->Timeout = 15;
+
+        $scheme = portal_env('MAIL_SCHEME') ?: portal_env('MAIL_ENCRYPTION');
+        if ($scheme === 'tls' || (int) $mail->Port === 587) {
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        } elseif ($scheme === 'ssl' || (int) $mail->Port === 465) {
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+        }
     }
 
     $mail->CharSet = 'UTF-8';
