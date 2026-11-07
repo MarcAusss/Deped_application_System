@@ -81,9 +81,9 @@ if ($relativePath === null) {
 }
 
 $pdo->prepare(
-    'INSERT INTO application_documents (application_id, type, file_path, created_at, updated_at)
-     VALUES (?, ?, ?, NOW(), NOW())'
-)->execute([$applicationId, $type, $relativePath]);
+    'INSERT INTO application_documents (application_id, type, file_path, original_name, created_at, updated_at)
+     VALUES (?, ?, ?, ?, NOW(), NOW())'
+)->execute([$applicationId, $type, $relativePath, mb_substr(basename((string) $_FILES['file']['name']), 0, 255)]);
 
 flash_set('success', 'Document uploaded.');
 header('Location: '.$redirect);

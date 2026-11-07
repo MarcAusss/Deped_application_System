@@ -477,6 +477,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'application_id' => $applicationRowId,
                     'type' => $field,
                     'file_path' => $path,
+                    // Some databases have this column as NOT NULL with no default.
+                    'original_name' => mb_substr(basename((string) $_FILES[$field]['name']), 0, 255),
                     'created_at' => $now, 'updated_at' => $now,
                 ]);
             }
@@ -1244,7 +1246,9 @@ require __DIR__.'/_layout_head.php';
         function serializeFormDraft() {
             const data = {};
             Array.from(form.elements).forEach(function (el) {
-                if (!el.name || el.type === 'file' || el.disabled) return;
+                // The security token belongs to the current session, so it must
+                // never be saved: restoring an old one fails every submit.
+                if (!el.name || el.name === '_csrf_token' || el.type === 'file' || el.disabled) return;
                 if (el.type === 'checkbox' || el.type === 'radio') {
                     if (el.checked) data[el.name] = el.value || '1';
                     return;
@@ -1313,6 +1317,8 @@ require __DIR__.'/_layout_head.php';
             });
 
             Object.keys(data).forEach(function (name) {
+                // Drafts saved before the token was excluded may still hold one.
+                if (name === '_csrf_token') return;
                 const el = form.querySelector('[name="' + name.replace(/"/g, '\\"') + '"]');
                 if (!el) return;
                 if (el.type === 'checkbox' || el.type === 'radio') el.checked = true;

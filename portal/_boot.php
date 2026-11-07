@@ -90,7 +90,16 @@ if (!$portalDebug) {
 // lifetime (commonly ~24 minutes of inactivity) can expire mid-fill-out,
 // silently discarding everything the applicant typed. Must be set before
 // session_start() to take effect for this session.
-ini_set('session.gc_maxlifetime', 3600);
+// SESSION_LIFETIME in .env is in minutes; without it, 1 hour. Sessions get
+// their own folder because a shared host's cleanup of its common folder
+// would ignore this setting.
+$sessionDir = PORTAL_ROOT.'/storage/framework/sessions';
+if (is_dir($sessionDir) || @mkdir($sessionDir, 0700, true)) {
+    session_save_path($sessionDir);
+}
+ini_set('session.gc_maxlifetime', (string) (max(1, (int) portal_env('SESSION_LIFETIME', 60)) * 60));
+ini_set('session.gc_probability', '1');
+ini_set('session.gc_divisor', '100');
 
 session_name('depedcares_portal_sess');
 session_set_cookie_params([

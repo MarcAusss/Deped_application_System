@@ -21,6 +21,7 @@
 /public/storage
 /storage/*.key
 /storage/.schema_migrated_*
+/storage/framework/sessions/
 /storage/pail
 /vendor
 Homestead.json
