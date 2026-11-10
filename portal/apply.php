@@ -21,6 +21,27 @@ function job_editing_window_closed(?object $job): bool
     return !$job || !((bool) $job->is_open) || job_deadline_passed($job->until, $job->until_time);
 }
 
+/**
+ * Turns a raw save-failure exception into something an applicant can
+ * actually act on, without the old blanket "system problem, contact the
+ * office" wrapper or raw SQLSTATE text. Falls back to a short, plain
+ * message for anything that doesn't match a known pattern.
+ */
+function apply_friendly_save_error(\Throwable $e): string
+{
+    $raw = $e->getMessage();
+
+    if (preg_match("/Data too long for column '([^']+)'/", $raw, $m)) {
+        return 'One of your entries is too long. Please shorten it and try again.';
+    }
+
+    if ($e instanceof PDOException) {
+        return 'We could not save your application. Please check your entries and try again.';
+    }
+
+    return 'Something went wrong while saving. Please try again.';
+}
+
 function has_entered_data(array $row): bool
 {
     foreach ($row as $key => $value) {
@@ -267,7 +288,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!v_present($yearGraduated)) { $errors->add("education.{$i}.year_graduated", 'The year graduated field is required.'); }
     }
 
+    foreach ($experienceRows as $i => $row) {
+        $title = trim($row['title'] ?? '');
+        if ($title !== '' && !v_max($title, 255)) {
+            $errors->add("experience.{$i}.title", 'The position title must not exceed 255 characters.');
+        }
+    }
+
     foreach ($trainingRows as $i => $row) {
+        $title = trim($row['title'] ?? '');
+        if ($title !== '' && !v_max($title, 255)) {
+            $errors->add("training.{$i}.title", 'The training/seminar title must not exceed 255 characters.');
+        }
         foreach (['training_date', 'training_end_date'] as $dateField) {
             $value = $row[$dateField] ?? '';
             if ($value !== '' && (!v_date($value) || !v_date_before_or_equal_today($value))) {
@@ -494,18 +526,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             error_log('[portal] apply.php save failed'.($savingDocument ? " while saving {$savingDocument}" : '').': '.$e);
 
-            // Tell the applicant what went wrong. Raw server details stay in
-            // storage/logs/laravel.log unless APP_DEBUG is on.
-            $action = $isEdit ? 'updated' : 'submitted';
+            // A short, plain message the applicant can act on — not raw
+            // SQLSTATE text, and not a generic "system problem" wrapper.
             if ($savingDocument !== null) {
                 $message = "{$savingDocument} could not be saved. Please choose the file again and resubmit.";
-            } elseif ($e instanceof PDOException) {
-                $message = "The application could not be {$action} because of a database problem (not your files). Please contact the SDO Albay office.";
             } else {
-                $message = "The application could not be {$action}. Please try again.";
-            }
-            if ($portalDebug) {
-                $message .= ' (Details: '.$e->getMessage().')';
+                $message = apply_friendly_save_error($e);
             }
             flash_set('error', $message);
             set_old_input($_POST);
@@ -737,7 +763,7 @@ require __DIR__.'/_layout_head.php';
                                     <button type="button" onclick="removeEntry(this)" class="text-sm font-bold text-red-600 hover:text-red-800">Remove</button>
                                 </div>
                                 <div class="grid gap-4 md:grid-cols-2">
-                                    <input type="text" name="experience[<?= $i ?>][title]" placeholder="Position title" value="<?= portal_e($experience['title'] ?? '') ?>" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-green-100">
+                                    <input type="text" name="experience[<?= $i ?>][title]" placeholder="Position title" maxlength="255" value="<?= portal_e($experience['title'] ?? '') ?>" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-green-100">
                                     <input type="text" name="experience[<?= $i ?>][company]" placeholder="Company or agency" value="<?= portal_e($experience['company'] ?? '') ?>" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-green-100">
                                     <input type="text" name="experience[<?= $i ?>][first_day]" placeholder="First Day of Service (Month and Year)" value="<?= portal_e($experience['first_day'] ?? '') ?>" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-green-100">
                                     <input type="text" name="experience[<?= $i ?>][last_day]" placeholder="Last Day of Service (Month and Year)" value="<?= portal_e($experience['last_day'] ?? '') ?>" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-green-100">
@@ -761,7 +787,7 @@ require __DIR__.'/_layout_head.php';
                                     <button type="button" onclick="removeEntry(this)" class="text-sm font-bold text-red-600 hover:text-red-800">Remove</button>
                                 </div>
                                 <div class="grid gap-4 md:grid-cols-2">
-                                    <input type="text" name="training[<?= $i ?>][title]" placeholder="Training or seminar title" value="<?= portal_e($training['title'] ?? '') ?>" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-green-100">
+                                    <input type="text" name="training[<?= $i ?>][title]" placeholder="Training or seminar title" maxlength="255" value="<?= portal_e($training['title'] ?? '') ?>" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-green-100">
                                     <input type="number" min="0" step="1" name="training[<?= $i ?>][hours]" placeholder="Number of hours" value="<?= portal_e((string) ($training['hours'] ?? '')) ?>" class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-government-blue focus:ring-4 focus:ring-green-100">
                                     <div class="md:col-span-2">
                                         <label class="mb-2 block text-sm font-bold text-government-dark">Start of Training</label>

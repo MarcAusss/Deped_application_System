@@ -10,7 +10,43 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Worksheet\MemoryDrawing;
 use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
+
+/**
+ * The DepEd wordmark and SDO Albay seal as GD resources, loaded once per
+ * request and reused across every worksheet — PhpSpreadsheet embeds
+ * drawings by reading pixel data from the resource, so sharing one
+ * read-only instance across sheets is safe and avoids re-decoding the
+ * source files per position group.
+ */
+function ier_deped_logo_resource(): \GdImage|false
+{
+    static $resource = null;
+    static $loaded = false;
+
+    if (!$loaded) {
+        $loaded = true;
+        $path = (defined('PORTAL_ROOT') ? PORTAL_ROOT : dirname(__DIR__)).'/images/Department_of_Education_(DepEd).svg.webp';
+        $resource = is_file($path) ? @imagecreatefromwebp($path) : false;
+    }
+
+    return $resource;
+}
+
+function ier_sdo_albay_logo_resource(): \GdImage|false
+{
+    static $resource = null;
+    static $loaded = false;
+
+    if (!$loaded) {
+        $loaded = true;
+        $path = (defined('PORTAL_ROOT') ? PORTAL_ROOT : dirname(__DIR__)).'/images/depedalbay.png';
+        $resource = is_file($path) ? @imagecreatefrompng($path) : false;
+    }
+
+    return $resource;
+}
 
 /**
  * Resolve the set of application IDs an IER preview/export request targets —
@@ -227,6 +263,36 @@ function ier_build_sheet(Spreadsheet $spreadsheet, ?object $position, array $app
     $sheet->freezePane('A'.IER_DATA_START_ROW);
     $sheet->setSelectedCell('A1');
 
+    $logoResource = ier_deped_logo_resource();
+    if ($logoResource !== false) {
+        $drawing = new MemoryDrawing();
+        $drawing->setName('DepEd');
+        $drawing->setImageResource($logoResource);
+        $drawing->setRenderingFunction(MemoryDrawing::RENDERING_PNG);
+        $drawing->setMimeType(MemoryDrawing::MIMETYPE_PNG);
+        $drawing->setHeight(34);
+        $drawing->setResizeProportional(true);
+        $drawing->setCoordinates('R1');
+        $drawing->setOffsetX(5);
+        $drawing->setOffsetY(2);
+        $drawing->setWorksheet($sheet);
+    }
+
+    $albayLogoResource = ier_sdo_albay_logo_resource();
+    if ($albayLogoResource !== false) {
+        $albayDrawing = new MemoryDrawing();
+        $albayDrawing->setName('SDO Albay');
+        $albayDrawing->setImageResource($albayLogoResource);
+        $albayDrawing->setRenderingFunction(MemoryDrawing::RENDERING_PNG);
+        $albayDrawing->setMimeType(MemoryDrawing::MIMETYPE_PNG);
+        $albayDrawing->setHeight(34);
+        $albayDrawing->setResizeProportional(true);
+        $albayDrawing->setCoordinates('Q1');
+        $albayDrawing->setOffsetX(5);
+        $albayDrawing->setOffsetY(2);
+        $albayDrawing->setWorksheet($sheet);
+    }
+
     $sheet->getStyle("A1:S{$lastRow}")->getFont()->setName('Arial')->setSize(8);
 
     // System green (#16402B dark, #1E6B42 primary); borders stay black for printing.
@@ -281,17 +347,46 @@ function ier_build_sheet(Spreadsheet $spreadsheet, ?object $position, array $app
         $sheet->getColumnDimension($col)->setWidth($width);
     }
 
+    // Signatory block under the table: label flush left, then the printed
+    // name (underlined, standing in for the signature line) and designation
+    // centered under it — matching the preview's narrow centered block.
+    // A:D (~22% of the A:S table width) mirrors the preview's w-72 box,
+    // which is ~21% of its table's width, so the two line up visually.
+    $sigLabelRow = $lastRow + 2;
+    $sigNameRow = $sigLabelRow + 1;
+    $sigTitleRow = $sigNameRow + 1;
+
+    $sheet->setCellValue("A{$sigLabelRow}", 'Certified Correct:');
+    $sheet->mergeCells("A{$sigLabelRow}:D{$sigLabelRow}");
+    $sheet->getStyle("A{$sigLabelRow}")->getFont()->setBold(true)->setSize(9)->getColor()->setARGB('FF16402B');
+
+    $sheet->setCellValue("A{$sigNameRow}", 'MARIANNE B. BUSTAMANTE');
+    $sheet->mergeCells("A{$sigNameRow}:D{$sigNameRow}");
+    $sheet->getStyle("A{$sigNameRow}")->getFont()->setBold(true)->setSize(9)->getColor()->setARGB('FF16402B');
+    $sheet->getStyle("A{$sigNameRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+    $sheet->getStyle("A{$sigNameRow}")->getBorders()->getBottom()->applyFromArray(['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => 'FF000000']]);
+
+    $sheet->setCellValue("A{$sigTitleRow}", 'AO IV - HRMO');
+    $sheet->mergeCells("A{$sigTitleRow}:D{$sigTitleRow}");
+    $sheet->getStyle("A{$sigTitleRow}")->getFont()->setSize(8);
+    $sheet->getStyle("A{$sigTitleRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
     $pageSetup = $sheet->getPageSetup();
     $pageSetup->setOrientation(PageSetup::ORIENTATION_LANDSCAPE);
     $pageSetup->setPaperSize(PageSetup::PAPERSIZE_A3);
     $pageSetup->setFitToWidth(1);
     $pageSetup->setFitToHeight(0);
     $pageSetup->setRowsToRepeatAtTopByStartAndEnd(IER_HEADER_START_ROW, IER_DATA_START_ROW - 1);
-    $pageSetup->setPrintArea("A1:S{$lastRow}");
+    $pageSetup->setPrintArea("A1:S{$sigTitleRow}");
     $pageSetup->setHorizontalCentered(true);
 
     $sheet->getPageMargins()->setTop(0.35)->setRight(0.20)->setBottom(0.35)->setLeft(0.20)->setHeader(0.10)->setFooter(0.15);
     $sheet->getHeaderFooter()->setOddFooter('&LInitial Evaluation Result&CPage &P of &N&R'.$sheetTitle);
+
+    // Re-assert the selected cell: mergeCells() silently moves it to the
+    // last merged range, so without this the file opens with a cell
+    // selected inside the signature block instead of at the top.
+    $sheet->setSelectedCell('A1');
 
     return $sheet;
 }

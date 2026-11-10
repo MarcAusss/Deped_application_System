@@ -58,6 +58,21 @@ function asset_url(string $path): string
 require PORTAL_ROOT.'/portal/_db.php';
 require PORTAL_ROOT.'/portal/_validate.php';
 
+// Own sessions folder + extended lifetime, matching admin-portal/_boot.php
+// and evaluator-portal/_boot.php exactly. session_save_path() applies to
+// every session_start() for the rest of this request, including the portal
+// session staff_start_portal_session() switches to below — without this,
+// that session gets written to PHP's default save location while the
+// target dashboard (via its own _boot.php) looks for it here, making a
+// successful login appear logged-out the moment it redirects.
+$sessionDir = PORTAL_ROOT.'/storage/framework/sessions';
+if (is_dir($sessionDir) || @mkdir($sessionDir, 0700, true)) {
+    session_save_path($sessionDir);
+}
+ini_set('session.gc_maxlifetime', (string) (max(1, (int) portal_env('SESSION_LIFETIME', 180)) * 60));
+ini_set('session.gc_probability', '1');
+ini_set('session.gc_divisor', '100');
+
 // A session scoped to this page only — holds the CSRF token, throttle
 // state, and flashed errors during the login attempt itself. Once a role is
 // confirmed below, this is closed in favor of that portal's own session.

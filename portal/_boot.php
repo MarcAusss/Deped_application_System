@@ -97,7 +97,7 @@ $sessionDir = PORTAL_ROOT.'/storage/framework/sessions';
 if (is_dir($sessionDir) || @mkdir($sessionDir, 0700, true)) {
     session_save_path($sessionDir);
 }
-ini_set('session.gc_maxlifetime', (string) (max(1, (int) portal_env('SESSION_LIFETIME', 60)) * 60));
+ini_set('session.gc_maxlifetime', (string) (max(1, (int) portal_env('SESSION_LIFETIME', 180)) * 60));
 ini_set('session.gc_probability', '1');
 ini_set('session.gc_divisor', '100');
 

@@ -85,7 +85,11 @@ require __DIR__.'/_layout_head.php';
                 $total = count($group['applications']);
                 $previewRows = array_slice($group['applications'], 0, 10);
             ?>
-                <article class="mb-8 rounded-lg border border-slate-300 bg-white p-6 shadow-lg">
+                <article class="relative mb-8 rounded-lg border border-slate-300 bg-white p-6 shadow-lg">
+                    <div class="absolute right-6 top-6 flex items-center gap-2">
+                        <img src="<?= asset_url('images/depedalbay.png') ?>" alt="SDO Albay" class="h-10 w-10 object-contain">
+                        <img src="<?= asset_url('images/Department_of_Education_(DepEd).svg.webp') ?>" alt="DepEd" class="h-8 w-auto">
+                    </div>
                     <h3 class="mb-4 text-center text-lg font-black text-admin-indigoDark">INITIAL EVALUATION RESULT (IER)</h3>
 
                     <table class="mb-4 w-full table-fixed border-collapse text-xs">
@@ -167,6 +171,14 @@ require __DIR__.'/_layout_head.php';
                     <div class="mt-2 flex items-center justify-between text-xs text-slate-500">
                         <span>Position: <strong class="text-[#16402B]"><?= admin_e($summary['position'] ?: 'Unassigned') ?></strong></span>
                         <span>Previewing <strong class="text-[#16402B]"><?= count($previewRows) ?></strong> of <strong class="text-[#16402B]"><?= $total ?></strong> record(s)</span>
+                    </div>
+
+                    <div class="mt-6 flex justify-start">
+                        <div class="w-72 text-center">
+                            <p class="mb-6 text-left text-xs font-bold text-[#16402B]">Certified Correct:</p>
+                            <p class="border-b border-slate-500 pb-1 text-xs font-black uppercase text-[#16402B]">Marianne B. Bustamante</p>
+                            <p class="mt-1 text-[11px] text-slate-600">AO IV - HRMO</p>
+                        </div>
                     </div>
                 </article>
             <?php endforeach; ?>

@@ -171,6 +171,32 @@ function portal_ensure_schema(PDO $pdo, string $database): void
             $pdo->exec("ALTER TABLE `application_evaluations` MODIFY COLUMN `evaluator_id` BIGINT UNSIGNED NULL DEFAULT NULL");
         }
     });
+
+    portal_apply_migration_once($pdo, $database, $storageDir.'/.schema_migrated_2026_11_09_assigned_evaluators_autoincrement', function (PDO $pdo, string $database) {
+        // admin_sync_assigned_evaluators() inserts job_position_id/evaluator_user_id/
+        // created_at only, relying on `id` to auto-generate itself — a table whose
+        // `id` ended up without AUTO_INCREMENT makes every one of those inserts
+        // fatal with "Field 'id' doesn't have a default value".
+        $hasTable = $pdo->prepare(
+            "SELECT 1 FROM information_schema.tables WHERE table_schema = ? AND table_name = 'job_position_assigned_evaluators'"
+        );
+        $hasTable->execute([$database]);
+
+        if (!$hasTable->fetchColumn()) {
+            return;
+        }
+
+        $col = $pdo->prepare(
+            "SELECT extra FROM information_schema.columns
+             WHERE table_schema = ? AND table_name = 'job_position_assigned_evaluators' AND column_name = 'id'"
+        );
+        $col->execute([$database]);
+        $extra = (string) $col->fetchColumn();
+
+        if (stripos($extra, 'auto_increment') === false) {
+            $pdo->exec("ALTER TABLE `job_position_assigned_evaluators` MODIFY COLUMN `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT");
+        }
+    });
 }
 
 /** Runs $apply once per $marker file, swallowing failures (see portal_ensure_schema()). */

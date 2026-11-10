@@ -87,6 +87,19 @@ if (!$portalDebug) {
     });
 }
 
+// Own sessions folder + extended lifetime, same reasoning as Phase 1's
+// portal/_boot.php: PHP's bare defaults (often a shared /tmp save path and
+// a ~24-minute gc_maxlifetime) make "Session Expired" show up for staff
+// mid-task on shared hosting. SESSION_LIFETIME in .env is in minutes;
+// without it, 1 hour.
+$sessionDir = PORTAL_ROOT.'/storage/framework/sessions';
+if (is_dir($sessionDir) || @mkdir($sessionDir, 0700, true)) {
+    session_save_path($sessionDir);
+}
+ini_set('session.gc_maxlifetime', (string) (max(1, (int) evaluator_env('SESSION_LIFETIME', 180)) * 60));
+ini_set('session.gc_probability', '1');
+ini_set('session.gc_divisor', '100');
+
 session_name('depedcares_evaluator_sess');
 session_set_cookie_params([
     'lifetime' => 0,
