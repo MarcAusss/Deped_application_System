@@ -5,7 +5,7 @@ require __DIR__.'/_boot.php';
 admin_require_main_account();
 $pdo = portal_pdo();
 
-const PASSWORD_REGEX = '/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/';
+const PASSWORD_REGEX = '/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{12,}$/';
 
 $userId = (int) ($_GET['id'] ?? $_POST['id'] ?? 0);
 if (!$userId) {
@@ -52,22 +52,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors->add('email', 'The email has already been taken.');
         }
     }
-    // Live system requires re-entering a password on every edit (no "leave
-    // blank to keep current" option) — port that constraint as-is.
-    if (!v_present($password) || !preg_match(PASSWORD_REGEX, $password)) {
-        $errors->add('password', 'At least 8 characters, with Uppercase, lowercase, number, and symbol.');
-    }
-    if ($passwordConfirmation !== $password) {
-        $errors->add('passwordConfirmation', 'The password confirmation does not match.');
+    // Password is optional on edit — leave both fields blank to keep the
+    // current password (e.g. just flipping Approved off to disable an
+    // account). Typing anything in either field re-enables full validation.
+    $changingPassword = $password !== '' || $passwordConfirmation !== '';
+    if ($changingPassword) {
+        if (!preg_match(PASSWORD_REGEX, $password)) {
+            $errors->add('password', 'At least 12 characters, with uppercase, lowercase, number, and symbol.');
+        }
+        if ($passwordConfirmation !== $password) {
+            $errors->add('passwordConfirmation', 'The password confirmation does not match.');
+        }
     }
     if (!in_array($role, ['admin', 'evaluator'], true)) {
         $errors->add('role', 'Please select a role.');
     }
 
     if (!$errors->any()) {
-        $pdo->prepare(
-            'UPDATE users SET name = ?, email = ?, password = ?, role = ?, is_approved = ?, updated_at = NOW() WHERE id = ?'
-        )->execute([$name, $email, password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]), $role, $isApproved ? 1 : 0, $userId]);
+        if ($changingPassword) {
+            $pdo->prepare(
+                'UPDATE users SET name = ?, email = ?, password = ?, role = ?, is_approved = ?, updated_at = NOW() WHERE id = ?'
+            )->execute([$name, $email, password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]), $role, $isApproved ? 1 : 0, $userId]);
+        } else {
+            $pdo->prepare(
+                'UPDATE users SET name = ?, email = ?, role = ?, is_approved = ?, updated_at = NOW() WHERE id = ?'
+            )->execute([$name, $email, $role, $isApproved ? 1 : 0, $userId]);
+        }
 
         flash_set('success', 'User updated.');
 
@@ -131,8 +141,9 @@ require __DIR__.'/_layout_head.php';
 
                 <div>
                     <label class="mb-1 block text-sm font-bold text-slate-700">New Password</label>
+                    <p class="mb-1 text-xs text-slate-500">Leave blank to keep the current password. If set, at least 12 characters with uppercase, lowercase, number, and symbol.</p>
                     <div class="relative">
-                        <input type="password" id="password" name="password" required class="w-full rounded-lg border border-slate-300 px-3 py-2 pr-11 text-sm">
+                        <input type="password" id="password" name="password" minlength="12" class="w-full rounded-lg border border-slate-300 px-3 py-2 pr-11 text-sm">
                         <?= admin_password_toggle('password') ?>
                     </div>
                     <?php if ($errors->has('password')): ?><p class="mt-1 text-xs text-red-600"><?= admin_e($errors->first('password')) ?></p><?php endif; ?>
@@ -141,7 +152,7 @@ require __DIR__.'/_layout_head.php';
                 <div>
                     <label class="mb-1 block text-sm font-bold text-slate-700">Confirm New Password</label>
                     <div class="relative">
-                        <input type="password" id="passwordConfirmation" name="passwordConfirmation" required class="w-full rounded-lg border border-slate-300 px-3 py-2 pr-11 text-sm">
+                        <input type="password" id="passwordConfirmation" name="passwordConfirmation" class="w-full rounded-lg border border-slate-300 px-3 py-2 pr-11 text-sm">
                         <?= admin_password_toggle('passwordConfirmation') ?>
                     </div>
                     <?php if ($errors->has('passwordConfirmation')): ?><p class="mt-1 text-xs text-red-600"><?= admin_e($errors->first('passwordConfirmation')) ?></p><?php endif; ?>

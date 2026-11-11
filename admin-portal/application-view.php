@@ -286,15 +286,27 @@ require __DIR__.'/_layout_head.php';
                             </div>
                         <?php endif; ?>
                         <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                            <p class="mb-3 text-xs font-bold uppercase tracking-wide text-slate-500">Evaluated By</p>
-                            <?php if ($evaluation->evaluator_name): ?>
-                                <p class="text-sm font-bold text-slate-800"><?= admin_e($evaluation->evaluator_name) ?>
-                                    <span class="pill ml-1 <?= $evaluation->evaluator_role === 'admin' ? 'bg-amber-100 text-amber-800' : 'bg-admin-indigoLight text-admin-indigo' ?>"><?= $evaluation->evaluator_role === 'admin' ? 'Admin' : 'Evaluator' ?></span>
-                                </p>
-                            <?php else: ?>
-                                <p class="text-sm font-bold text-slate-800">—</p>
-                            <?php endif; ?>
-                            <p class="text-xs text-slate-500">Evaluated on <?= $evaluation->evaluated_at ? admin_e(date('M d, Y h:i A', strtotime($evaluation->evaluated_at))) : '—' ?></p>
+                            <div class="flex flex-wrap items-start justify-between gap-3">
+                                <div>
+                                    <p class="mb-3 text-xs font-bold uppercase tracking-wide text-slate-500">Evaluated By</p>
+                                    <?php if ($evaluation->evaluator_name): ?>
+                                        <p class="text-sm font-bold text-slate-800"><?= admin_e($evaluation->evaluator_name) ?>
+                                            <span class="pill ml-1 <?= $evaluation->evaluator_role === 'admin' ? 'bg-amber-100 text-amber-800' : 'bg-admin-indigoLight text-admin-indigo' ?>"><?= $evaluation->evaluator_role === 'admin' ? 'Admin' : 'Evaluator' ?></span>
+                                        </p>
+                                    <?php else: ?>
+                                        <p class="text-sm font-bold text-slate-800">—</p>
+                                    <?php endif; ?>
+                                    <p class="text-xs text-slate-500">Evaluated on <?= $evaluation->evaluated_at ? admin_e(date('M d, Y h:i A', strtotime($evaluation->evaluated_at))) : '—' ?></p>
+                                </div>
+
+                                <?php if (admin_is_main_account(admin_user()) && $evaluation->evaluator_id && !in_array($application->status, ['qualified', 'disqualified'], true)): ?>
+                                    <form method="POST" action="<?= admin_url('application-undo-claim.php') ?>" data-confirm="Undo this evaluator's claim? This deletes their checklist/remarks and sends the application back to Pending, open to any evaluator. This cannot be undone.">
+                                        <?= admin_csrf_field() ?>
+                                        <input type="hidden" name="id" value="<?= $application->id ?>">
+                                        <button type="submit" class="rounded-lg border border-rose-300 bg-white px-3 py-1.5 text-xs font-bold text-rose-700 transition hover:bg-rose-50">Undo Claim</button>
+                                    </form>
+                                <?php endif; ?>
+                            </div>
 
                             <?php // The remarks belong to the evaluation, so they sit with who evaluated it. ?>
                             <div class="mt-3 border-t border-slate-200 pt-3">

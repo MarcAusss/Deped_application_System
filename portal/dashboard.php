@@ -193,6 +193,16 @@ require __DIR__.'/_layout_head.php';
                         $missingMandatory = missing_mandatory_requirements($app);
                     }
 
+                    // The evaluator's checklist said "Meet the QS", but the admin's
+                    // final call was Disqualified anyway (for a reason outside the
+                    // checklist). Showing "Meet the QS" right next to "Disqualified"
+                    // reads as a flat contradiction to the applicant, so this
+                    // specific combination is hidden entirely rather than shown or
+                    // explained — the reverse case (admin Qualifies something the
+                    // evaluator Excluded) already has its own explanatory message
+                    // below instead, since that box still honestly reflects reality.
+                    $qsContradictsDecision = $app->status === 'disqualified' && $app->eval_result === 'qualified';
+
                     // The admin can qualify an application the evaluator had
                     // excluded — the Mandatory Requirements box below still
                     // honestly shows what was originally missing, so without
@@ -287,7 +297,7 @@ require __DIR__.'/_layout_head.php';
                         // box is skipped entirely in that case rather than show it empty.
                         $showMandatoryBox = $app->eval_result !== 'excluded' || $missingMandatory;
                     ?>
-                    <?php if ($isFinalDecision && $app->eval_result && $showMandatoryBox): ?>
+                    <?php if ($isFinalDecision && $app->eval_result && $showMandatoryBox && !$qsContradictsDecision): ?>
                         <div class="mt-5 rounded-xl border border-slate-200 bg-white p-4">
                             <div class="flex flex-wrap items-center justify-between gap-2">
                                 <p class="text-xs font-bold uppercase tracking-wide text-slate-500"><?= $app->eval_result === 'excluded' ? 'Mandatory Requirements' : 'Qualification Standards' ?></p>

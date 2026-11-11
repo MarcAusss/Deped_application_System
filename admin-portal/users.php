@@ -181,10 +181,14 @@ require __DIR__.'/_layout_head.php';
                 <input type="email" name="email" id="user-edit-field-email" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
             </div>
 
+            <div class="sm:col-span-2">
+                <p class="mb-1 text-xs text-slate-500">Leave both password fields blank to keep the current password — e.g. just toggling Approved below.</p>
+            </div>
+
             <div>
                 <label class="mb-1 block text-sm font-bold text-slate-700">New Password</label>
                 <div class="relative">
-                    <input type="password" id="user-edit-password" name="password" required class="w-full rounded-lg border border-slate-300 px-3 py-2 pr-11 text-sm">
+                    <input type="password" id="user-edit-password" name="password" minlength="12" class="w-full rounded-lg border border-slate-300 px-3 py-2 pr-11 text-sm">
                     <?= admin_password_toggle('user-edit-password') ?>
                 </div>
             </div>
@@ -192,7 +196,7 @@ require __DIR__.'/_layout_head.php';
             <div>
                 <label class="mb-1 block text-sm font-bold text-slate-700">Confirm New Password</label>
                 <div class="relative">
-                    <input type="password" id="user-edit-passwordConfirmation" name="passwordConfirmation" required class="w-full rounded-lg border border-slate-300 px-3 py-2 pr-11 text-sm">
+                    <input type="password" id="user-edit-passwordConfirmation" name="passwordConfirmation" class="w-full rounded-lg border border-slate-300 px-3 py-2 pr-11 text-sm">
                     <?= admin_password_toggle('user-edit-passwordConfirmation') ?>
                 </div>
             </div>

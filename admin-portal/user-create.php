@@ -5,7 +5,7 @@ require __DIR__.'/_boot.php';
 admin_require_main_account();
 $pdo = portal_pdo();
 
-const PASSWORD_REGEX = '/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/';
+const PASSWORD_REGEX = '/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{12,}$/';
 
 $errors = new Errors();
 
@@ -32,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
     if (!v_present($password) || !preg_match(PASSWORD_REGEX, $password)) {
-        $errors->add('password', 'At least 8 characters, with Uppercase, lowercase, number, and symbol.');
+        $errors->add('password', 'At least 12 characters, with uppercase, lowercase, number, and symbol.');
     }
     if ($passwordConfirmation !== $password) {
         $errors->add('passwordConfirmation', 'The password confirmation does not match.');
@@ -104,8 +104,9 @@ require __DIR__.'/_layout_head.php';
 
                 <div>
                     <label class="mb-1 block text-sm font-bold text-slate-700">Password</label>
+                    <p class="mb-1 text-xs text-slate-500">At least 12 characters, with uppercase, lowercase, number, and symbol.</p>
                     <div class="relative">
-                        <input id="password" type="password" name="password" required class="w-full rounded-lg border border-slate-300 px-3 py-2 pr-11 text-sm">
+                        <input id="password" type="password" name="password" required minlength="12" class="w-full rounded-lg border border-slate-300 px-3 py-2 pr-11 text-sm">
                         <button type="button" class="absolute right-0 top-0 flex h-full w-10 items-center justify-center rounded-r-lg border-l border-slate-300 bg-slate-50 text-slate-500 hover:text-slate-700" onclick="toggleAuthPassword('password', this)" aria-label="Show password">
                             <svg class="icon-eye h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />

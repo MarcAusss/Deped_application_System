@@ -186,6 +186,14 @@ require __DIR__.'/_layout_head.php';
                                                     <?php endif; ?>
                                                 <?php endif; ?>
 
+                                                <?php if (admin_is_main_account($currentAdmin) && $app->evaluator_id): ?>
+                                                    <form method="POST" action="<?= admin_url('application-undo-claim.php') ?>" data-confirm="Undo <?= admin_e($app->evaluator_name ?: 'this evaluator') ?>'s claim on this application? This deletes their checklist/remarks and sends it back to Pending, open to any evaluator. This cannot be undone.">
+                                                        <?= admin_csrf_field() ?>
+                                                        <input type="hidden" name="id" value="<?= $app->id ?>">
+                                                        <button type="submit" class="font-bold text-rose-600 hover:underline">Undo Claim</button>
+                                                    </form>
+                                                <?php endif; ?>
+
                                                 <form method="POST" action="<?= admin_url('application-status.php') ?>" data-confirm="Are you sure you want to mark this application Qualified? This finalizes the hiring decision.">
                                                     <?= admin_csrf_field() ?>
                                                     <input type="hidden" name="id" value="<?= $app->id ?>">
