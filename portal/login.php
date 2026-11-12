@@ -188,20 +188,37 @@ $pageTitle = 'Applicant Login | DepEd Recruitment Portal';
         .auth-toggle { position: absolute; right: .9rem; top: 50%; transform: translateY(-50%); color: #94a3b8; cursor: pointer; }
         .auth-btn { background: #1E6B42; transition: .2s ease; }
         .auth-btn:hover { background: #278253; }
+
+        .login-bg-photo {
+            position: fixed;
+            inset: 0;
+            background-image: url('<?= asset_url('images/mayon.jpg') ?>');
+            background-size: cover;
+            background-position: center 70%;
+            background-repeat: no-repeat;
+        }
+
+        .login-bg-tint {
+            position: fixed;
+            inset: 0;
+            background: rgba(22, 64, 43, 0.55);
+        }
     </style>
     <style>
         /* Edge adds its own eye button to password fields; these pages have their own show-password toggle. */
         input[type="password"]::-ms-reveal, input[type="password"]::-ms-clear { display: none; }
     </style>
 </head>
-<body class="min-h-screen bg-slate-50">
+<body class="relative min-h-screen bg-[#1F5A3D] overflow-hidden">
 
-    <div class="mx-auto flex min-h-screen max-w-5xl flex-col items-center justify-center p-5">
-        <div class="auth-card grid w-full grid-cols-1 overflow-hidden rounded-3xl bg-white lg:grid-cols-[2.3fr_2.7fr]">
+    <div class="login-bg-photo"></div>
+    <div class="login-bg-tint"></div>
+
+    <div class="relative z-10 mx-auto flex min-h-screen max-w-5xl flex-col items-center justify-center p-5">
+        <div class="auth-card grid w-full grid-cols-1 overflow-hidden rounded-3xl lg:grid-cols-[2.8fr_2.2fr]">
 
             <div class="relative hidden min-h-[640px] flex-col overflow-hidden lg:flex">
-                <img src="<?= asset_url('images/mayon.jpg') ?>" class="absolute left-1/2 top-0 h-full w-[260%] -translate-x-1/2 object-cover object-[center_15%]" alt="SDO Albay">
-                <div class="absolute inset-0 bg-gradient-to-b from-government-dark/90 via-government-dark/70 to-government-dark/90"></div>
+                <div class="absolute inset-0 bg-government-dark/35 backdrop-blur-sm"></div>
 
                 <div class="absolute left-4 top-4 z-20 flex items-center gap-2">
                     <div class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-white shadow-md ring-2 ring-white/20">
@@ -219,14 +236,22 @@ $pageTitle = 'Applicant Login | DepEd Recruitment Portal';
                     <h1 class="mt-1 text-4xl font-black leading-tight">SDO Albay CARES</h1>
                     <div class="mt-2 h-1 w-14 rounded-full bg-government-gold"></div>
 
+                    <p class="mt-4 text-sm leading-relaxed text-white/80">Career Application &amp; Recruitment for Education Services (CARES) &mdash; building brighter futures through quality education and excellent service.</p>
+
                     <div class="flex-1"></div>
 
                     <div class="w-full border-t border-white/10 pt-6">
-                        <div class="flex flex-col items-center gap-3">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-6 w-6 shrink-0 text-government-gold">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.436 60.436 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
-                            </svg>
-                            <p class="text-sm leading-relaxed text-white/80">Career Application &amp; Recruitment for Education Services (CARES) &mdash; building brighter futures through quality education and excellent service.</p>
+                        <div class="flex flex-col items-center gap-2 text-xs text-white/70">
+                            <div class="flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-4 w-4 shrink-0">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
+                                </svg>
+                                Your information is secure with us.
+                            </div>
+                            <p>
+                                For issues and concerns, please contact:
+                                <a href="mailto:cares.support@depedalbay.com" class="font-bold text-white hover:underline">cares.support@depedalbay.com</a>
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -296,7 +321,12 @@ $pageTitle = 'Applicant Login | DepEd Recruitment Portal';
                             </div>
                         <?php endif; ?>
 
-                        <button type="submit" id="login-submit-btn" class="auth-btn w-full rounded-xl py-3.5 text-lg font-bold text-white">Login</button>
+                        <button type="submit" id="login-submit-btn" class="auth-btn w-full flex items-center justify-center gap-2 rounded-xl py-3.5 text-lg font-bold text-white">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-5 w-5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
+                            </svg>
+                            <span id="login-submit-label">Login</span>
+                        </button>
 
                         <div class="flex items-center gap-3 text-xs font-bold uppercase tracking-wide text-slate-400">
                             <span class="h-px flex-1 bg-slate-200"></span> or <span class="h-px flex-1 bg-slate-200"></span>
@@ -318,14 +348,14 @@ $pageTitle = 'Applicant Login | DepEd Recruitment Portal';
             </div>
         </div>
 
-        <div class="mt-5 flex items-center gap-2 text-xs text-slate-500">
+        <div class="mt-5 flex items-center gap-2 text-xs text-slate-500 lg:hidden">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-4 w-4">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
             </svg>
             Your information is secure with us.
         </div>
 
-        <p class="mt-2 text-xs text-slate-500">
+        <p class="mt-2 text-xs text-slate-500 lg:hidden">
             For issues and concerns, please contact:
             <a href="mailto:cares.support@depedalbay.com" class="font-bold text-government-navy hover:underline">cares.support@depedalbay.com</a>
         </p>
@@ -366,7 +396,8 @@ $pageTitle = 'Applicant Login | DepEd Recruitment Portal';
             var textEl = document.getElementById('login-error-text');
             var alertBox = document.getElementById('login-alert-box');
             var submitBtn = document.getElementById('login-submit-btn');
-            var originalLabel = submitBtn ? submitBtn.textContent.trim() : null;
+            var submitLabel = document.getElementById('login-submit-label');
+            var originalLabel = submitLabel ? submitLabel.textContent.trim() : null;
 
             if (submitBtn) {
                 submitBtn.disabled = true;
@@ -385,7 +416,7 @@ $pageTitle = 'Applicant Login | DepEd Recruitment Portal';
                     if (submitBtn) {
                         submitBtn.disabled = false;
                         submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                        submitBtn.textContent = originalLabel;
+                        if (submitLabel) submitLabel.textContent = originalLabel;
                     }
                     return;
                 }

@@ -108,20 +108,37 @@ $pageTitle = 'Applicant Registration | DepEd Recruitment Portal';
         .auth-toggle { position: absolute; right: .9rem; top: 50%; transform: translateY(-50%); color: #94a3b8; cursor: pointer; }
         .auth-btn { background: #1E6B42; transition: .2s ease; }
         .auth-btn:hover { background: #278253; }
+
+        .login-bg-photo {
+            position: fixed;
+            inset: 0;
+            background-image: url('<?= asset_url('images/mayon.jpg') ?>');
+            background-size: cover;
+            background-position: center 70%;
+            background-repeat: no-repeat;
+        }
+
+        .login-bg-tint {
+            position: fixed;
+            inset: 0;
+            background: rgba(22, 64, 43, 0.55);
+        }
     </style>
     <style>
         /* Edge adds its own eye button to password fields; these pages have their own show-password toggle. */
         input[type="password"]::-ms-reveal, input[type="password"]::-ms-clear { display: none; }
     </style>
 </head>
-<body class="min-h-screen bg-slate-50">
+<body class="relative min-h-screen bg-[#1F5A3D] overflow-hidden">
 
-    <div class="mx-auto flex min-h-screen max-w-5xl flex-col items-center justify-center p-5">
-        <div class="auth-card grid w-full grid-cols-1 overflow-hidden rounded-3xl bg-white lg:grid-cols-[2fr_3fr]">
+    <div class="login-bg-photo"></div>
+    <div class="login-bg-tint"></div>
+
+    <div class="relative z-10 mx-auto flex min-h-screen max-w-5xl flex-col items-center justify-center p-5">
+        <div class="auth-card grid w-full grid-cols-1 overflow-hidden rounded-3xl lg:grid-cols-[2fr_3fr]">
 
             <div class="relative hidden min-h-[700px] flex-col overflow-hidden lg:flex">
-                <img src="<?= asset_url('images/mayon.jpg') ?>" class="absolute left-1/2 top-0 h-full w-[260%] -translate-x-1/2 object-cover object-[center_15%]" alt="SDO Albay">
-                <div class="absolute inset-0 bg-gradient-to-b from-government-dark/90 via-government-dark/70 to-government-dark/90"></div>
+                <div class="absolute inset-0 bg-government-dark/35 backdrop-blur-sm"></div>
 
                 <div class="absolute left-4 top-4 z-20 flex items-center gap-2">
                     <div class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-white shadow-md ring-2 ring-white/20">
@@ -248,7 +265,12 @@ $pageTitle = 'Applicant Registration | DepEd Recruitment Portal';
                             <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600"><?= portal_e(current($errors->all())) ?></div>
                         <?php endif; ?>
 
-                        <button type="submit" class="auth-btn w-full rounded-xl py-3.5 text-lg font-bold text-white">Register</button>
+                        <button type="submit" class="auth-btn w-full flex items-center justify-center gap-2 rounded-xl py-3.5 text-lg font-bold text-white">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-5 w-5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z" />
+                            </svg>
+                            Register
+                        </button>
 
                         <div class="flex items-center gap-3 text-xs font-bold uppercase tracking-wide text-slate-400">
                             <span class="h-px flex-1 bg-slate-200"></span> or <span class="h-px flex-1 bg-slate-200"></span>

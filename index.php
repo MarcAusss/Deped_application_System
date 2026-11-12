@@ -15,8 +15,24 @@ $BASE_PATH = app_base_path(0);
     <style>
         .landing-card {
             backdrop-filter: blur(10px);
-            background: rgba(255, 255, 255, 0.9);
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08), 0 25px 60px rgba(0, 0, 0, 0.10);
+        }
+
+        .page-bg-photo {
+            position: fixed;
+            inset: 0;
+            background-image: url('<?= $BASE_PATH ?>/images/mayon-dawn.jpg');
+            background-size: cover;
+            background-position: center 60%;
+            background-repeat: no-repeat;
+            filter: blur(3px) saturate(1.15) brightness(1.02);
+            transform: scale(1.05);
+        }
+
+        .page-bg-tint {
+            position: fixed;
+            inset: 0;
+            background: rgba(45, 74, 66, 0.32);
         }
 
         .choice { border: 1px solid #e2e8f0; transition: .2s ease; }
@@ -26,13 +42,17 @@ $BASE_PATH = app_base_path(0);
     </style>
 </head>
 
-<body class="min-h-screen flex items-center justify-center p-5 bg-slate-50">
+<body class="relative min-h-screen flex items-center justify-center p-5 bg-[#1F5A3D] overflow-hidden">
 
-    <div class="landing-card w-full max-w-3xl rounded-[32px] overflow-hidden">
+    <div class="page-bg-photo"></div>
+    <div class="page-bg-tint"></div>
 
-        <div class="relative flex flex-col items-center px-8 pt-20 pb-10 text-center sm:pt-10" style="background: linear-gradient(150deg, #16402B, #1E6B42);">
+    <div class="landing-card relative z-10 w-full max-w-3xl rounded-[32px] overflow-hidden">
 
-            <div class="absolute left-5 top-5 flex items-center gap-2">
+        <div class="relative flex flex-col items-center overflow-hidden px-8 pt-20 pb-10 text-center sm:pt-10">
+            <div class="absolute inset-0 bg-[#1F5A3D]/20 backdrop-blur-sm"></div>
+
+            <div class="absolute left-5 top-5 z-20 flex items-center gap-2">
                 <div class="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-white shadow-md ring-2 ring-white/20">
                     <img src="<?= $BASE_PATH ?>/images/depedalbay.png" alt="DepEd SDO Albay" class="h-16 w-16 shrink-0 translate-y-0.5 object-contain">
                 </div>
@@ -41,23 +61,26 @@ $BASE_PATH = app_base_path(0);
                 </div>
             </div>
 
-            <img src="<?= $BASE_PATH ?>/images/cares-logo.svg" alt="SDO Albay CARES logo" class="h-36 w-36 drop-shadow-xl md:h-40 md:w-40">
+            <div class="relative z-10 flex flex-col items-center">
+                <img src="<?= $BASE_PATH ?>/images/cares-logo.svg" alt="SDO Albay CARES logo" class="h-36 w-36 drop-shadow-xl md:h-40 md:w-40">
 
-            <p class="mt-5 text-xs font-bold uppercase tracking-widest text-[#D4A017]">
-                Department of Education &middot; Schools Division Office of Albay
-            </p>
+                <p class="mt-5 text-xs font-bold uppercase tracking-widest text-[#D4A017]">
+                    Department of Education &middot; Schools Division Office of Albay
+                </p>
 
-            <h1 class="mt-2 text-3xl md:text-4xl font-black text-white">
-                SDO Albay CARES
-            </h1>
+                <h1 class="mt-2 text-3xl md:text-4xl font-black text-white">
+                    SDO Albay CARES
+                </h1>
 
-            <p class="mt-3 text-white/75 max-w-lg">
-                Career Application &amp; Recruitment for Education Services
-            </p>
+                <p class="mt-3 text-white/75 max-w-lg">
+                    Career Application &amp; Recruitment for Education Services
+                </p>
 
+                <div class="mt-6 h-px w-40 bg-white/25"></div>
+            </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 px-8 py-10">
+        <div class="grid grid-cols-1 gap-5 bg-[#1F5A3D]/20 backdrop-blur-sm px-8 py-10 sm:grid-cols-2">
 
             <a href="<?= $BASE_PATH ?>/portal/jobs.php" class="choice group rounded-2xl bg-white p-6 flex flex-col">
                 <div class="w-12 h-12 rounded-xl bg-[#EAF4EE] flex items-center justify-center text-[#1E6B42]">

@@ -300,10 +300,43 @@ $oldEmail = $oldInput['email'] ?? '';
             html { font-size: clamp(10px, min(100vw / 120, 100vh / 60), 16px); }
         }
 
+        @keyframes loginCardIn {
+            from { opacity: 0; transform: translateY(18px) scale(.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
         .login-card {
-            backdrop-filter: blur(10px);
-            background: rgba(255, 255, 255, 0.85);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08), 0 25px 60px rgba(0, 0, 0, 0.10);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 25px 70px rgba(0, 0, 0, 0.35), 0 45px 110px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(212, 160, 23, 0.08);
+            animation: loginCardIn .6s cubic-bezier(.16, 1, .3, 1);
+        }
+
+        .page-bg-photo {
+            position: fixed;
+            inset: 0;
+            background-image: url('<?= asset_url('images/mayon-dawn.jpg') ?>');
+            background-size: cover;
+            background-position: center 60%;
+            background-repeat: no-repeat;
+            filter: blur(3px) saturate(1.15) brightness(1.02);
+            transform: scale(1.05);
+        }
+
+        .page-bg-tint {
+            position: fixed;
+            inset: 0;
+            background: rgba(45, 74, 66, 0.32);
+        }
+
+        .cares-logo-glow {
+            position: absolute;
+            inset: 0;
+            margin: auto;
+            width: 12rem;
+            height: 12rem;
+            border-radius: 9999px;
+            background: radial-gradient(circle, rgba(212, 160, 23, 0.35) 0%, rgba(212, 160, 23, 0) 70%);
+            filter: blur(6px);
         }
 
         .auth-input {
@@ -342,10 +375,17 @@ $oldEmail = $oldInput['email'] ?? '';
         .auth-btn {
             background: #1E6B42;
             transition: .2s ease;
+            box-shadow: 0 8px 20px rgba(30, 107, 66, 0.35);
         }
 
         .auth-btn:hover {
             background: #278253;
+            transform: translateY(-2px);
+            box-shadow: 0 12px 26px rgba(30, 107, 66, 0.45);
+        }
+
+        .auth-btn:active {
+            transform: translateY(0);
         }
     </style>
     <style>
@@ -354,29 +394,37 @@ $oldEmail = $oldInput['email'] ?? '';
     </style>
 </head>
 
-<body class="min-h-screen flex items-center justify-center p-5 bg-slate-50">
+<body class="relative min-h-screen flex items-center justify-center p-5 bg-[#1F5A3D] overflow-hidden">
 
-    <div class="login-card w-full max-w-7xl rounded-[2.2rem] overflow-hidden grid grid-cols-1 lg:grid-cols-[3fr_2fr]">
+    <div class="page-bg-photo"></div>
+    <div class="page-bg-tint"></div>
 
-        <div class="relative hidden lg:block min-h-[43.75rem]">
-            <img src="<?= asset_url('images/SDO-ALBAY.webp') ?>" class="absolute inset-0 w-full h-full object-cover object-[42%_center]" alt="Background Image">
-            <div class="absolute inset-0 bg-[#1F5A3D]/65"></div>
+    <div class="login-card relative z-10 w-full max-w-7xl rounded-[2.2rem] overflow-hidden grid grid-cols-1 lg:grid-cols-[3fr_2fr]">
+
+        <div class="relative hidden lg:flex flex-col items-center justify-center min-h-[43.75rem] px-10 py-10 text-center">
+            <img src="<?= asset_url('images/mayon-dawn.jpg') ?>" class="absolute inset-0 w-full h-full object-cover object-[center_60%]" alt="Mayon Volcano at dawn">
+            <div class="absolute inset-0 bg-[#1F5A3D]/32"></div>
 
             <div class="absolute left-6 top-6 z-20 flex items-center gap-2">
                 <div class="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-white shadow-md ring-2 ring-white/20">
                     <img src="<?= asset_url('images/depedalbay.png') ?>" alt="DepEd SDO Albay" class="h-16 w-16 shrink-0 translate-y-0.5 object-contain">
                 </div>
                 <div class="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-white shadow-md ring-2 ring-white/20">
-                    <img src="<?= asset_url('images/Department_of_Education_(DepEd).svg.webp') ?>" alt="Department of Education" class="h-11 w-11 object-contain">
+                    <img src="<?= asset_url('images/Department_of_Education_(DepEd).svg.webp') ?>" alt="Department of Education" class="h-10 w-10 object-contain">
                 </div>
             </div>
 
-            <div class="relative z-10 flex flex-col items-center justify-start h-full px-10 pt-60 text-center">
-                <img src="<?= asset_url('images/cares-logo.svg') ?>" alt="SDO Albay CARES logo" class="h-40 w-40 drop-shadow-xl">
+            <div class="relative z-10 flex flex-col items-center">
+                <div class="relative mt-32 flex items-center justify-center">
+                    <div class="cares-logo-glow"></div>
+                    <img src="<?= asset_url('images/cares-logo.svg') ?>" alt="SDO Albay CARES logo" class="relative h-36 w-36 drop-shadow-xl">
+                </div>
 
                 <h1 class="text-4xl font-black text-white mt-8">
                     Career Application &amp; Recruitment for Education Services (CARES)
                 </h1>
+
+                <div class="mt-3 h-1 w-16 rounded-full bg-[#D4A017]"></div>
 
                 <p class="text-white/85 mt-4 text-lg max-w-md leading-relaxed">
                     Welcome to the online recruitment and application management system.
@@ -387,7 +435,7 @@ $oldEmail = $oldInput['email'] ?? '';
         <div class="bg-white px-8 md:px-16 py-14 flex items-center">
             <div class="w-full">
 
-                <div class="lg:hidden flex items-center justify-center gap-3 mb-8">
+                <div class="lg:hidden flex items-center justify-center gap-3 mb-6">
                     <div class="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-white shadow ring-1 ring-slate-200">
                         <img src="<?= asset_url('images/depedalbay.png') ?>" alt="DepEd SDO Albay" class="h-14 w-14 shrink-0 translate-y-0.5 object-contain">
                     </div>
@@ -397,9 +445,9 @@ $oldEmail = $oldInput['email'] ?? '';
                     </div>
                 </div>
 
-                <div class="mb-10">
-                    <h2 class="text-4xl font-black text-[#1E6B42]">Office System</h2>
-                    <p class="mt-3 text-lg text-[#278253]">Sign in to continue — Administrator and Evaluator accounts both work here.</p>
+                <div class="mb-8">
+                    <h2 class="text-3xl font-black text-slate-900">Welcome to CARES!</h2>
+                    <p class="mt-2 text-base text-slate-600">Sign in to access the Office System — Administrator and Evaluator accounts both work here.</p>
                 </div>
 
                 <form method="POST" action="<?= asset_url('staff-login.php') ?><?= isset($_GET['redirect']) ? '?redirect='.urlencode($_GET['redirect']) : '' ?>" class="space-y-6">
@@ -443,8 +491,11 @@ $oldEmail = $oldInput['email'] ?? '';
                         </div>
                     <?php endif; ?>
 
-                    <button type="submit" id="login-submit-btn" class="auth-btn w-full text-white py-4 rounded-2xl font-bold text-lg">
-                        Login
+                    <button type="submit" id="login-submit-btn" class="auth-btn w-full flex items-center justify-center gap-2 text-white py-4 rounded-2xl font-bold text-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-5 w-5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
+                        </svg>
+                        <span id="login-submit-label">Login</span>
                     </button>
                 </form>
 
@@ -470,7 +521,8 @@ $oldEmail = $oldInput['email'] ?? '';
                 var textEl = document.getElementById('login-error-text');
                 var alertBox = document.getElementById('login-alert-box');
                 var submitBtn = document.getElementById('login-submit-btn');
-                var originalLabel = submitBtn ? submitBtn.textContent.trim() : null;
+                var submitLabel = document.getElementById('login-submit-label');
+                var originalLabel = submitLabel ? submitLabel.textContent.trim() : null;
 
                 if (submitBtn) {
                     submitBtn.disabled = true;
@@ -489,7 +541,7 @@ $oldEmail = $oldInput['email'] ?? '';
                         if (submitBtn) {
                             submitBtn.disabled = false;
                             submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                            submitBtn.textContent = originalLabel;
+                            if (submitLabel) submitLabel.textContent = originalLabel;
                         }
                         return;
                     }
